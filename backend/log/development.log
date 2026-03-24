@@ -1,0 +1,16 @@
+  [1m[35mSQL (0.1ms)[0m  [1m[35mSET search_path TO public /*application='Backend'*/[0m
+  [1m[35m (89.2ms)[0m  [1m[35mCREATE DATABASE "backend_development" ENCODING = 'unicode' /*application='Backend'*/[0m
+Started GET "/" for 172.20.0.1 at 2026-03-24 17:55:24 +0000
+  [1m[35m (9.9ms)[0m  [1m[35mCREATE TABLE "schema_migrations" ("version" character varying NOT NULL PRIMARY KEY) /*application='Backend'*/[0m
+  [1m[35m (9.0ms)[0m  [1m[35mCREATE TABLE "ar_internal_metadata" ("key" character varying NOT NULL PRIMARY KEY, "value" character varying, "created_at" timestamp(6) NOT NULL, "updated_at" timestamp(6) NOT NULL) /*application='Backend'*/[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.7ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC /*application='Backend'*/[0m
+Processing by Rails::WelcomeController#index as HTML
+  Rendering /usr/local/bundle/gems/railties-8.1.2.1/lib/rails/templates/rails/welcome/index.html.erb
+  Rendered /usr/local/bundle/gems/railties-8.1.2.1/lib/rails/templates/rails/welcome/index.html.erb (Duration: 0.6ms | GC: 0.0ms)
+Completed 200 OK in 18ms (Views: 5.2ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 1.3ms)
+
+
+Started GET "/icon.png" for 172.20.0.1 at 2026-03-24 17:55:24 +0000
+  
+ActionController::RoutingError (No route matches [GET] "/icon.png"):
+  

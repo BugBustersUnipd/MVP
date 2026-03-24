@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16  # Ultimissima versione stabile di Postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/backend_development
+
+  frontend:
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Questo evita fastidiosi conflitti di permessi sui pacchetti npm
+    ports:
+      - "4200:4200"
+
+volumes:
+  postgres_data:
