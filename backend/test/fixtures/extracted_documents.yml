@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  confidence: MyString
+  page_start: 1
+  page_end: 1
+  error_message: MyText
+  sequence: 1
+  metadata: 
+  status: MyString
+  process_time_seconds: 9.99
+  processed_at: 2026-03-26 16:40:16
+  uploaded_document: one
+  matched_employee: one
+
+two:
+  confidence: MyString
+  page_start: 1
+  page_end: 1
+  error_message: MyText
+  sequence: 1
+  metadata: 
+  status: MyString
+  process_time_seconds: 9.99
+  processed_at: 2026-03-26 16:40:16
+  uploaded_document: two
+  matched_employee: two

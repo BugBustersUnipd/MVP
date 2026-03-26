@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  checksum: MyString
+  file_kind: MyString
+  storage_path: MyString
+  original_filename: MyString
+  override_company: MyString
+  override_department: MyString
+  page_count: 1
+  category: MyString
+  competence_period: MyString
+  employee: one
+
+two:
+  checksum: MyString
+  file_kind: MyString
+  storage_path: MyString
+  original_filename: MyString
+  override_company: MyString
+  override_department: MyString
+  page_count: 1
+  category: MyString
+  competence_period: MyString
+  employee: two
