@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_26_164845) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_27_110500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,20 +31,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_164845) do
   end
 
   create_table "extracted_documents", force: :cascade do |t|
-    t.string "confidence"
+    t.jsonb "confidence"
     t.datetime "created_at", null: false
     t.text "error_message"
-    t.bigint "matched_employee_id", null: false
+    t.bigint "matched_employee_id"
     t.jsonb "metadata"
     t.integer "page_end"
     t.integer "page_start"
     t.decimal "process_time_seconds"
     t.datetime "processed_at"
+    t.text "recipient"
     t.integer "sequence"
     t.string "status"
     t.datetime "updated_at", null: false
     t.bigint "uploaded_document_id", null: false
     t.index ["matched_employee_id"], name: "index_extracted_documents_on_matched_employee_id"
+    t.index ["status"], name: "index_extracted_documents_on_status"
+    t.index ["uploaded_document_id", "sequence"], name: "index_extracted_documents_on_uploaded_document_id_and_sequence", unique: true
     t.index ["uploaded_document_id"], name: "index_extracted_documents_on_uploaded_document_id"
   end
 
@@ -86,14 +89,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_164845) do
   create_table "processing_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error_message"
-    t.bigint "extracted_document_id", null: false
+    t.bigint "extracted_document_id"
     t.string "filename"
     t.bigint "processing_run_id", null: false
-    t.string "sequence"
+    t.integer "sequence", null: false
     t.string "status"
     t.datetime "updated_at", null: false
     t.index ["extracted_document_id"], name: "index_processing_items_on_extracted_document_id"
+    t.index ["processing_run_id", "sequence"], name: "index_processing_run_id_and_sequence", unique: true
     t.index ["processing_run_id"], name: "index_processing_items_on_processing_run_id"
+    t.index ["status"], name: "index_processing_items_on_status"
   end
 
   create_table "processing_runs", force: :cascade do |t|
@@ -101,12 +106,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_164845) do
     t.datetime "created_at", null: false
     t.text "error_message"
     t.string "job_id"
-    t.string "original_file_name"
+    t.string "original_filename"
     t.integer "processed_documents"
+    t.datetime "started_at"
     t.string "status"
     t.integer "total_documents"
     t.datetime "updated_at", null: false
-    t.bigint "uploaded_document_id", null: false
+    t.bigint "uploaded_document_id"
+    t.index ["job_id"], name: "index_processing_runs_on_job_id", unique: true
+    t.index ["status"], name: "index_processing_runs_on_status"
     t.index ["uploaded_document_id"], name: "index_processing_runs_on_uploaded_document_id"
   end
 
@@ -117,11 +125,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_164845) do
     t.bigint "recipient_id", null: false
     t.datetime "sent_at"
     t.string "subject"
-    t.bigint "template_document_id", null: false
+    t.bigint "template_id"
     t.datetime "updated_at", null: false
     t.index ["extracted_document_id"], name: "index_sendings_on_extracted_document_id"
     t.index ["recipient_id"], name: "index_sendings_on_recipient_id"
-    t.index ["template_document_id"], name: "index_sendings_on_template_document_id"
+    t.index ["template_id"], name: "index_sendings_on_template_id"
   end
 
   create_table "styles", force: :cascade do |t|
@@ -159,10 +167,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_164845) do
     t.string "original_filename"
     t.string "override_company"
     t.string "override_department"
-    t.integer "page_count"
+    t.integer "page_count", default: 0
     t.string "storage_path"
     t.datetime "updated_at", null: false
+    t.index ["checksum"], name: "index_uploaded_documents_on_checksum", unique: true
     t.index ["employee_id"], name: "index_uploaded_documents_on_employee_id"
+    t.index ["file_kind"], name: "index_uploaded_documents_on_file_kind"
   end
 
   create_table "users", force: :cascade do |t|
@@ -188,7 +198,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_26_164845) do
   add_foreign_key "processing_items", "processing_runs"
   add_foreign_key "processing_runs", "uploaded_documents"
   add_foreign_key "sendings", "extracted_documents"
-  add_foreign_key "sendings", "templates", column: "template_document_id"
+  add_foreign_key "sendings", "templates"
   add_foreign_key "sendings", "users", column: "recipient_id"
   add_foreign_key "styles", "companies"
   add_foreign_key "tones", "companies"

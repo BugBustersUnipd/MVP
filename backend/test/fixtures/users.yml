@@ -1,17 +1,48 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  cf: MyString
-  username: MyString
-  password: MyString
-  email: MyString
-  name: MyString
-  surname: MyString
+  cf: cf-one
+  username: user_one
+  password: pass_one
+  email: user.one@example.com
+  name: User One
+  surname: Surname One
 
 two:
-  cf: MyString
-  username: MyString
-  password: MyString
-  email: MyString
-  name: MyString
-  surname: MyString
+  cf: cf-two
+  username: user_two
+  password: pass_two
+  email: user.two@example.com
+  name: User Two
+  surname: Surname Two
+
+# Named fixtures used by recipient_resolver tests
+mario_rossi:
+  username: mario_rossi
+  email: mario.rossi@example.com
+  name: Mario Rossi
+  surname: Rossi
+
+mueller:
+  username: kmueller
+  email: k.mueller@example.com
+  name: Klaus Müller
+  surname: Müller
+
+eric_blanc:
+  username: eblanc
+  email: eric.blanc@example.com
+  name: Éric Blanc
+  surname: Blanc
+
+giovanni_rossini:
+  username: grossini
+  email: g.rossini@example.com
+  name: Giovanni Rossini
+  surname: Rossini
+
+luigi_bianchi:
+  username: lbianchi
+  email: luigi.bianchi@example.com
+  name: Luigi Bianchi
+  surname: Bianchi

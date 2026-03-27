@@ -1,10 +1,10 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  checksum: MyString
-  file_kind: MyString
-  storage_path: MyString
-  original_filename: MyString
+  checksum: checksum-one
+  file_kind: pdf
+  storage_path: /tmp/file-one.pdf
+  original_filename: file-one.pdf
   override_company: MyString
   override_department: MyString
   page_count: 1
@@ -13,10 +13,10 @@ one:
   employee: one
 
 two:
-  checksum: MyString
-  file_kind: MyString
-  storage_path: MyString
-  original_filename: MyString
+  checksum: checksum-two
+  file_kind: image
+  storage_path: /tmp/file-two.png
+  original_filename: file-two.png
   override_company: MyString
   override_department: MyString
   page_count: 1

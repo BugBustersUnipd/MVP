@@ -35,6 +35,20 @@ gem "image_processing", "~> 1.2"
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 gem "rack-cors"
 
+# PDF processing
+gem "combine_pdf"
+
+# CSV (explicit to silence Ruby 3.4 deprecation warning)
+gem "csv"
+
+# AWS SDK (Textract for OCR, Bedrock for LLM)
+gem "aws-sdk-textract"
+gem "aws-sdk-bedrockruntime"
+
+group :test do
+  gem "simplecov", require: false
+end
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

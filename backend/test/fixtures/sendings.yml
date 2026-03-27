@@ -6,7 +6,7 @@ one:
   subject: MyString
   recipient: one
   extracted_document: one
-  template_document: one
+  template: one
 
 two:
   body: MyText
@@ -14,4 +14,4 @@ two:
   subject: MyString
   recipient: two
   extracted_document: two
-  template_document: two
+  template: two

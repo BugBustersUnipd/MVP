@@ -1,21 +1,17 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  status: MyString
-  completed_at: 2026-03-26 16:36:34
-  error_message: MyText
-  job_id: MyString
-  original_file_name: MyString
+  status: queued
+  job_id: job-one
+  original_filename: file-one.pdf
   processed_documents: 1
   total_documents: 1
   uploaded_document: one
 
 two:
-  status: MyString
-  completed_at: 2026-03-26 16:36:34
-  error_message: MyText
-  job_id: MyString
-  original_file_name: MyString
+  status: queued
+  job_id: job-two
+  original_filename: file-two.pdf
   processed_documents: 1
   total_documents: 1
   uploaded_document: two
