@@ -1,0 +1,21 @@
+
+.p-tag-pronto{
+    color:white ;
+    background: var(--p-tag-pronto-background);
+}
+.p-tag-inviato{
+    color:white ;
+    background: var(--p-tag-inviato-background);
+}
+.p-tag-programmato{
+    color:white ;
+    background: var(--p-tag-programmato-background);
+}
+.p-tag-validare{
+    color:white ;
+    background: var(--p-tag-validare-background);
+}
+.p-tag-default{
+    color:white ;
+    background: var(--p-tag-default-background);
+}

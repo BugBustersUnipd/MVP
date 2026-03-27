@@ -1,0 +1,57 @@
+
+
+.sidebar {  
+  min-height: 100vh;
+  width: 220px;
+  min-width: 220px;
+  flex-shrink: 0;
+  background-color: #ffffff;
+  padding-top: 20px;
+  border: none; 
+  border-right: 0.3px solid #d9d9d9;
+} 
+.sidebar li:hover {
+  background: #e9e9e9;
+}
+
+::ng-deep .p-menu-submenu-label{
+  margin-top: 0.75rem;
+}
+
+::ng-deep .bb-custom-icon {
+  width: 23px;
+  height: 23px;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+}
+
+::ng-deep .bb-icon-generatore {
+  -webkit-mask-image: url('/assets/icons/ai-assistant-icon.svg');
+  mask-image: url('/assets/icons/ai-assistant-icon.svg');
+}
+::ng-deep .bb-icon-ai-copilot {
+  -webkit-mask-image: url('/assets/icons/ai-co-pilot-icon.svg');
+  mask-image: url('/assets/icons/ai-co-pilot-icon.svg');
+}
+::ng-deep .bb-icon-analytics {
+  -webkit-mask-image: url('/assets/icons/analytics-icon.svg');
+  mask-image: url('/assets/icons/analytics-icon.svg');
+}
+::ng-deep .bb-icon-storico {
+  -webkit-mask-image: url('/assets/icons/storico-icon.svg');
+  mask-image: url('/assets/icons/storico-icon.svg');
+}
+
+::ng-deep .p-menu {
+  border: none !important;
+  box-shadow: none !important;
+}
+::ng-deep .p-menu .p-menu-submenu-label {
+  font-size: 0.625rem;
+  color: var(--menu-label);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  padding: 0 12px;
+  margin-bottom: 4px;
+  font-weight: 700;
+}

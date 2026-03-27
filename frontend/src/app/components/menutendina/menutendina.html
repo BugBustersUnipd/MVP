@@ -1,0 +1,33 @@
+<label class="label">{{ label }}</label>
+<!-- [disabled] rende il menu non apribile e non focalizzabile quando @Input disabled è true -->
+<p-select
+    [options]="options"
+    [(ngModel)]="selected"
+    (ngModelChange)="selectedChange.emit($event)"
+    optionLabel="name"
+    [filter]="true"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    class="w-full"
+    appendTo="body"
+    >
+        <!-- Item personalizzato -->
+    <ng-template pTemplate="item" let-option>
+        <div class="item-row">
+        <span class="truncate-content">{{ option.name }}</span>
+            <button
+                *ngIf="showRemove"
+                type="button"
+                pButton
+                icon="pi pi-trash"
+                class="p-button-text p-button-danger p-button-sm ms-auto"
+                (click)="$event.stopPropagation();remove.emit(option.id)">
+            </button>
+        </div>
+    </ng-template>
+    <ng-template #footer *ngIf="showAddNew">
+        <div class="p-3">
+            <app-button [label]="addButtonLabel" class="btn-secondary" size="small" [fluid]="true" icon="pi pi-plus" (action)="emitAddNew()" />
+        </div>
+    </ng-template>   
+</p-select>

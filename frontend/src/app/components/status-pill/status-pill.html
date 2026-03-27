@@ -1,0 +1,4 @@
+<label class="label">Stato</label>
+<div [ngClass]="'status-pill-' + (state | lowercase).replace(' ', '-')" class="status-pill rounded-pill text-center py-2">
+    {{ state }}
+</div>

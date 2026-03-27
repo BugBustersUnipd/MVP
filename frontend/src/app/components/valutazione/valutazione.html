@@ -1,0 +1,5 @@
+<label class="label">Valuta</label>
+<div class="valutazione-container">
+  <p-rating [(ngModel)]="rating" (ngModelChange)="ratingChange.emit($event)" [stars]="5">
+  </p-rating>
+</div>

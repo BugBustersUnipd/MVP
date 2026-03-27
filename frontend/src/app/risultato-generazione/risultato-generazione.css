@@ -1,0 +1,66 @@
+.menu{
+  border-radius: 12px;
+  display: flex;
+  margin-left: auto;
+  max-width: fit-content;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  max-height: fit-content;
+  gap: 8px;
+}
+.actions {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.5rem;
+  display: flex;
+  margin-left: auto;
+  max-width: fit-content;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  /* max-height: fit-content; */
+  gap: 8px;
+}
+.actions app-button {
+    min-width: 6rem;
+}
+
+.output-container {
+  margin-top: 2rem;
+}
+.valutazione{
+  margin-right: auto;
+  max-width: fit-content;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  margin-top: 2rem;
+}
+.valutazione-modifica-container{
+    display: flex;
+    align-items: flex-end;
+}
+/* Sezione "PARAMETRI INSERITI" - riepilogo in sola lettura dei dati dal Generatore */
+.parametri-container {
+  margin-top: 2rem;
+}
+.parametri-label {
+  font-size: 0.8rem;
+  color: #000000;
+  font-weight: bold;
+}
+/* Riga divisoria che separa visivamente il riepilogo dal resto della pagina */
+.parametri-divider {
+  border: none;
+  border-top: 1px solid #cccccc;
+  margin: 0.5rem 0 1rem 0;
+}
+.parametri-fields {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+

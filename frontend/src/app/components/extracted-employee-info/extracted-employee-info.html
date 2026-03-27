@@ -1,0 +1,45 @@
+<div class="extracted-employee-info-card">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h3 class="section-title mb-0">Destinatario estratto</h3>
+		<app-button
+			label="Modifica"
+			class="btn extracted-edit-btn"
+			(action)="requestEdit()"
+		></app-button>
+	</div>
+
+	<p-table [value]="rows" [tableStyle]="{ 'min-width': '40rem' }">
+		<ng-template pTemplate="header">
+			<tr>
+				<th>Nominativo</th>
+				<th>Matricola</th>
+				<th>Email</th>
+				<th class="action-column">Azioni</th>
+			</tr>
+		</ng-template>
+
+		<ng-template pTemplate="body" let-row let-rowIndex="rowIndex">
+			<tr>
+				<td>{{ row.name }}</td>
+				<td>{{ row.employeeCode }}</td>
+				<td>{{ row.email }}</td>
+				<td class="action-column">
+					<p-button
+						icon="pi pi-trash"
+						severity="secondary"
+						[text]="true"
+						[rounded]="true"
+						(onClick)="requestRowRemoval(rowIndex)"
+						[attr.aria-label]="'Elimina destinatario'"
+					></p-button>
+				</td>
+			</tr>
+		</ng-template>
+
+		<ng-template pTemplate="emptymessage">
+			<tr>
+				<td colspan="4" class="empty-message">Nessun destinatario estratto</td>
+			</tr>
+		</ng-template>
+	</p-table>
+</div>

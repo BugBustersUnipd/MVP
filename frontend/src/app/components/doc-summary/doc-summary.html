@@ -1,0 +1,71 @@
+<div class="bg-white my-4" [ngClass]="editable ? 'border 1px border-primary' : ''" >
+    <div class="card p-4">
+
+        <!-- TOP ROW -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <bb-status-pill [state]="result?.state ?? 'Errore'"></bb-status-pill>
+            </div>
+
+            <div class="col-md-6">
+                <label class="label">Confidenza media</label>
+                <div class="confidence-pill bg-success text-white rounded-pill text-center py-2">
+                    {{result?.confidence}}
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-5 mb-4">
+                <div class="pdf-preview d-flex align-items-center justify-content-center">
+                    <!-- qui probabilmente si fa un componente specifico, per ora lascio ocsì -->
+                    <bb-pdf-preview [pdfUrl]="pdfUrl"></bb-pdf-preview>
+                    <!-- <span class="text-muted">PDF Preview</span> -->
+                </div>
+            </div>
+
+            <div class="col-md-7">
+
+                <div class="mb-3">
+                    <label class="label">Categoria</label>
+                    <app-input [editable]="editable" [value]="getFieldValue('category')" (valueChange)="onFieldChange('category', $event)"></app-input>
+                </div>
+
+                <div class="mb-3">
+                    <label class="label">Azienda</label>
+                    <app-input [editable]="editable" [value]="getFieldValue('company')" (valueChange)="onFieldChange('company', $event)"></app-input>
+                </div>
+
+                <div class="mb-3">
+                    <label class="label">Reparto</label>
+                    <app-input [editable]="editable" [value]="getFieldValue('department')" (valueChange)="onFieldChange('department', $event)"></app-input>
+                </div>
+
+                <div class="mb-3">
+                    <label class="label">Mese/Anno</label>
+                    <app-input [editable]="editable" [value]="getFieldValue('month_year')" (valueChange)="onFieldChange('month_year', $event)"></app-input>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-8 mb-3">
+                <label class="label">Nome documento</label>
+                <app-input [editable]="editable" [value]="getFieldValue('name')" (valueChange)="onFieldChange('name', $event)"></app-input>
+            </div>
+
+            <div class="col-md-5">
+                <label class="label">Pagine estratte</label>
+                <!-- todo aggiungere pagine del documento originale a ResultSplit -->
+                <bb-page-range-input [editable]="editable" class="d-flex gap-2" [page_min]="1" [page_max]="pages" [page_start]="result?.page_start" [page_end]="result?.page_end"></bb-page-range-input>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="bg-white my-4 flex-1 d-flex align-items-center justify-content-between p-4">
+    <app-button label="Apri documento originale" class="mx-2 btn-secondary" (action)="openOriginalPdf.emit()"></app-button>
+    <app-button label="Apri documento" class="mx-2 btn-primary" (action)="openSplitPdf.emit()"></app-button>
+</div>

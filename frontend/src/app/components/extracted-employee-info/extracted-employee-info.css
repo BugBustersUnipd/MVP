@@ -1,0 +1,32 @@
+.extracted-employee-info-card {
+	padding: 1rem;
+}
+
+.section-title {
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: var(--txt-color);
+}
+
+.action-column {
+	width: 90px;
+	text-align: center;
+}
+
+.empty-message {
+	text-align: center;
+	color: #6b7280;
+	padding: 1rem 0;
+}
+
+:host ::ng-deep .extracted-edit-btn {
+	background-color: #111111 !important;
+	border: 1px solid #111111 !important;
+	color: #ffffff !important;
+	border-radius: 999px !important;
+}
+
+:host ::ng-deep .extracted-edit-btn:hover {
+	background-color: #000000 !important;
+	border-color: #000000 !important;
+}

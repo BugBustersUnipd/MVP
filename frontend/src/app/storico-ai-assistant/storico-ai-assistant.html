@@ -1,0 +1,14 @@
+<div class="filters-menu">
+    <app-filters TypeOfFilter="searchbar" [(searchvalue)]="searchvalue" (searchvalueChange)="onSearchChange($event)"></app-filters>
+    <app-filters TypeOfFilter="dateRange" DatepickerLabel="Data" [(dates)]="dates" (datesChange)="onDateChange($event)"></app-filters>
+    <app-filters TypeOfFilter="text" TextFilterLabel="Tono" [textOptions]="tonoOptions.map(o => o.name)" [(selectedTextOption)]="selectedTono" (selectedTextOptionChange)="onTonoChange($event)"></app-filters>
+    <app-filters TypeOfFilter="text" TextFilterLabel="Stile" [textOptions]="stileOptions.map(o => o.name)" [(selectedTextOption)]="selectedStile" (selectedTextOptionChange)="onStileChange($event)"></app-filters>
+    <app-button [label]="ButtonLabel" (action)="NavigateToGeneratore()" ></app-button>
+</div>
+<app-tables
+    [columns]="columns"
+    [RisultatoFiltrato]="GenerazioniFiltrate"
+    [items]="items"
+    (titleClick)="openGenerationResult($event)"
+>
+</app-tables>

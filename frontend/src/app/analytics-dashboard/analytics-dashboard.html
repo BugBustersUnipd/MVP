@@ -1,0 +1,79 @@
+<p-accordion value="0">
+  <p-accordion-panel value="0">
+    <p-accordion-header>Ai Assistant Generativo</p-accordion-header>
+    <p-accordion-content>
+      <div class="Generico">
+        <div class="labels-datepicker">
+          <div class="label-container">
+            @for (data of (aiAssistantMetrics$ | async) || AiAssistantData; track data.label) {
+              <div class="card item">
+                <label class="label">{{ data.label }}</label>
+                <p-card class="p-data-body">
+                  <div class="data-container">
+                    <span class="data-value">{{ data.value }}</span>
+                  </div>
+                </p-card>
+              </div>
+            }
+          </div>
+          <div class="DatePicker Container">
+            <label class="label">Quando:</label>
+            <app-date-range-picker
+              [periodoOptions]="periodoOptions"
+              (rangeChange)="onAiAssistantRangeChange($event)"
+            ></app-date-range-picker>
+          </div>
+        </div>
+        <div class="Charts-Container">
+          <div class="chart">
+            <label class="label"> Toni più usati</label>
+            <!-- Grafico TONI -->
+            <app-analytics-charts
+              [labels]="['tono1', 'tono2', 'tono3', 'tono4', 'tono5']"
+              [dataValues]="[10, 20, 15, 30, 46]"
+              datasetLabel="Toni più usati"
+            ></app-analytics-charts>
+          </div>
+          <div class="Chart">
+            <label class="label"> Stili più usati</label>
+            <!-- Grafico STILI -->
+            <app-analytics-charts
+              [labels]="['stile1', 'stile2', 'stile3', 'stile4', 'stile5']"
+              [dataValues]="[25, 10, 8, 30, 50]"
+              datasetLabel="Stili più usati"
+            ></app-analytics-charts>
+          </div>
+        </div>
+      </div>
+    </p-accordion-content>
+  </p-accordion-panel>
+
+  <p-accordion-panel value="1">
+    <p-accordion-header>Ai Co-Pilot</p-accordion-header>
+    <p-accordion-content>
+      <div class="Generico">
+        <div class="labels-datepicker">
+          <div class="label-container">
+            @for (data of (aiCoPilotMetrics$ | async) || AiCoPilotData; track data.label) {
+              <div class="card item">
+                <label class="label">{{ data.label }}</label>
+                <p-card class="p-data-body">
+                  <div class="data-container">
+                    <span class="data-value">{{ data.value }}</span>
+                  </div>
+                </p-card>
+              </div>
+            }
+          </div>
+          <div class="DatePicker-Container">
+            <label class="label">Quando:</label>
+            <app-date-range-picker
+              [periodoOptions]="periodoOptions"
+              (rangeChange)="onAiCoPilotRangeChange($event)"
+            ></app-date-range-picker>
+          </div>
+        </div>
+      </div>
+    </p-accordion-content>
+  </p-accordion-panel>
+</p-accordion>

@@ -1,0 +1,30 @@
+<div class="date-filter">
+  <!-- Icona calendario -->
+  <app-button
+    pButton
+    type="button"
+    icon="pi pi-calendar"
+    (click)="datepicker.toggle()"
+  ></app-button>
+
+  <!-- Dropdown periodi predefiniti -->
+  <menutendina
+    class="menutendina w-full"
+    [options]="periodoOptions"
+    [(selected)]="selectedPeriodo"
+    (selectedChange)="onPeriodoChange($event)"
+    [placeholder]="getLabel()"
+  ></menutendina>
+
+  <!-- Datepicker per selezione manuale -->
+  <p-datepicker
+    #datepicker
+    [(ngModel)]="dates"
+    selectionMode="range"
+    [readonlyInput]="true"
+    [showIcon]="false"
+    (ngModelChange)="onDateSelect()"
+    class="hidden-datepicker"
+    appendTo="body"
+  ></p-datepicker>
+</div>

@@ -1,0 +1,29 @@
+<div class="d-flex gap-3">
+    
+    <p-fileupload
+        #fu
+        name="files[]"
+        [multiple]="true"
+        [customUpload]="true"
+        (onSelect)="onSelect($event)"
+        chooseLabel="Carica file"
+        mode="basic"
+        class="flex-shrink-0">
+    </p-fileupload>
+    
+    <div class="d-flex flex-wrap gap-2 flex-grow-1">
+        @for (file of files; track $index) {
+            <div class="btn-upload">
+                <app-button 
+                    class="btn-icon"
+                    (action)="removeFile($index)"
+                    title="Rimuovi file"
+                >
+                <i class="pi pi-times"></i>
+                </app-button>
+                <span>{{ file.name }}</span>
+            </div>
+        }
+    </div>
+
+</div>

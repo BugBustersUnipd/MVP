@@ -1,0 +1,108 @@
+.estrattore-page {
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.azienda-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.azienda-input {
+	background: #ffffff;
+	border-radius: 12px;
+	/* padding: 1rem; */
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.azienda-input menutendina {
+	display: block;
+	width: 100%;
+}
+
+.azienda-input menutendina ::ng-deep .label {
+	display: none;
+}
+
+.azienda-input menutendina ::ng-deep .p-select {
+	width: 100%;
+	background: transparent !important;
+}
+
+.competenza-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.competenza-input {
+	background: #ffffff;
+	border-radius: 12px;
+	/* padding: 1rem; */
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.competenza-input app-month-year {
+	display: block;
+	width: 100%;
+}
+
+.competenza-input app-month-year ::ng-deep .label {
+	display: none;
+}
+
+.competenza-input app-month-year ::ng-deep .picker-container {
+	background: transparent;
+	padding: 0;
+	box-shadow: none;
+}
+
+.competenza-input app-month-year ::ng-deep .month-year-picker {
+	width: 100%;
+}
+
+
+.toolbar {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: end;
+	gap: 16px;
+}
+
+.filters-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.filters-grid > * {
+	min-width: 0;
+	display: block;
+}
+
+.action-area {
+	min-width: 140px;
+}
+
+.upload-area {
+	width: 100%;
+}
+
+@media (max-width: 768px) {
+	.toolbar {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.filters-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.action-area {
+		width: 100%;
+	}
+}

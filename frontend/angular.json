@@ -2,11 +2,12 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "dc7b781e-3267-4d86-acef-44a7a3066a7e"
   },
   "newProjectRoot": "projects",
   "projects": {
-    "frontend": {
+    "ProvaPrimeNg": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -25,7 +26,10 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "node_modules/primeicons/primeicons.css",
+              "node_modules/bootstrap/dist/css/bootstrap-grid.min.css",
+              "node_modules/bootstrap/dist/css/bootstrap-utilities.min.css"
             ]
           },
           "configurations": {
@@ -56,10 +60,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "frontend:build:production"
+              "buildTarget": "ProvaPrimeNg:build:production"
             },
             "development": {
-              "buildTarget": "frontend:build:development"
+              "buildTarget": "ProvaPrimeNg:build:development"
             }
           },
           "defaultConfiguration": "development"

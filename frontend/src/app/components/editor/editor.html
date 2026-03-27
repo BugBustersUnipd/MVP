@@ -1,0 +1,4 @@
+<label class="label">Contenuto</label>
+<div class="editor-container">
+    <p-editor [(ngModel)]="text" [readonly]="!editable" (ngModelChange)="textChange.emit($event)"></p-editor>
+</div>

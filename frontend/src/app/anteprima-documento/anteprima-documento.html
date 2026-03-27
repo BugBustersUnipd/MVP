@@ -1,0 +1,41 @@
+<div class="header"></div>
+<div class="preview-layout d-flex flex-wrap gap-5">
+    <div class="doc-summary-container">
+        @if (isEditable){
+            <div class="d-flex justify-content-end gap-2">
+                   <app-button label="Annulla Modifiche" class="btn btn-secondary" (action)="cancelEditing()"></app-button>
+                   <app-button label="Salva Modifiche" class="btn btn-primary" [disabled]="!hasPendingModifications" (action)="saveChanges()"></app-button>
+            </div>
+        }@else {
+            <div class="d-flex justify-content-end">
+                <app-button label="Modifica" (action)="enableEditing()"></app-button>
+            </div>
+        }
+            <bb-doc-summary [editable]="isEditable" [result]="result" [pendingModifications]="pendingModifications" [pages]="pages" (openOriginalPdf)="handleOpenOriginalPdf()" (openSplitPdf)="handleOpenSplitPdf()" (fieldModified)="onFieldModified($event)"></bb-doc-summary>
+    </div>
+
+    <div class="info-container">
+        <div class="extracted-info-container">
+            <bb-extracted-employee-info
+                [rows]="extractedEmployeeRows"
+                (editRequested)="handleEditExtractedEmployeeInfo()"
+                (rowRemoved)="handleRemoveExtractedEmployeeRow($event)"
+            ></bb-extracted-employee-info>
+
+            <div class="d-flex justify-content-end">
+
+                <app-button label="Invia il documento" class="genera btn btn-primary" (action)="showDialog()"></app-button>
+            </div>
+        </div>
+        <div class="other-info-container">
+            <div class="other-documents-section">
+                <app-other-extract-documents
+                    [rows]="otherExtractedDocumentRows"
+                    (rowRemoved)="handleRemoveOtherExtractedDocumentRow($event)"
+                ></app-other-extract-documents>
+            </div>
+
+        </div>
+    </div>
+</div>
+<p-toast></p-toast>

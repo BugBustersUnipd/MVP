@@ -1,0 +1,35 @@
+:host ::ng-deep .p-select{
+    width: 100%;
+    background-color: var(--bg-p-select) !important;
+}
+:host ::ng-deep .p-inputicon {
+    top: 50% !important;
+    transform: translateY(0) !important;
+    margin-top: calc(-1 * (var(--p-icon-size) / 2)) !important;
+}
+:host ::ng-deep .p-inputtext {
+    padding-block-start: 0.5rem !important;
+}
+
+:host ::ng-deep .p-select-label {
+    font-size: 0.875rem !important;
+}
+:host ::ng-deep .p-overlay span{
+    font-weight: 400;
+    font-size: 0.875rem;
+}
+
+:host ::ng-deep .p-select-filter{
+    height: 2rem;
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+}
+

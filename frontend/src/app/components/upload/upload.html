@@ -1,0 +1,22 @@
+<div class="upload-wrapper">
+  <p-fileUpload
+    #fileUpload
+    name="files[]"
+    [multiple]="multiple"
+    [accept]="accept"
+    [maxFileSize]="maxFileSize"
+    (onSelect)="onSelectFiles($event)"
+    styleClass="custom-p-fileupload">
+
+    <ng-template pTemplate="empty">
+      <div class="empty-drop-area" (click)="triggerClick()">
+        <i class="pi pi-upload"></i>
+        <div class="text-container">
+            <span class="title">{{ titleText }}</span>
+            <span class="subtitle">{{ subtitleText }}</span>
+        </div>
+      </div>
+    </ng-template>
+
+  </p-fileUpload>
+</div>

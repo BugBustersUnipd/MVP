@@ -1,1 +1,133 @@
-/* You can add global styles to this file, and also import other style files */
+
+:root{
+  --bs-body-font-size: 0.875rem !important;
+  --p-select-focus-border-color: #383838 !important;
+  --p-select-option-selected-color: #4a4a4a !important;
+  --p-select-option-selected-focus-color: #4a4a4a !important;
+  --p-select-option-selected-background: #f8f9fa !important;
+  --p-select-option-hover-background: #e6e6e6 !important;
+  --p-select-option-selected-focus-background: #f8f9fa !important;
+  --p-paginator-nav-button-selected-background: #383838 !important;
+  --p-paginator-nav-button-hover-background: #e6e6e6 !important;
+  --p-paginator-nav-button-selected-color: #f8f9fa !important;
+  --p-datatable-header-cell-selected-background: #f8f9fa !important;
+  --p-datatable-header-cell-selected-color: #4a4a4a !important;
+  --p-rating-icon-hover-color: #383838 !important;
+  --p-rating-icon-active-color: #383838 !important;
+  --bs-body-font-size: 0.875rem;
+  --txt-color: rgba(12, 12, 13, 0.8509803922);
+  --btn-border-radius: 0.75rem;
+  --bg-light: #f8f9fa;
+  --p-textarea-border-color: #b2b2b2 !important;
+  --p-inputtext-border-radius: 0.75rem !important;
+  --bs-primary-rgb:  rgba(93, 93, 95, 0.851) !important;
+}
+
+
+/* BUTTONS */
+:root{
+  --p-button-primary-active-background: #4a4a4a !important;
+  --p-button-border-radius: 0.75rem !important;
+  --p-button-primary-background: #383838 !important;
+  --p-button-primary-border-color: #383838 !important;
+  --p-button-primary-hover-background: #4a4a4a !important;
+  --p-button-secondary-background: #f3f3f3 !important;
+  --p-button-secondary-hover-background: #e0e0e0 !important;
+  --p-button-primary-hover-border-color: #4a4a4a !important;
+}
+/* MENU*/
+:root{
+  --menu-label:#b2b2b2;
+  --p-menu-item-icon-color: #b2b2b2 !important;
+  --p-menu-item-icon-focus-color : black !important;
+  --p-menu-item-color : #626161 !important;
+  --p-menu-item-focus-color : black !important;
+  --p-menu-item-focus-background: #f3f3f3 !important;
+  --p-menu-item-border-radius : 0.75rem !important;
+  --p-menu-submenu-label-font-weight: 500 !important;
+  --p-menu-item-padding: 0.3rem 0.5rem !important;
+}
+/* MENUATENDINA */
+:root{
+  --p-select-list-header-padding: 0.5rem !important;
+  --p-inputtext-focus-border-color: rgba(194, 194, 194, 0.8) !important;
+  --p-select-border-radius: 0.75rem !important;
+  --p-select-focus-border-color: black !important;
+  --p-select-option-focus-background: #f3f3f3 !important;
+  --p-select-option-selected-background: #f3f3f3 !important;
+  --p-textarea-focus-border-color: black !important;
+  --p-select-option-padding:0.5em 0em !important;
+  --bg-p-select: #f3f3f3;
+  --p-select-border-color: #b2b2b2 !important;
+}
+
+:root{
+  --p-rating-icon-size: 1.5rem !important;
+  --p-rating-icon-hover-color:black !important;
+}
+ 
+body{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Open Sans";
+    font-size: var(--bs-body-font-size);
+    background-color: var(--bg-light) !important;
+}
+
+.label{
+    display: block;
+    font-weight: 700;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    text-align: left;
+}
+/* Larghezza select */
+.menu-row {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+.menu-row menutendina{
+    flex: 0 1 300px;
+    width: 100%;
+    max-width: 300px;
+    min-width: 0;
+}
+
+/* Datepicker */
+:root{
+  --p-datepicker-date-selected-color: black !important;
+  --p-datepicker-date-selected-background: #939393 !important;
+  --p-datepicker-date-range-selected-color:black !important;
+  --p-datepicker-date-range-selected-background: #cecece !important;
+
+  --p-datepicker-today-background: black !important;
+  --p-datepicker-today-color: white !important;
+}
+
+/* status pill */
+:root{
+  --p-tag-pronto-background: #009DFF !important;
+  --p-tag-inviato-background: #00CC4B !important;
+  --p-tag-programmato-background: #A2ACC0 !important;
+  --p-tag-validare-background: #FF7700 !important;
+  --p-tag-default-background: #ff00a2 !important;
+}
+
+
+.truncate-content {
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+
+:root{
+  --p-inputtext-disabled-background: #f8f9fa !important;
+  --p-textarea-disabled-background: #f8f9fa !important;
+  --p-select-disabled-background: #f8f9fa !important;
+}
