@@ -1,0 +1,977 @@
+<div class="dp-shell">
+  <section class="dp-hero">
+    <h1>DocumentProcessor Dashboard</h1>
+    <p>Upload PDF, split asincrono, estrazione metadata e monitor live in un unico pannello.</p>
+  </section>
+
+  <section class="dp-grid">
+    <article class="dp-card">
+      <h2>Nuovo processo</h2>
+      <p class="dp-small">Avvia una pipeline completa su PDF multi documento. Puoi includere metadati contestuali opzionali.</p>
+
+      <form id="pipelineForm" enctype="multipart/form-data">
+        <div class="dp-form-grid">
+          <div class="dp-field dp-field-full">
+            <label for="pipelineFile">File PDF</label>
+            <input type="file" id="pipelineFile" name="pdf" accept=".pdf,application/pdf" required>
+          </div>
+
+          <div class="dp-field">
+            <label for="categoryInput">Categoria</label>
+            <input id="categoryInput" name="category" type="text" placeholder="es. Cedolini">
+          </div>
+
+          <div class="dp-field">
+            <label for="companyInput">Azienda</label>
+            <input id="companyInput" name="company" type="text" placeholder="es. ACME Srl">
+          </div>
+
+          <div class="dp-field">
+            <label for="departmentInput">Dipartimento</label>
+            <input id="departmentInput" name="department" type="text" placeholder="es. Finance">
+          </div>
+
+          <div class="dp-field">
+            <label for="periodInput">Periodo competenza</label>
+            <input id="periodInput" name="competence_period" type="text" placeholder="es. 2026-03">
+          </div>
+        </div>
+
+        <div class="dp-actions">
+          <button type="submit" class="dp-button dp-button-primary">Avvia pipeline</button>
+          <button type="button" class="dp-button dp-button-secondary" id="reloadButton">Ricarica liste</button>
+        </div>
+      </form>
+
+      <div id="pipelineStatus" class="dp-status dp-status-info">Pronto: seleziona un PDF per iniziare.</div>
+    </article>
+
+    <article class="dp-card">
+      <h3>Feed eventi</h3>
+      <p class="dp-small">Aggiornamenti realtime dal canale WebSocket della pipeline in esecuzione.</p>
+      <div id="eventStream" class="dp-stream">
+        <div class="dp-empty">Nessun evento disponibile.</div>
+      </div>
+    </article>
+  </section>
+
+  <section class="dp-grid">
+    <article class="dp-card">
+      <h2>Processa file generico</h2>
+      <p class="dp-small">Invia singolo file (CSV / immagine) alla pipeline generica e segui gli eventi via Action Cable.</p>
+
+      <form id="genericForm" enctype="multipart/form-data">
+        <div class="dp-form-grid">
+          <div class="dp-field dp-field-full">
+            <label for="genericFile">File</label>
+            <input type="file" id="genericFile" name="file" accept=".csv,image/*" required>
+          </div>
+
+          <div class="dp-field">
+            <label for="genericCategory">Categoria</label>
+            <input id="genericCategory" name="category" type="text" placeholder="opzionale">
+          </div>
+
+          <div class="dp-field">
+            <label for="genericCompany">Azienda</label>
+            <input id="genericCompany" name="company" type="text" placeholder="opzionale">
+          </div>
+
+          <div class="dp-field">
+            <label for="genericDepartment">Dipartimento</label>
+            <input id="genericDepartment" name="department" type="text" placeholder="opzionale">
+          </div>
+
+          <div class="dp-field">
+            <label for="genericPeriod">Periodo competenza</label>
+            <input id="genericPeriod" name="competence_period" type="text" placeholder="opzionale">
+          </div>
+        </div>
+
+        <div class="dp-actions">
+          <button type="submit" class="dp-button dp-button-primary">Processa file</button>
+        </div>
+      </form>
+
+      <div id="genericStatus" class="dp-status dp-status-info">Pronto: seleziona un file generico.</div>
+    </article>
+  </section>
+
+  <section class="dp-layout-3">
+    <article class="dp-card">
+      <h3 class="dp-panel-title">Upload</h3>
+      <div id="uploadsList" class="dp-list"></div>
+    </article>
+
+    <article class="dp-card">
+      <h3 class="dp-panel-title">Documenti estratti</h3>
+      <div id="documentsList" class="dp-list"></div>
+    </article>
+
+    <!-- Storico run rimosso per versione di prova frontend -->
+  </section>
+
+  <section class="dp-layout-1">
+    <article class="dp-card">
+      <h3 class="dp-panel-title">Invii (Sendings)</h3>
+      <div class="dp-actions" style="margin-bottom:8px">
+        <button id="loadSendingsButton" type="button" class="dp-button dp-button-secondary">Carica invii</button>
+      </div>
+      <div id="sendingsList" class="dp-list"><div class="dp-empty">Nessun invio caricato.</div></div>
+    </article>
+  </section>
+</div>
+
+<script>
+  const state = {
+    uploads: [],
+    selectedUploadId: null,
+    selectedUploadedDocumentIdFromQueue: null,
+    activeJobId: null
+  };
+
+  const refs = {
+    form: document.getElementById('pipelineForm'),
+    fileInput: document.getElementById('pipelineFile'),
+    categoryInput: document.getElementById('categoryInput'),
+    companyInput: document.getElementById('companyInput'),
+    departmentInput: document.getElementById('departmentInput'),
+    periodInput: document.getElementById('periodInput'),
+    genericForm: document.getElementById('genericForm'),
+    genericFile: document.getElementById('genericFile'),
+    genericCategory: document.getElementById('genericCategory'),
+    genericCompany: document.getElementById('genericCompany'),
+    genericDepartment: document.getElementById('genericDepartment'),
+    genericPeriod: document.getElementById('genericPeriod'),
+    genericStatus: document.getElementById('genericStatus'),
+    reloadButton: document.getElementById('reloadButton'),
+    status: document.getElementById('pipelineStatus'),
+    uploadsList: document.getElementById('uploadsList'),
+    documentsList: document.getElementById('documentsList'),
+    eventStream: document.getElementById('eventStream')
+    ,loadSendingsButton: document.getElementById('loadSendingsButton')
+    ,sendingsList: document.getElementById('sendingsList')
+  };
+
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    bindEvents();
+    refreshAll();
+  });
+
+  function bindEvents() {
+    refs.form.addEventListener('submit', startPipeline);
+    if (refs.genericForm) refs.genericForm.addEventListener('submit', startGenericProcessing);
+    refs.reloadButton.addEventListener('click', refreshAll);
+    if (refs.loadSendingsButton) refs.loadSendingsButton.addEventListener('click', loadSendings);
+
+    document.addEventListener('click', (event) => {
+      const uploadButton = event.target.closest('[data-upload-id]');
+      if (uploadButton) {
+        const uploadId = Number(uploadButton.dataset.uploadId);
+        if (!Number.isNaN(uploadId)) {
+          selectUpload(uploadId);
+        }
+        return;
+      }
+
+      const actionButton = event.target.closest('[data-action]');
+      if (!actionButton) return;
+
+      const extractedDocumentId = Number(actionButton.dataset.extractedId);
+      if (Number.isNaN(extractedDocumentId)) return;
+
+      if (actionButton.dataset.action === 'edit-recipient') {
+        editRecipient(extractedDocumentId);
+      }
+
+      if (actionButton.dataset.action === 'reassign-range') {
+        reassignRange(extractedDocumentId);
+      }
+
+      if (actionButton.dataset.action === 'mark-sent') {
+        const recipientId = actionButton.dataset.recipientId ? Number(actionButton.dataset.recipientId) : null;
+        markAsSent(extractedDocumentId, recipientId);
+      }
+    });
+  }
+
+  async function startGenericProcessing(event) {
+    event.preventDefault();
+
+    const selectedFile = refs.genericFile && refs.genericFile.files && refs.genericFile.files[0];
+    if (!selectedFile) {
+      if (refs.genericStatus) { refs.genericStatus.className = 'dp-status dp-status-error'; refs.genericStatus.textContent = 'Seleziona un file prima di procedere.'; }
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    appendOptionalValue(formData, 'category', refs.genericCategory ? refs.genericCategory.value : '');
+    appendOptionalValue(formData, 'company', refs.genericCompany ? refs.genericCompany.value : '');
+    appendOptionalValue(formData, 'department', refs.genericDepartment ? refs.genericDepartment.value : '');
+    appendOptionalValue(formData, 'competence_period', refs.genericPeriod ? refs.genericPeriod.value : '');
+
+    if (refs.genericStatus) { refs.genericStatus.className = 'dp-status dp-status-info'; refs.genericStatus.textContent = 'Upload in corso...'; }
+    appendEvent('Invio file generico al backend...', 'info');
+
+    try {
+      const response = await fetch('<%= process_file_documents_path %>', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+
+      const data = await response.json();
+
+      if (data.status !== 'queued') {
+        if (refs.genericStatus) { refs.genericStatus.className = 'dp-status dp-status-error'; refs.genericStatus.textContent = data.message || 'Richiesta non valida.'; }
+        appendEvent(`Errore backend (generic): ${data.message || 'richiesta non valida'}`, 'error');
+        return;
+      }
+
+      state.activeJobId = data.job_id;
+      state.selectedUploadedDocumentIdFromQueue = data.uploaded_document_id || null;
+      if (refs.genericStatus) { refs.genericStatus.className = 'dp-status dp-status-info'; refs.genericStatus.textContent = `Processo in coda. Job: ${data.job_id || 'n/a'}`; }
+      appendEvent(`Processo generico avviato, job ${data.job_id || 'n/a'}`, 'success');
+      listenToPipelineEvents(data.job_id);
+      await loadUploads();
+    } catch (error) {
+      if (refs.genericStatus) { refs.genericStatus.className = 'dp-status dp-status-error'; refs.genericStatus.textContent = `Errore durante l'upload: ${error.message}`; }
+      appendEvent(`Errore client (generic): ${error.message}`, 'error');
+    }
+  }
+
+  async function markAsSent(extractedDocumentId, recipientId) {
+    if (!extractedDocumentId) return;
+    // Carica templates e offri la possibilità di usarne uno
+    let chosenTemplateId = null;
+    let subjectInput = '';
+    let bodyInput = '';
+    try {
+      const tplRes = await fetch('/templates');
+      if (tplRes.ok) {
+        const tplData = await tplRes.json();
+        const tplList = tplData.templates || [];
+        if (tplList.length > 0) {
+          let menu = 'Usare un template? Digita "t<ID>" (es. t1) oppure lascia vuoto per testo libero. Template disponibili:\n';
+          tplList.forEach((t) => { menu += `${t.id}: ${t.subject}\n`; });
+          const choice = prompt(menu, '');
+          if (choice === null) return; // annulla
+          const trimmed = String(choice).trim();
+          if (trimmed.toLowerCase().startsWith('t')) {
+            const num = parseInt(trimmed.slice(1), 10);
+            if (!Number.isNaN(num)) chosenTemplateId = num;
+          } else if (trimmed !== '') {
+            subjectInput = trimmed;
+            bodyInput = prompt('Testo invio:', '') || '';
+            if (bodyInput === null) return;
+          } else {
+            subjectInput = prompt('Oggetto invio (opzionale):', '') || '';
+            if (subjectInput === null) return;
+            bodyInput = prompt('Testo invio:', '') || '';
+            if (bodyInput === null) return;
+          }
+        } else {
+          subjectInput = prompt('Oggetto invio (opzionale):', '') || '';
+          if (subjectInput === null) return;
+          bodyInput = prompt('Testo invio:', '') || '';
+          if (bodyInput === null) return;
+        }
+      }
+    } catch (_e) {
+      subjectInput = prompt('Oggetto invio (opzionale):', '') || '';
+      if (subjectInput === null) return;
+      bodyInput = prompt('Testo invio:', '') || '';
+      if (bodyInput === null) return;
+    }
+
+    const payload = { extracted_document_id: extractedDocumentId };
+    if (recipientId) payload.recipient_id = recipientId;
+    if (chosenTemplateId) payload.template_id = chosenTemplateId; else if (subjectInput) payload.subject = String(subjectInput).trim();
+    if (!chosenTemplateId && bodyInput) payload.body = String(bodyInput).trim();
+    payload.sent_at = new Date().toISOString();
+
+    try {
+      // Log the outgoing POST payload in the debug panel
+      logLastPost(payload, null);
+
+      const res = await fetch('/sendings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify(payload)
+      });
+
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = { raw_text: await res.text() }; }
+
+      // Update raw POST panel with response
+      logLastPost(payload, { status: res.status, statusText: res.statusText, body: data });
+
+      
+      if (res.status === 201 && data.status === 'ok') {
+        appendEvent(`Invio registrato (extracted_document: ${extractedDocumentId})`, 'success');
+        await loadSendings();
+      } else {
+        appendEvent(`Errore registrazione invio: ${data.errors ? data.errors.join(', ') : data.message || res.statusText}`, 'error');
+      }
+    } catch (err) {
+      appendEvent(`Errore client invio: ${err.message}`, 'error');
+    }
+  }
+
+  async function loadSendings() {
+    if (!refs.sendingsList) return;
+    refs.sendingsList.innerHTML = '<div class="dp-empty">Caricamento invii...</div>';
+    try {
+      const res = await fetch('/sendings');
+      const data = await res.json();
+      const list = data.sendings || [];
+      if (list.length === 0) {
+        refs.sendingsList.innerHTML = '<div class="dp-empty">Nessun invio registrato.</div>';
+        return;
+      }
+
+      refs.sendingsList.innerHTML = '';
+      list.forEach((s) => {
+        const el = document.createElement('div');
+        el.className = 'dp-item';
+        el.innerHTML = `
+          <div class="dp-item-head">
+            <strong>Invio #${escapeHtml(String(s.id))}</strong>
+            <span class="dp-chip dp-chip-warn">ED#${escapeHtml(String(s.extracted_document_id))}</span>
+          </div>
+            <div class="dp-small">Oggetto: ${escapeHtml(s.subject || '')}</div>
+          <div class="dp-small">Testo: ${escapeHtml((s.body || '').slice(0, 120))}${(s.body && s.body.length > 120) ? '…' : ''}</div>
+          <div class="dp-small">Destinatario: ${escapeHtml(s.recipient.name || '')} &lt;${escapeHtml(s.recipient.email || '')}&gt;</div>
+          <div class="dp-small">Inviato: ${escapeHtml(formatDate(new Date(s.sent_at)))}</div>
+        `;
+        refs.sendingsList.appendChild(el);
+      });
+    } catch (err) {
+      refs.sendingsList.innerHTML = '<div class="dp-empty">Impossibile caricare gli invii.</div>';
+    }
+  }
+
+  async function refreshAll() {
+    await loadUploads();
+    if (state.selectedUploadId) {
+      await Promise.all([
+        loadExtractedForUpload(state.selectedUploadId),
+        loadHistoryForUpload(state.selectedUploadId)
+      ]);
+    }
+  }
+
+  async function startPipeline(event) {
+    event.preventDefault();
+
+    const selectedFile = refs.fileInput.files[0];
+    if (!selectedFile) {
+      setStatus('error', 'Seleziona un PDF prima di avviare la pipeline.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('pdf', selectedFile);
+    appendOptionalValue(formData, 'category', refs.categoryInput.value);
+    appendOptionalValue(formData, 'company', refs.companyInput.value);
+    appendOptionalValue(formData, 'department', refs.departmentInput.value);
+    appendOptionalValue(formData, 'competence_period', refs.periodInput.value);
+
+    setStatus('info', 'Upload in corso...');
+    appendEvent('Invio file al backend...', 'info');
+
+    try {
+      const response = await fetch('<%= split_documents_path %>', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+
+      const data = await response.json();
+
+      if (data.status !== 'queued') {
+        setStatus('error', data.message || 'Richiesta non valida.');
+        appendEvent(`Errore backend: ${data.message || 'richiesta non valida'}`, 'error');
+        return;
+      }
+
+      state.activeJobId = data.job_id;
+      state.selectedUploadedDocumentIdFromQueue = data.uploaded_document_id || null;
+      setStatus('info', `Pipeline in coda. Job: ${data.job_id || 'n/a'}`);
+      appendEvent(`Pipeline avviata, job ${data.job_id || 'n/a'}`, 'success');
+      listenToPipelineEvents(data.job_id);
+      await loadUploads();
+    } catch (error) {
+      setStatus('error', `Errore durante l'upload: ${error.message}`);
+      appendEvent(`Errore client: ${error.message}`, 'error');
+    }
+  }
+
+  function appendOptionalValue(formData, key, value) {
+    if (!value) return;
+    const normalized = String(value).trim();
+    if (!normalized) return;
+    formData.append(key, normalized);
+  }
+
+  function setStatus(type, message) {
+    refs.status.className = `dp-status ${statusClass(type)}`;
+    refs.status.textContent = message;
+  }
+
+  function statusClass(type) {
+    if (type === 'success') return 'dp-status-success';
+    if (type === 'error') return 'dp-status-error';
+    return 'dp-status-info';
+  }
+
+  function appendEvent(text, type) {
+    const placeholder = refs.eventStream.querySelector('.dp-empty');
+    if (placeholder) placeholder.remove();
+
+    const item = document.createElement('div');
+    item.className = 'dp-stream-item';
+    item.innerHTML = `<span class="${chipClass(type)} dp-chip">${type.toUpperCase()}</span> ${escapeHtml(text)} <span class="dp-muted">${formatDate(new Date())}</span>`;
+    refs.eventStream.prepend(item);
+  }
+
+  function chipClass(type) {
+    if (type === 'success') return 'dp-chip-ok';
+    if (type === 'error') return 'dp-chip-err';
+    return 'dp-chip-warn';
+  }
+
+  async function loadUploads() {
+    refs.uploadsList.innerHTML = '<div class="dp-empty">Caricamento upload...</div>';
+    try {
+      const response = await fetch('<%= uploaded_documents_path %>');
+      const data = await response.json();
+      state.uploads = data.uploaded_documents || [];
+
+      if (state.uploads.length === 0) {
+        state.selectedUploadId = null;
+        renderUploads();
+        refs.documentsList.innerHTML = '<div class="dp-empty">Nessun documento estratto.</div>';
+        if (refs.historyList) refs.historyList.innerHTML = '<div class="dp-empty">Nessuna run.</div>';
+        return;
+      }
+
+      if (state.selectedUploadedDocumentIdFromQueue) {
+        const queued = state.uploads.find((upload) => upload.id === state.selectedUploadedDocumentIdFromQueue);
+        if (queued) state.selectedUploadId = queued.id;
+      }
+
+      if (!state.selectedUploadId || !state.uploads.some((upload) => upload.id === state.selectedUploadId)) {
+        state.selectedUploadId = state.uploads[0].id;
+      }
+
+      renderUploads();
+    } catch (_error) {
+      refs.uploadsList.innerHTML = '<div class="dp-empty">Impossibile caricare gli upload.</div>';
+    }
+  }
+
+  function renderUploads() {
+    if (state.uploads.length === 0) {
+      refs.uploadsList.innerHTML = '<div class="dp-empty">Nessun upload disponibile.</div>';
+      return;
+    }
+
+    refs.uploadsList.innerHTML = '';
+    state.uploads.forEach((upload) => {
+      const selected = upload.id === state.selectedUploadId;
+      const wrapper = document.createElement('button');
+      wrapper.type = 'button';
+      wrapper.dataset.uploadId = String(upload.id);
+      wrapper.className = `dp-item dp-clickable ${selected ? 'is-selected' : ''}`;
+      wrapper.innerHTML = `
+        <div class="dp-item-head">
+          <strong>${escapeHtml(upload.original_filename || 'Documento')}</strong>
+          <span class="dp-chip dp-chip-warn">#${upload.id}</span>
+        </div>
+        <div class="dp-small">Pagine: ${escapeHtml(String(upload.page_count || 0))}</div>
+        <div class="dp-small">Creato: ${escapeHtml(formatDate(upload.created_at))}</div>
+      `;
+      refs.uploadsList.appendChild(wrapper);
+    });
+  }
+
+  async function selectUpload(uploadId) {
+    state.selectedUploadId = uploadId;
+    renderUploads();
+    refs.documentsList.innerHTML = '<div class="dp-empty">Caricamento documenti...</div>';
+    if (refs.historyList) refs.historyList.innerHTML = '<div class="dp-empty">Caricamento storico...</div>';
+
+    await Promise.all([
+      loadExtractedForUpload(uploadId),
+      loadHistoryForUpload(uploadId)
+    ]);
+  }
+
+  async function loadExtractedForUpload(uploadedDocumentId) {
+    try {
+      const response = await fetch(`/documents/uploads/${uploadedDocumentId}/extracted`);
+      const data = await response.json();
+      const documents = data.extracted_documents || [];
+
+      if (documents.length === 0) {
+        refs.documentsList.innerHTML = '<div class="dp-empty">Nessun documento estratto per questo upload.</div>';
+        return;
+      }
+
+      refs.documentsList.innerHTML = '';
+      documents.slice().reverse().forEach((documentData) => {
+        refs.documentsList.appendChild(buildExtractedDocumentCard(documentData));
+      });
+    } catch (_error) {
+      refs.documentsList.innerHTML = '<div class="dp-empty">Impossibile caricare gli estratti.</div>';
+    }
+  }
+
+  async function loadHistoryForUpload(uploadedDocumentId) {
+    // La sezione "Storico run" è stata rimossa dall'HTML: refs.historyList non esiste.
+    if (!refs.historyList) return;
+
+    try {
+      const response = await fetch('<%= uploaded_documents_path %>');
+      const data = await response.json();
+      const uploads = data.uploaded_documents || [];
+
+      if (uploads.length === 0) {
+        refs.historyList.innerHTML = '<div class="dp-empty">Nessun upload trovato.</div>';
+        return;
+      }
+
+      refs.historyList.innerHTML = '';
+      uploads.forEach((u) => {
+        const el = document.createElement('div');
+        el.className = 'dp-item';
+        el.innerHTML = `
+          <div class="dp-item-head">
+            <strong>${escapeHtml(u.original_filename || 'Documento')}</strong>
+            <span class="dp-chip dp-chip-warn">#${escapeHtml(String(u.id))}</span>
+          </div>
+          <div class="dp-small">Pagine: ${escapeHtml(String(u.page_count || 0))}</div>
+          <div class="dp-small">Creato: ${escapeHtml(formatDate(u.created_at))}</div>
+        `;
+        refs.historyList.appendChild(el);
+      });
+    } catch (_error) {
+      if (refs.historyList) refs.historyList.innerHTML = '<div class="dp-empty">Impossibile caricare lo storico caricamenti.</div>';
+    }
+  }
+
+  function buildExtractedDocumentCard(documentData) {
+      const recipientText = documentData.matched_employee
+        ? `${documentData.matched_employee.name} - ${documentData.matched_employee.email || 'no email'}`
+        : (documentData.recipient || 'non risolto');
+
+    const statusText = String(documentData.status || 'unknown');
+    const statusClass = statusText === 'success' ? 'dp-chip-ok' : (statusText === 'error' ? 'dp-chip-err' : 'dp-chip-warn');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = `dp-item ${statusText === 'error' ? 'is-error' : ''}`;
+    wrapper.innerHTML = `
+      <div class="dp-item-head">
+        <strong>Pag ${escapeHtml(String(documentData.page_start))}-${escapeHtml(String(documentData.page_end))}</strong>
+        <span class="dp-chip ${statusClass}">${escapeHtml(statusText)}</span>
+      </div>
+
+      <table class="dp-meta">
+        <tr><th>Destinatario</th><td>${escapeHtml(recipientText)}</td></tr>
+        ${renderMetadataRows(documentData.metadata || {})}
+      </table>
+
+      <details>
+        <summary>Confidenze</summary>
+        <table class="dp-meta">
+          ${renderConfidenceRows((documentData.confidence || {}).global || documentData.confidence || {})}
+        </table>
+      </details>
+
+      <div class="dp-item-actions">
+        <a class="dp-link-button" href="/documents/extracted/${documentData.id}/pdf">Scarica PDF</a>
+          <button type="button" class="dp-link-button" data-action="edit-recipient" data-extracted-id="${documentData.id}">Modifica destinatario</button>
+        <button type="button" class="dp-link-button" data-action="reassign-range" data-extracted-id="${documentData.id}">Riassegna range</button>
+          <button type="button" class="dp-link-button" data-action="mark-sent" data-extracted-id="${documentData.id}" data-recipient-id="${documentData.matched_employee ? (documentData.matched_employee.id || '') : ''}">Segna inviato</button>
+      </div>
+    `;
+
+    return wrapper;
+  }
+
+  function buildHistoryCard(run) {
+    const wrapper = document.createElement('div');
+    const status = String(run.status || 'unknown');
+    const statusClass = status === 'completed' ? 'dp-chip-ok' : (status === 'error' ? 'dp-chip-err' : 'dp-chip-warn');
+    const items = Array.isArray(run.processing_items) ? run.processing_items : [];
+
+    wrapper.className = 'dp-item';
+    wrapper.innerHTML = `
+      <div class="dp-item-head">
+        <strong>Run #${escapeHtml(String(run.id))}</strong>
+        <span class="dp-chip ${statusClass}">${escapeHtml(status)}</span>
+      </div>
+      <div class="dp-small">Job: ${escapeHtml(run.job_id || 'n/a')}</div>
+      <div class="dp-small">Progress: ${escapeHtml(String(run.processed_documents || 0))}/${escapeHtml(String(run.total_documents || 0))}</div>
+      <div class="dp-small">Creata: ${escapeHtml(formatDate(run.created_at))}</div>
+      <div class="dp-small">Completata: ${escapeHtml(formatDate(run.completed_at))}</div>
+      ${run.error_message ? `<div class="dp-small" style="color: var(--danger)">Errore: ${escapeHtml(run.error_message)}</div>` : ''}
+
+      <details>
+        <summary>Item (${items.length})</summary>
+        ${items.length === 0 ? '<div class="dp-empty">Nessun item.</div>' : items.map((item) => {
+          const matchedEmployee = item.extracted_document && item.extracted_document.matched_employee ? item.extracted_document.matched_employee : (item.matched_employee || null);
+          const matched = matchedEmployee ? `${matchedEmployee.name} (${matchedEmployee.email || 'no email'})` : 'no match';
+          return `
+            <div class="dp-item" style="margin-top:8px;padding:8px;">
+              <div><strong>#${escapeHtml(String(item.sequence))}</strong> ${escapeHtml(item.filename || 'n/a')}</div>
+              <div class="dp-small">Stato: ${escapeHtml(item.status || 'n/a')}</div>
+              <div class="dp-small">Destinatario: ${escapeHtml(item.recipient || 'n/a')}</div>
+              <div class="dp-small">Match: ${escapeHtml(matched)}</div>
+              ${item.error_message ? `<div class="dp-small" style="color: var(--danger)">Errore: ${escapeHtml(item.error_message)}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </details>
+    `;
+
+    return wrapper;
+  }
+
+  // --- Raw traffic panel helpers ---
+  function ensureRawPanel() {
+    if (document.getElementById('dp-raw-panel')) return;
+    const panel = document.createElement('div');
+    panel.id = 'dp-raw-panel';
+    panel.style.marginTop = '16px';
+    panel.innerHTML = `
+      <h3>Raw traffic</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:300px;">
+          <div class="dp-small" style="margin-bottom:6px;"><strong>Last POST request / response</strong></div>
+          <pre id="dp-last-post" style="background:#0f0f12;color:#e6e6e6;padding:8px;border-radius:4px;overflow:auto;max-height:260px;font-size:12px;white-space:pre-wrap;"></pre>
+        </div>
+        <div style="flex:1;min-width:300px;">
+          <div class="dp-small" style="margin-bottom:6px;"><strong>Last WebSocket message</strong></div>
+          <pre id="dp-last-ws" style="background:#0f0f12;color:#e6e6e6;padding:8px;border-radius:4px;overflow:auto;max-height:120px;font-size:12px;white-space:pre-wrap;"></pre>
+          <div class="dp-small" style="margin-top:8px;margin-bottom:6px;"><strong>WebSocket history</strong> <button id="dp-clear-ws-history" style="margin-left:8px;">Clear</button></div>
+          <div id="dp-ws-history" style="background:#0b0b0d;color:#cfcfcf;padding:8px;border-radius:4px;overflow:auto;max-height:120px;font-size:12px;white-space:pre-wrap;"></div>
+        </div>
+      </div>
+    `;
+    const container = document.querySelector('.dp-side') || document.body;
+    container.appendChild(panel);
+    const clearBtn = document.getElementById('dp-clear-ws-history');
+    if (clearBtn) clearBtn.addEventListener('click', () => { const h = document.getElementById('dp-ws-history'); if (h) h.innerHTML = ''; });
+  }
+
+  function logLastPost(requestObj, responseObj) {
+    ensureRawPanel();
+    const el = document.getElementById('dp-last-post');
+    const now = new Date().toISOString();
+    const payload = {
+      time: now,
+      request: requestObj,
+      response: responseObj
+    };
+    try { el.textContent = JSON.stringify(payload, null, 2); } catch (e) { el.textContent = String(payload); }
+  }
+
+  function logLastWs(message) {
+    ensureRawPanel();
+    const el = document.getElementById('dp-last-ws');
+    const now = new Date().toISOString();
+    const payload = { time: now, message };
+    try { el.textContent = JSON.stringify(payload, null, 2); } catch (e) { el.textContent = String(payload); }
+
+    // prepend to history
+    try {
+      const historyEl = document.getElementById('dp-ws-history');
+      if (historyEl) {
+        const entry = document.createElement('pre');
+        entry.style.margin = '0 0 8px 0';
+        entry.style.padding = '6px';
+        entry.style.background = '#060607';
+        entry.style.borderRadius = '4px';
+        entry.style.fontSize = '12px';
+        try { entry.textContent = JSON.stringify(payload, null, 2); } catch (e) { entry.textContent = String(payload); }
+        historyEl.insertBefore(entry, historyEl.firstChild);
+      }
+    } catch (e) { /* ignore history errors */ }
+  }
+
+  async function editRecipient(extractedDocumentId) {
+    const name = prompt('Nuovo destinatario:');
+    if (!name) return;
+
+    try {
+      const response = await fetch(`/documents/extracted/${extractedDocumentId}/metadata`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ metadata_updates: { recipient: name } })
+      });
+
+      let data;
+      try { data = await response.json(); } catch (e) { data = null; }
+
+      if (!response.ok || !data || data.status !== 'ok') {
+        const msg = (data && data.message) || `Server risponde con status ${response.status}`;
+        alert(msg || 'Aggiornamento non riuscito');
+        return;
+      }
+
+      appendEvent(`Destinatario aggiornato per estratto ${extractedDocumentId}`, 'success');
+
+      // Se il server ritorna l'extracted_document aggiornato, usa il suo uploaded_document_id
+      const uploadedId = data.extracted_document && data.extracted_document.uploaded_document_id;
+      if (uploadedId) {
+        state.selectedUploadId = uploadedId;
+        await Promise.all([
+          loadExtractedForUpload(uploadedId),
+          loadHistoryForUpload(uploadedId)
+        ]);
+        return;
+      }
+
+      // Fallback: ricarica l'upload selezionato correntemente se esiste
+      if (state.selectedUploadId) {
+        await Promise.all([
+          loadExtractedForUpload(state.selectedUploadId),
+          loadHistoryForUpload(state.selectedUploadId)
+        ]);
+      }
+    } catch (error) {
+      alert(`Errore durante il salvataggio: ${error.message}`);
+    }
+  }
+
+  async function reassignRange(extractedDocumentId) {
+    const input = prompt('Inserisci nuovo range (esempio: 2-5)');
+    if (!input) return;
+
+    const match = input.trim().match(/^(\d+)\s*[-:]\s*(\d+)$/);
+    if (!match) {
+      alert('Range non valido. Usa il formato 2-5.');
+      return;
+    }
+
+    const pageStart = Number(match[1]);
+    const pageEnd = Number(match[2]);
+
+    try {
+      const response = await fetch(`/documents/extracted/${extractedDocumentId}/reassign_range`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ page_start: pageStart, page_end: pageEnd })
+      });
+
+      const data = await response.json();
+      if (data.status !== 'queued') {
+        alert(data.message || 'Riassegnazione non riuscita');
+        return;
+      }
+
+      appendEvent(`Riassegnazione in coda per estratto ${extractedDocumentId}`, 'info');
+      if (state.selectedUploadId) {
+        await Promise.all([
+          loadExtractedForUpload(state.selectedUploadId),
+          loadHistoryForUpload(state.selectedUploadId)
+        ]);
+      }
+    } catch (error) {
+      alert(`Errore durante la riassegnazione: ${error.message}`);
+    }
+  }
+
+  function listenToPipelineEvents(jobId) {
+    if (!jobId) return;
+
+    subscribeToJob(jobId, async (message, unsubscribe) => {
+      // show raw websocket message for debugging
+      try { logLastWs(message); } catch (e) { /* ignore */ }
+      if (message.event === 'split_completed') {
+        if (message.status === 'error') {
+          setStatus('error', message.message || 'Split fallito');
+          appendEvent(`Split fallito: ${message.message || 'errore sconosciuto'}`, 'error');
+          unsubscribe();
+          return;
+        }
+
+        setStatus('success', `Split completato: ${message.mini_pdfs_count || 0} documenti`);
+        appendEvent(`Split completato: ${message.mini_pdfs_count || 0} documenti generati`, 'success');
+        return;
+      }
+
+      if (message.event === 'document_processed') {
+        appendDocumentFromEvent(message);
+        return;
+      }
+
+      if (message.event === 'processing_completed') {
+        setStatus('success', 'Pipeline completata.');
+        appendEvent('Processing completato', 'success');
+        unsubscribe();
+        await refreshAll();
+      }
+    }, (errorText) => {
+      setStatus('error', `WebSocket non disponibile: ${errorText}`);
+      appendEvent(`WebSocket errore: ${errorText}`, 'error');
+    });
+  }
+
+  function appendDocumentFromEvent(message) {
+    const status = message.status === 'success' ? 'success' : 'error';
+    appendEvent(`Documento ${message.filename || 'n/a'}: ${message.status || 'unknown'}`, status);
+
+    const card = document.createElement('div');
+    card.className = `dp-item ${message.status === 'success' ? '' : 'is-error'}`;
+    card.innerHTML = `
+      <div class="dp-item-head">
+        <strong>${escapeHtml(message.filename || 'Documento')}</strong>
+        <span class="dp-chip ${message.status === 'success' ? 'dp-chip-ok' : 'dp-chip-err'}">${escapeHtml(message.status || 'unknown')}</span>
+      </div>
+      ${message.status === 'success' ? buildEventSuccessBody(message) : `<div class="dp-small" style="color: var(--danger)">${escapeHtml(message.message || 'Errore sconosciuto')}</div>`}
+      <div class="dp-item-actions">
+        ${message.extracted_document_id ? `<button type="button" class="dp-link-button" data-action="edit-recipient" data-extracted-id="${message.extracted_document_id}">Modifica destinatario</button>` : ''}
+      </div>
+    `;
+
+    if (refs.documentsList.querySelector('.dp-empty')) {
+      refs.documentsList.innerHTML = '';
+    }
+    refs.documentsList.prepend(card);
+  }
+
+  function buildEventSuccessBody(message) {
+    const recipient = message.matched_recipient
+      ? `${message.matched_recipient.name} - ${message.matched_recipient.email || 'no email'}`
+      : (message.recipient || 'Nessun destinatario estratto');
+
+    return `
+      <table class="dp-meta">
+        <tr><th>Destinatario</th><td>${escapeHtml(recipient)}</td></tr>
+        ${renderMetadataRows(message.extracted_document_data || {})}
+      </table>
+      <details>
+        <summary>Confidenze</summary>
+        <table class="dp-meta">
+          ${renderConfidenceRows((message.extracted_confidence || {}).global || message.extracted_confidence || {})}
+        </table>
+      </details>
+    `;
+  }
+
+  function renderMetadataRows(metadata) {
+    const entries = Object.entries(metadata || {});
+    if (entries.length === 0) {
+      return '<tr><th>Metadata</th><td class="dp-muted">Nessun metadato</td></tr>';
+    }
+
+    return entries.map(([key, value]) => {
+      const valueText = value == null ? '-' : String(value);
+      return `<tr><th>${escapeHtml(formatLabel(key))}</th><td>${escapeHtml(valueText)}</td></tr>`;
+    }).join('');
+  }
+
+  function renderConfidenceRows(confidenceMap) {
+    const entries = Object.entries(confidenceMap || {});
+    if (entries.length === 0) {
+      return '<tr><th>Confidenza</th><td class="dp-muted">Nessuna confidenza</td></tr>';
+    }
+
+    return entries.map(([key, value]) => {
+      return `<tr><th>${escapeHtml(formatLabel(key))}</th><td>${renderConfidenceBadge(value)}</td></tr>`;
+    }).join('');
+  }
+
+  function renderConfidenceBadge(raw) {
+    const normalized = normalizeConfidence(raw);
+    const percentage = Math.round(normalized * 100);
+    const color = percentage >= 80 ? '#1f8a4c' : (percentage >= 50 ? '#b87400' : '#b42318');
+    return `<span class="dp-confidence" style="background:${color}">${percentage}%</span>`;
+  }
+
+  function normalizeConfidence(raw) {
+    if (raw == null) return 0;
+    const numeric = Number(raw);
+    if (Number.isNaN(numeric)) return 0;
+    if (numeric > 1) return Math.max(0, Math.min(1, numeric / 100));
+    return Math.max(0, Math.min(1, numeric));
+  }
+
+  function formatLabel(value) {
+    return String(value || '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  function formatDate(value) {
+    if (!value) return '-';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleString();
+  }
+
+  function subscribeToJob(jobId, onData, onError) {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const socket = new WebSocket(`${protocol}://${window.location.host}/cable`);
+    const identifier = JSON.stringify({ channel: 'DocumentProcessingChannel', job_id: jobId });
+
+    const unsubscribe = () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ command: 'unsubscribe', identifier }));
+      }
+      socket.close();
+    };
+
+    socket.addEventListener('open', () => {
+      socket.send(JSON.stringify({ command: 'subscribe', identifier }));
+    });
+
+    socket.addEventListener('message', (event) => {
+      let payload;
+      try {
+        payload = JSON.parse(event.data);
+      } catch (e) {
+        // not JSON - ignore
+        return;
+      }
+
+      if (!payload) return;
+
+      if (payload.type === 'welcome' || payload.type === 'ping' || payload.type === 'confirm_subscription') {
+        return;
+      }
+
+      if (payload.type === 'reject_subscription') {
+        onError('Sottoscrizione rifiutata dal server');
+        unsubscribe();
+        return;
+      }
+
+      if (payload.message) {
+        onData(payload.message, unsubscribe);
+      }
+    });
+
+    socket.addEventListener('error', () => {
+      onError('Connessione non disponibile');
+    });
+  }
+
+  function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = value == null ? '' : String(value);
+    return element.innerHTML;
+  }
+</script>

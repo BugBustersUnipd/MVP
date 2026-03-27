@@ -18,6 +18,8 @@ services:
       - "3000:3000"
     depends_on:
       - db
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/backend_development
 

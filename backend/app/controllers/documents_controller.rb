@@ -1,4 +1,9 @@
 class DocumentsController < ActionController::Base
+  # CSRF protection is disabled because the app runs in api_only mode (no session
+  # middleware in the stack). The test view is served from the same origin so
+  # there is no practical security concern here.
+  skip_before_action :verify_authenticity_token
+
   # GET /documents/test
   def test
     render template: "documents/test"

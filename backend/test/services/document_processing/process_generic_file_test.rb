@@ -126,6 +126,61 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
     csv.close! if csv
   end
 
+  test "csv with multiple rows is processed as single extracted document" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u_csv = User.create!(email: "u_csv_multi@test", name: "CSV Multi", username: "csvmulti")
+    emp_csv = Employee.create!(user: u_csv, company: company)
+    uploaded_document = UploadedDocument.create!(
+      original_filename: "records_multi.csv",
+      storage_path: "/tmp/records_multi.csv",
+      page_count: 1,
+      checksum: "csv-checksum-multi-1",
+      file_kind: "csv",
+      employee: emp_csv
+    )
+
+    run = ProcessingRun.create!(
+      job_id: "job-csv-multi-1",
+      status: "queued",
+      original_filename: uploaded_document.original_filename,
+      uploaded_document: uploaded_document
+    )
+
+    csv = Tempfile.new(["rows_multi", ".csv"])
+    csv.write("recipient,amount\nMario Rossi,100\nLuigi Bianchi,200\n")
+    csv.rewind
+
+    container = FakeContainer.new
+
+    csv_processor_factory = -> { DocumentProcessing::CsvProcessor.new(data_extractor: container.data_extractor, recipient_resolver: container.recipient_resolver) }
+    image_processor_factory = -> { DocumentProcessing::ImageProcessor.new(container: container) }
+
+    service = DocumentProcessing::ProcessGenericFile.new(
+      notifier: container.notifier,
+      file_storage: container.file_storage,
+      generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
+      image_processor_factory: image_processor_factory,
+      csv_processor_factory: csv_processor_factory
+    )
+
+    service.call(
+      file_path: csv.path,
+      job_id: run.job_id,
+      uploaded_document_id: uploaded_document.id,
+      file_kind: "csv"
+    )
+
+    run.reload
+    assert_equal 1, run.total_documents
+    assert_equal 1, run.processed_documents
+
+    extracted = uploaded_document.extracted_documents
+    assert_equal 1, extracted.count
+    assert_equal "Mario Rossi", extracted.first.recipient
+  ensure
+    csv.close! if csv
+  end
+
   test "image processing emits uniform document_processed payload" do
     company = Company.first || Company.create!(name: "TestCo")
     u_img = User.create!(email: "img@test", name: "ImgUser", username: "imguser")

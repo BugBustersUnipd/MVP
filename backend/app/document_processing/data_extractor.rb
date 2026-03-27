@@ -19,6 +19,10 @@ module DocumentProcessing
         llm_confidence: extract_llm_confidence(parsed)
       }
     rescue StandardError => error
+      if expired_credentials_error?(error)
+        raise RuntimeError, "Credenziali AWS scadute (Bedrock): aggiorna AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN nel backend e riavvia il container. Dettaglio: #{error.message}"
+      end
+
       Rails.logger.error("Errore estrazione dati documento LLM: #{error.message}")
       empty_document_data
     end
@@ -134,6 +138,11 @@ module DocumentProcessing
           competence: 0.0
         }
       }
+    end
+
+    def expired_credentials_error?(error)
+      message = error.message.to_s.downcase
+      message.include?("security token") && message.include?("expired")
     end
   end
 end

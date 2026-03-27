@@ -86,40 +86,38 @@ module DocumentProcessing
 
     def process_csv(file_path, uploaded_document, run, overlays)
       processor = build_csv_processor
-      extracted_rows = processor.extract_rows(file_path)
+      result = processor.extract_document(file_path)
+
+      raise ArgumentError, "CSV vuoto o non processabile" if result.nil?
 
       generic_file_repository.transaction do
-        generic_file_repository.set_run_total!(run, extracted_rows.size)
+        generic_file_repository.set_run_total!(run, 1)
 
-        events = extracted_rows.each_with_index.map do |result, idx|
-          seq = idx + 1
-          merged_metadata, merged_confidence = apply_user_overlays(result[:metadata], result[:confidence], overlays)
+        merged_metadata, merged_confidence = apply_user_overlays(result[:metadata], result[:confidence], overlays)
 
-          extracted, item = generic_file_repository.create_csv_item!(
-            uploaded_document: uploaded_document,
-            run: run,
-            sequence: seq,
-            metadata: merged_metadata,
-            confidence: merged_confidence,
-            recipient: result[:recipient],
-            employee: result[:employee]
-          )
+        extracted, _item = generic_file_repository.create_csv_item!(
+          uploaded_document: uploaded_document,
+          run: run,
+          sequence: 1,
+          metadata: merged_metadata,
+          confidence: merged_confidence,
+          recipient: result[:recipient],
+          employee: result[:employee]
+        )
 
-          build_success_payload(
-            filename: uploaded_document.original_filename,
-            recipient: result[:recipient],
-            extracted_document_data: merged_metadata,
-            extracted_confidence: merged_confidence,
-            matched_recipient: format_employee(result[:employee]),
-            extracted_document_id: extracted.id,
-            document_index: seq,
-            total_documents: extracted_rows.size,
-            ocr_text: result[:ocr_text]
-          )
-        end
+        generic_file_repository.mark_run_completed!(run, processed_documents: 1)
 
-        generic_file_repository.mark_run_completed!(run, processed_documents: extracted_rows.size)
-        events
+        [build_success_payload(
+          filename: uploaded_document.original_filename,
+          recipient: result[:recipient],
+          extracted_document_data: merged_metadata,
+          extracted_confidence: merged_confidence,
+          matched_recipient: format_employee(result[:employee]),
+          extracted_document_id: extracted.id,
+          document_index: 1,
+          total_documents: 1,
+          ocr_text: result[:ocr_text]
+        )]
       end
     end
 

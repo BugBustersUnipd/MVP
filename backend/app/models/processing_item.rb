@@ -6,4 +6,9 @@ class ProcessingItem < ApplicationRecord
 
   validates :sequence, presence: true
   validates :status, inclusion: { in: STATUSES }, allow_nil: true
+
+  def done? = status == "done"
+  def failed? = status == "failed"
+  def in_progress? = status == "in_progress"
+  def queued? = status == "queued"
 end

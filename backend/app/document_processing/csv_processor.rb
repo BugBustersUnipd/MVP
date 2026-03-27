@@ -13,37 +13,31 @@ module DocumentProcessing
       CSV.parse(text, headers: true).map(&:to_h)
     end
 
-    # Pure extraction for CSV rows: extract and structure each row with LLM (like ImageProcessor for images).
-    # No DB writes, no broadcast. Returns array of structured payloads (one per row).
-    def extract_rows(file_path)
+    # Extract a single payload from the whole CSV content.
+    # This enforces one logical document and one recipient for a CSV upload.
+    def extract_document(file_path)
       rows = parse(file_path)
+      non_empty_rows = rows.reject { |row| row.values.all? { |v| v.nil? || v.to_s.strip.empty? } }
+      return nil if non_empty_rows.empty?
 
-      rows.map do |raw_data|
-        # Skip or handle empty rows
-        next nil if raw_data.values.all? { |v| v.nil? || v.to_s.strip.empty? }
+      raw_text = non_empty_rows.map { |row| row.values.compact.join(" ").strip }.reject(&:empty?).join("\n")
+      return nil if raw_text.empty?
 
-        # Concatenate row values into plain text for LLM extraction
-        raw_text = raw_data.values.compact.join(" ").strip
-        next nil if raw_text.empty?
+      extracted = @data_extractor.extract(raw_text)
+      recipient_names = extracted[:recipients]
+      recipient = Array(recipient_names).compact.first
+      confidence = extracted[:llm_confidence]
+      metadata = extracted[:metadata]
 
-        # Extract structured data via LLM
-        extracted = @data_extractor.extract(raw_text)
-        recipient_names = extracted[:recipients]
-        recipient = Array(recipient_names).compact.first
-        confidence = extracted[:llm_confidence]
-        metadata = extracted[:metadata]
+      resolution = @recipient_resolver.resolve(recipient_names: recipient_names, raw_text: raw_text)
 
-        # Resolve recipient to employee
-        resolution = @recipient_resolver.resolve(recipient_names: recipient_names, raw_text: raw_text)
-
-        {
-          ocr_text: nil,  # CSV records don't have OCR text (not scanned pages)
-          metadata: metadata || raw_data,
-          confidence: confidence || {},
-          recipient: recipient,
-          employee: resolution.matched? ? resolution.employee : nil
-        }
-      end.compact  # Remove nil entries for empty rows
+      {
+        ocr_text: nil,
+        metadata: metadata || {},
+        confidence: confidence || {},
+        recipient: recipient,
+        employee: resolution.matched? ? resolution.employee : nil
+      }
     end
   end
 end
