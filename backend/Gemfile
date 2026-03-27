@@ -47,6 +47,7 @@ gem "aws-sdk-bedrockruntime"
 
 group :test do
   gem "simplecov", require: false
+  gem 'minitest-mock'
 end
 
 group :development, :test do

@@ -98,3 +98,12 @@ docker compose run --rm frontend node -v
 docker compose run --rm frontend ng version
 
 
+## Lanciare test (tutti)
+
+docker compose run --rm backend rails test
+
+## Lanciare test (modulo analyst)
+
+docker compose run --rm backend rails test test/managers/*_test.rb test/controllers/*_test.rb
+
+
