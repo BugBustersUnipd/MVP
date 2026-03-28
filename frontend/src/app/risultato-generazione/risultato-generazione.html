@@ -47,7 +47,7 @@
         <!-- Sezione riepilogativa dei parametri scelti dall'utente nel Generatore -->
         <!-- Tutti i campi hanno [disabled]="true": non sono cliccabili né focalizzabili -->
         <div class="parametri-container">
-            <label class="parametri-label">PARAMETRI INSERITI</label>
+            <span class="fs-9 text-muted fw-bold">PARAMETRI INSERITI</span>
             <hr class="parametri-divider">
             @if(result.isPost){
                 <div class="actions">
@@ -55,9 +55,8 @@
                     <app-button label="Duplica" class="btn btn-primary" [fluid]="true" (action)="duplicateGeneration()"></app-button>
                 </div>
             }
-            <div class="parametri-fields">
-                 <div class="menu-row">
-                    
+            <div>
+                 <div class="menu-row mb-3">
                      <menutendina [options]="[result.tone]" [selected]="result.tone"
                          label="Tono" placeholder="Nessun tono selezionato" [disabled]="true"></menutendina>
      
@@ -65,7 +64,6 @@
                          label="Stile" placeholder="Nessuno stile selezionato" [disabled]="true"></menutendina>
                  </div>
                 <app-prompt [prompt]="result.prompt" label="Prompt" [autoResize]="true" [disabled]="true"></app-prompt>
-
             </div>
         </div>
     

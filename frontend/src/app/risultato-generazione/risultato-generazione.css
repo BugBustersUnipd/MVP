@@ -43,11 +43,7 @@
 .parametri-container {
   margin-top: 2rem;
 }
-.parametri-label {
-  font-size: 0.8rem;
-  color: #000000;
-  font-weight: bold;
-}
+
 /* Riga divisoria che separa visivamente il riepilogo dal resto della pagina */
 .parametri-divider {
   border: none;
