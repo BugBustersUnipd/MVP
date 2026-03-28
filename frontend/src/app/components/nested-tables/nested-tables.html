@@ -1,0 +1,23 @@
+<!-- Vorrei fare un for che costruisce la macrotabella per ogni documento padre, e i figli sono costituite dal table component -->
+<p-accordion>
+  @for (doc of documents; track doc.id) {
+    <p-accordion-panel [value]="doc.id.toString()">
+      <p-accordion-header>
+        <label>ID: {{ doc.id }}</label>
+        <label>Nome del documento: {{ doc.name }}</label>
+        <label>Pagine: {{ doc.pages }}</label>
+        <label
+          >Stato: <p-tag [value]="doc.state" [class]="getSeverity(doc.state)" [rounded]="true"></p-tag></label
+        >
+      </p-accordion-header>
+      <p-accordion-content
+        ><app-tables
+          [RisultatoFiltrato]="doc.ResultSplit"
+          [columns]="columns"
+          [items]="items"
+          [class]="class"
+        ></app-tables
+      ></p-accordion-content>
+    </p-accordion-panel>
+  }
+</p-accordion>

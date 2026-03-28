@@ -1,16 +1,22 @@
 import { inject, Injectable } from '@angular/core';
-
+import { HttpClient } from '@angular/common/http';
 import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-ai-copilot.serializer';
-import { ResultSplit } from '../../app/shared/models/result-split.model';
+import { ResultSplit, State} from '../../app/shared/models/result-split.model';
 import { BehaviorSubject } from 'rxjs';
+import { Company } from '../../app/shared/models/result-ai-assistant.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AiCoPilotService {
+  private http = inject(HttpClient);
   private serializer = inject(ResultAiCopilotSerializer);
+  
   private resultSubject : BehaviorSubject<ResultSplit | null> = new BehaviorSubject<ResultSplit | null>(null);
   currentResult$ = this.resultSubject.asObservable();
+
+  private resultsHistorySubject: BehaviorSubject<ResultSplit[] | null> = new BehaviorSubject<ResultSplit[] | null>(null);
+  currentResultsHistory$ = this.resultsHistorySubject.asObservable();
 
   private templatesSubject = new BehaviorSubject<{ name: string; content: string }[]>([]);
   templates$ = this.templatesSubject.asObservable();
@@ -20,6 +26,18 @@ export class AiCoPilotService {
 
   private employeesSubject = new BehaviorSubject<{ id: number; name: string; email?: string; employeeCode?: string }[]>([]);
   employees$ = this.employeesSubject.asObservable();
+
+  private companiesSubject = new BehaviorSubject<Company[]>([]);
+  companies$ = this.companiesSubject.asObservable();
+
+  private departmentSubject = new BehaviorSubject<string[]>([]);
+  department$ = this.departmentSubject.asObservable();
+
+  private StateSubject = new BehaviorSubject<string[]>([]);
+  state$ = this.StateSubject.asObservable();
+  
+  private ConfidenceSubject = new BehaviorSubject<string[]>([]);
+  confidence$ = this.ConfidenceSubject.asObservable();
 // aggiunto MA VEDIAMO SE VA BENE; SERVE PER ALTRI DOCUMENTI ESTRATTI
   private otherExtractedDocumentsSubject = new BehaviorSubject<{ id: number; destinatario: string; confidenza: number }[]>([]);
   otherExtractedDocuments$ = this.otherExtractedDocumentsSubject.asObservable();
@@ -225,19 +243,42 @@ export class AiCoPilotService {
     this.templatesSubject.next(mockData);
      
   }
-  public addCategory() : void {
+  /*public addCategory() : void {
     //todo implementare con chiamata al backend
 
     //qui voglio un fucking push su categorySubject, in modo che la view riceva la notifica e si aggiorni!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   }
-
-  public fetchCompanies() : void {
-    //todo implementare con chiamata al backend
-  }
-
   public addDepartment(idCompany: string) : void {
     //todo implementare con chiamata al backend
+  }*/
+
+  
+    public fetchCategories() : void {
+    const mockCategories = ['Categoria 1', 'Categoria 2', 'Categoria 3'];
+    this.categorySubject.next(mockCategories);
   }
+  public fetchDepartment() : void {
+    const mockDepartment = ['Reparto 1', 'Reparto 2', 'Reparto 3'];
+    this.departmentSubject.next(mockDepartment);
+  }
+  public fetchState() : void {
+    const mockState = ['Pronto', 'Inviato', 'Programmato', 'Da validare'];
+    this.StateSubject.next(mockState);
+  }
+  public fetchConfidence() : void {
+    const mockConfidence = ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'];
+    this.ConfidenceSubject.next(mockConfidence);
+  }
+  public fetchCompanies() : void {
+    const mockCompanies = [
+      { id: 1, name: 'default-company' },
+      { id: 2, name: 'AlbertoSrl' },
+      { id: 3, name: 'PiruzSrl' }
+    ];
+    this.companiesSubject.next(mockCompanies);
+  }
+
+  
   getOriginalPdfById(id: number) : void {
     // window.open('/Candidatura RTB.pdf', '_blank');
   }
@@ -249,8 +290,129 @@ export class AiCoPilotService {
     //todo implementare con chiamata al backend
   }
 
-  fetchHistoryResults(){
-    //qui obv si usa anche il serializer!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  fetchHistoryResults(): void {
+    if ((this.resultsHistorySubject.value ?? []).length > 0) {
+      return;
+    }
+
+    const mockData: ResultSplit[] = [
+      {
+        id: 101,
+        name: 'Mini documento 1',
+        state: State.Pronto,
+        confidence: 96,
+        recipientId: 1001,
+        recipientName: 'Anna Blu',
+        recipientEmail: 'anna.blu@azienda.it',
+        recipientCode: 'EMP010',
+        time_Analysis: 1200,
+        page_end: 5,
+        page_start: 1,
+        company: 'AlbertoSrl',
+        department: 'HR',
+        month_year: '202603',
+        category: 'Buste paga',
+        data: new Date('2026-03-10'),
+        parentId: 5001,
+      },
+      {
+        id: 102,
+        name: 'Mini documento 2',
+        state: State.Pronto,
+        confidence: 91,
+        recipientId: 1004,
+        recipientName: 'Marco Gialli',
+        recipientEmail: 'marco.gialli@azienda.it',
+        recipientCode: 'EMP013',
+        time_Analysis: 1320,
+        page_end: 8,
+        page_start: 6,
+        company: 'AlbertoSrl',
+        department: 'HR',
+        month_year: '202603',
+        category: 'Bonus',
+        data: new Date('2026-03-10'),
+        parentId: 5001,
+      },
+      {
+        id: 103,
+        name: 'Mini documento 1',
+        state: State.DaValidare,
+        confidence: 89,
+        recipientId: 1002,
+        recipientName: 'Paolo Neri',
+        recipientEmail: 'paolo.neri@azienda.it',
+        recipientCode: 'EMP011',
+        time_Analysis: 1450,
+        page_end: 4,
+        page_start: 1,
+        company: 'PiruzSrl',
+        department: 'Finance',
+        month_year: '202603',
+        category: 'Cedolini',
+        data: new Date('2026-03-12'),
+        parentId: 5002,
+      },
+      {
+        id: 104,
+        name: 'Mini documento 2',
+        state: State.DaValidare,
+        confidence: 84,
+        recipientId: 1005,
+        recipientName: 'Giada Rosa',
+        recipientEmail: 'giada.rosa@azienda.it',
+        recipientCode: 'EMP014',
+        time_Analysis: 1510,
+        page_end: 7,
+        page_start: 5,
+        company: 'PiruzSrl',
+        department: 'Finance',
+        month_year: '202603',
+        category: 'Rimborsi',
+        data: new Date('2026-03-12'),
+        parentId: 5002,
+      },
+      {
+        id: 105,
+        name: 'Mini documento 1',
+        state: State.Inviato,
+        confidence: 93,
+        recipientId: 1003,
+        recipientName: 'Lucia Verdi',
+        recipientEmail: 'lucia.verdi@azienda.it',
+        recipientCode: 'EMP012',
+        time_Analysis: 980,
+        page_end: 3,
+        page_start: 1,
+        company: 'default-company',
+        department: 'Operations',
+        month_year: '202603',
+        category: 'Stipendi',
+        data: new Date('2026-03-14'),
+        parentId: 5003,
+      },
+      {
+        id: 106,
+        name: 'Mini documento 2',
+        state: State.Pronto,
+        confidence: 90,
+        recipientId: 1006,
+        recipientName: 'Dario Bianchi',
+        recipientEmail: 'dario.bianchi@azienda.it',
+        recipientCode: 'EMP015',
+        time_Analysis: 1105,
+        page_end: 6,
+        page_start: 4,
+        company: 'default-company',
+        department: 'Operations',
+        month_year: '202603',
+        category: 'Premi',
+        data: new Date('2026-03-14'),
+        parentId: 5003,
+      },
+    ];
+
+    this.resultsHistorySubject.next(mockData);
   }
 
   fetchEmployeesByCompany(idCompany: string) : void {

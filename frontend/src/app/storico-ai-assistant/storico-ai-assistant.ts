@@ -28,8 +28,8 @@ export class StoricoAiAssistant {
   dates: Date[] | undefined;
   tonoOptions: Tone[] = [];
   stileOptions: Style[] = [];
-  selectedTono: number | undefined; 
-  selectedStile: number | undefined;
+  selectedTono: number | string | undefined; 
+  selectedStile: number | string | undefined;
   searchvalue: string ='';
   columns = [
     { field: 'title', header: 'Titolo' },
@@ -97,12 +97,12 @@ export class StoricoAiAssistant {
     this.applyFilters();
   }
 
-  onTonoChange(tono: number | undefined) {
+  onTonoChange(tono: number | string) {
     this.selectedTono = tono;
     this.applyFilters();
   }
 
-  onStileChange(stile: number | undefined) {
+  onStileChange(stile: number | string) {
     this.selectedStile = stile;
     this.applyFilters();
   }

@@ -1,0 +1,49 @@
+<div class="filter-container">
+  <app-filters
+    TypeOfFilter="searchbar"
+    [(searchvalue)]="searchvalue"
+    (searchvalueChange)="onSearchChange($event)"
+  ></app-filters>
+  <app-filters
+    TypeOfFilter="text"
+    TextFilterLabel="confidenza"
+    [textOptions]="(confidence$ | async) || []"
+    [selectedTextOption]="selectedconfidence"
+    (selectedTextOptionChange)="onConfidenceChange($event)"
+  ></app-filters>
+  <app-filters
+    TypeOfFilter="dateRange"
+    DatepickerLabel="data"
+    [(dates)]="dates"
+    (datesChange)="onDateChange($event)"
+  ></app-filters>
+  <app-filters
+    TypeOfFilter="text"
+    TextFilterLabel="stato"
+    [textOptions]="(state$ | async) || []"
+    [selectedTextOption]="selectedState"
+    (selectedTextOptionChange)="onStateChange($event)"
+  ></app-filters>
+  <app-filters
+    TypeOfFilter="text"
+    TextFilterLabel="categoria"
+    [textOptions]="(categories$ | async) || []"
+    [selectedTextOption]="selectedCategory"
+    (selectedTextOptionChange)="onCategoryChange($event)"
+  ></app-filters>
+  <app-filters
+    TypeOfFilter="text"
+    TextFilterLabel="azienda"
+    [textOptions]="(companyNames$ | async) || []"
+    [selectedTextOption]="selectedCompany"
+    (selectedTextOptionChange)="onCompanyChange($event)"
+  ></app-filters>
+  <app-filters
+    TypeOfFilter="text"
+    TextFilterLabel="reparto"
+    [textOptions]="(departments$ | async) || []"
+    [selectedTextOption]="selectedDepartment"
+    (selectedTextOptionChange)="onDepartmentChange($event)"
+  ></app-filters>
+</div>
+<bb-nested-tables [columns]="columns" [documents]="nestedDocuments" [items]="items"></bb-nested-tables>
