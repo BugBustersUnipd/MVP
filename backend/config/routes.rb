@@ -18,6 +18,8 @@ Rails.application.routes.draw do
   patch "/documents/extracted/:id/reassign_range", to: "documents#reassign_range", as: :reassign_extracted_document_range
   patch "/documents/extracted/:id/metadata", to: "documents#update_metadata", as: :update_extracted_document_metadata
   patch "/documents/extracted/:id/validate", to: "documents#validate_extracted", as: :validate_extracted_document
+  post  "/documents/uploads/:id/retry",    to: "documents#retry_processing",  as: :retry_processing
+  post  "/documents/extracted/:id/retry",  to: "documents#retry_extracted",   as: :retry_extracted
 
   # Lookups: aziende e utenti
   get "/lookups/companies", to: "lookups#companies", as: :lookups_companies
@@ -31,6 +33,12 @@ Rails.application.routes.draw do
   get "/templates", to: "templates#index", as: :templates
   get "/templates/:id", to: "templates#show", as: :template
   post "/templates", to: "templates#create", as: :create_template
+
+  # Data Analyst
+
+  get 'ai_generator_data_analyst', to: 'ai_generator_data_analyst#index'
+  get 'ai_copilot_data_analyst', to: 'ai_copilot_data_analyst#index'
+
 
   # Defines the root path route ("/")
   root "documents#test"

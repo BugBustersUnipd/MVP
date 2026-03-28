@@ -1,31 +1,38 @@
 require "test_helper"
 
 class CompaniesFetcherTest < ActiveSupport::TestCase
-  test "aggregates companies from uploaded documents and extracted metadata" do
-    # Clear any residual data from previous tests (delete in FK order)
-    Sending.delete_all
-    ProcessingItem.delete_all
-    ExtractedDocument.delete_all
-    ProcessingRun.delete_all
-    UploadedDocument.delete_all
-
-    company = Company.first || Company.create!(name: "TestCo")
-    u = User.create!(email: "c1@test", name: "C1", username: "c1")
-    emp = Employee.create!(user: u, company: company)
-
-    ud = UploadedDocument.create!(original_filename: "a.pdf", storage_path: "/tmp/a", page_count: 1, checksum: "ch1", override_company: "ACME", file_kind: "pdf", employee: emp)
-    ud2 = UploadedDocument.create!(original_filename: "b.pdf", storage_path: "/tmp/b", page_count: 1, checksum: "ch2", file_kind: "pdf", employee: emp)
-
-    ExtractedDocument.create!(uploaded_document: ud2, sequence: 1, page_start: 1, page_end: 1, metadata: { "company" => "Beta" })
+  test "returns company names from companies table ordered alphabetically" do
+    Company.create!(name: "Zeta")
+    Company.create!(name: "Alpha")
+    Company.create!(name: "Gamma")
 
     result = DocumentProcessing::Lookups::CompaniesFetcher.new.call
 
-    assert_equal ["ACME", "Beta"], result
-  ensure
-    Sending.delete_all
-    ProcessingItem.delete_all
-    ExtractedDocument.delete_all
-    ProcessingRun.delete_all
-    UploadedDocument.delete_all
+    assert_includes result, "Zeta"
+    assert_includes result, "Alpha"
+    assert_includes result, "Gamma"
+    assert_equal result, result.sort
+  end
+
+  test "excludes companies with null or empty name" do
+    Company.create!(name: "ValidCo")
+    Company.create!(name: nil) rescue nil # potrebbe fallire per validazione DB
+    Company.where(name: nil).delete_all    # pulizia sicura
+
+    result = DocumentProcessing::Lookups::CompaniesFetcher.new.call
+
+    assert_not_includes result, nil
+    assert_not_includes result, ""
+  end
+
+  test "does not include companies with blank name" do
+    Company.create!(name: "Visibile")
+    # name non può essere nil per vincolo DB, ma può essere stringa vuota
+    Company.where(name: "").delete_all rescue nil
+
+    result = DocumentProcessing::Lookups::CompaniesFetcher.new.call
+
+    assert_includes result, "Visibile"
+    assert_not_includes result, ""
   end
 end

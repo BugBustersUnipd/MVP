@@ -15,6 +15,7 @@ class OcrTest < ActiveSupport::TestCase
     ocr = DocumentProcessing::Ocr.new(textract_client: Object.new)
     fake_pdf = Struct.new(:pages).new([:page1])
 
+    ocr.define_singleton_method(:pdf_file?) { |_path| true }
     ocr.define_singleton_method(:extract_line_items) do |_page|
       [{ text: "Mario Rossi", confidence: 91.0 }, { text: "ACME", confidence: 88.0 }]
     end
