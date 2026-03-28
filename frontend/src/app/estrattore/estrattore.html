@@ -1,4 +1,6 @@
 <section class="estrattore-page">
+  <p-toast></p-toast>
+
   <div class="toolbar">
     <div class="filters-grid">
       <app-input
@@ -55,7 +57,8 @@
       [multiple]="true"
       [titleText]="'Carica uno o piu documenti'"
       [subtitleText]="'(pdf, csv, jpg)'"
-      (filesSelected)="onFilesSelected($event)">
+      (filesSelected)="onFilesSelected($event)"
+      (fileValidationError)="onFileValidationError($event)">
     </app-upload>
   </div>
 </section>

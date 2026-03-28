@@ -7,19 +7,24 @@ import { MonthYearComponent } from '../components/month-year/month-year';
 import { Upload } from '../components/upload/upload';
 import { Button } from '../components/button/button';
 import { Router } from '@angular/router';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { UploadValidationError } from '../components/upload/upload';
 
 // servizi
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
 
 @Component({
   selector: 'app-estrattore',
-  imports: [FormsModule, Upload, Menutendina, InputComponent, MonthYearComponent, Button, AsyncPipe],
+  imports: [FormsModule, Upload, Menutendina, InputComponent, MonthYearComponent, Button, AsyncPipe, ToastModule],
+  providers: [MessageService],
   templateUrl: './estrattore.html',
   styleUrl: './estrattore.css',
 })
 export class Estrattore implements OnInit {
   private router = inject(Router);
   private aiService = inject(AiCoPilotService);
+  private messageService = inject(MessageService);
   companies$ = this.aiService.companies$;
 
   selectedCategory: string | undefined= '';
@@ -57,8 +62,18 @@ export class Estrattore implements OnInit {
   }
 
   onFilesSelected(files: File[]): void {
-    console.log('Files selezionati:', files);
     this.selectedFiles = files ?? [];
+  }
+
+  onFileValidationError(error: UploadValidationError): void {
+    const invalidList = error.invalidFiles.join(', ');
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'File immagine non valido',
+      detail: invalidList
+        ? `I seguenti file non sono validi: ${invalidList}`
+        : 'Carica un file immagine valido.',
+    });
   }
 
   upload(): void {
