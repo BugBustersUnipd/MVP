@@ -17,12 +17,19 @@ const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 export class AiCoPilotService {
   private http = inject(HttpClient);
   private serializer = inject(ResultAiCopilotSerializer);
+  private tempParentId = -1;
   
   private resultSubject : BehaviorSubject<ResultSplit | null> = new BehaviorSubject<ResultSplit | null>(null);
   currentResult$ = this.resultSubject.asObservable();
 
   private resultsHistorySubject: BehaviorSubject<ResultSplit[] | null> = new BehaviorSubject<ResultSplit[] | null>(null);
   currentResultsHistory$ = this.resultsHistorySubject.asObservable();
+
+  private sessionParentsSubject: BehaviorSubject<ResultAiCopilot[]> = new BehaviorSubject<ResultAiCopilot[]>([]);
+  currentSessionParents$ = this.sessionParentsSubject.asObservable();
+
+  private parentNamesSubject: BehaviorSubject<Record<number, string>> = new BehaviorSubject<Record<number, string>>({});
+  currentParentNames$ = this.parentNamesSubject.asObservable();
 
 
   private templatesSubject = new BehaviorSubject<{ name: string; content: string }[]>([]);
@@ -52,7 +59,8 @@ export class AiCoPilotService {
 
   public uploadFiles(files: File[], company: string, department: string, category: string, competence_period: string): void {
     for (const file of files) {
-      this.processDocument(file, company, department, category, competence_period);
+      const temporaryParentId = this.addPendingParent(file);
+      this.processDocument(file, company, department, category, competence_period, temporaryParentId);
     }
   }
 
@@ -141,7 +149,7 @@ export class AiCoPilotService {
       );
     }
   } */
-  private processDocument(file: File, company: string, department: string, category: string, competence_period: string) : ResultAiCopilot {
+  private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
       const reactiveResult  = this.serializer.creaStatoIniziale(file, company, department, category, competence_period);
       reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire il nuovo documento in lista
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
@@ -160,6 +168,7 @@ export class AiCoPilotService {
           const uploadedDocumentId = Number(response?.uploaded_document_id) || 0;
           reactiveResult.id = uploadedDocumentId;
           reactiveResult.state = DocumentState.InElaborazione; // Stato iniziale
+          this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione);
           // Use ActionCable subprotocols for better compatibility with Rails cable server.
           const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
           const identifier = JSON.stringify({ channel: 'DocumentProcessingChannel', job_id: response.job_id });
@@ -203,6 +212,7 @@ export class AiCoPilotService {
                 // Show extracted rows as soon as split artifacts are created.
                 this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
                 this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
+                this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
               }
             }
             if (evt === 'processing_completed') {
@@ -210,6 +220,7 @@ export class AiCoPilotService {
               if (uploadedDocumentId > 0) {
                 this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
                 this.updateParentStateInHistory(uploadedDocumentId, State.Pronto);
+                this.updateSessionParentState(uploadedDocumentId, DocumentState.Completato);
               }
               socket.close();
             }
@@ -217,6 +228,7 @@ export class AiCoPilotService {
               console.error('Elaborazione fallita per il documento:', cable.message.error);
               if (uploadedDocumentId > 0) {
                 this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
+                this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
               }
               socket.close();
             }
@@ -227,12 +239,69 @@ export class AiCoPilotService {
           };
         },
         error: (error) => {
+          this.removeSessionParent(temporaryParentId);
           throw new Error('Errore durante l\'upload del documento: ' + error.message);
         }
       });
       return reactiveResult;
       //qui dentro chiama addCategory
       //poi faccio anche addDepartment 
+  }
+
+  private addPendingParent(file: File): number {
+    const id = this.tempParentId--;
+    const parent: ResultAiCopilot = {
+      id,
+      name: file.name,
+      pages: 0,
+      state: DocumentState.InCoda,
+      ResultSplit: [],
+    };
+    this.sessionParentsSubject.next([...this.sessionParentsSubject.value, parent]);
+    this.setParentName(id, file.name);
+    return id;
+  }
+
+  private replacePendingParentId(temporaryParentId: number, realParentId: number, state: DocumentState): void {
+    const updated = this.sessionParentsSubject.value.map((parent) =>
+      parent.id === temporaryParentId ? { ...parent, id: realParentId, state } : parent
+    );
+    this.sessionParentsSubject.next(updated);
+
+    const names = this.parentNamesSubject.value;
+    const pendingName = names[temporaryParentId];
+    if (pendingName) {
+      const nextNames = { ...names };
+      delete nextNames[temporaryParentId];
+      nextNames[realParentId] = pendingName;
+      this.parentNamesSubject.next(nextNames);
+    }
+  }
+
+  private updateSessionParentState(parentId: number, state: DocumentState): void {
+    const updated = this.sessionParentsSubject.value.map((parent) =>
+      parent.id === parentId ? { ...parent, state } : parent
+    );
+    this.sessionParentsSubject.next(updated);
+  }
+
+  private removeSessionParent(parentId: number): void {
+    const updated = this.sessionParentsSubject.value.filter((parent) => parent.id !== parentId);
+    this.sessionParentsSubject.next(updated);
+
+    const names = this.parentNamesSubject.value;
+    if (names[parentId]) {
+      const nextNames = { ...names };
+      delete nextNames[parentId];
+      this.parentNamesSubject.next(nextNames);
+    }
+  }
+
+  private setParentName(parentId: number, name: string): void {
+    if (!parentId || !name) return;
+    const current = this.parentNamesSubject.value;
+    if (current[parentId] === name) return;
+    this.parentNamesSubject.next({ ...current, [parentId]: name });
   }
   private upsertInHistory(split: ResultSplit): void {
     const current = this.resultsHistorySubject.value ?? [];
@@ -265,6 +334,10 @@ export class AiCoPilotService {
   private refreshExtractedDocumentsForUpload(uploadedDocumentId: number): void {
     this.http.get<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}/extracted`).subscribe({
       next: (response) => {
+        const parentName = response?.uploaded_document?.original_filename;
+        if (parentName) {
+          this.setParentName(uploadedDocumentId, parentName);
+        }
         (response.extracted_documents ?? [])
           .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
           .forEach((split: ResultSplit) => this.upsertInHistory(split));
@@ -402,6 +475,9 @@ export class AiCoPilotService {
     this.http.get<any>(`${API_BASE}/documents/uploads`).subscribe({
       next: ({ uploaded_documents }) => {
         for (const ud of uploaded_documents) {
+          if (ud?.id && ud?.original_filename) {
+            this.setParentName(ud.id, ud.original_filename);
+          }
           this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`).subscribe({
             next: (response) =>
               response.extracted_documents

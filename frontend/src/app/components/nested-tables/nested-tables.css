@@ -28,3 +28,23 @@
   background-color: #e5e7eb;
   color: #374151;
 }
+.header-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-left: 0.875rem;
+}
+
+/* gruppo sinistro */
+.left-group {
+  display: flex;
+  gap: 2rem; /* spazio tra ID, nome, pagine */
+}
+
+/* gruppo destro (spinto a destra) */
+.right-group {
+  margin-left: auto; /* 🔥 chiave per mandarlo a destra */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
