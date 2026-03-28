@@ -25,8 +25,8 @@ export class Filters {
 
 @Input() TextFilterLabel: string = 'Label Text Generico';
 @Input() textOptions: string[] = [];
-@Input() selectedTextOption: number | undefined;
-@Output() selectedTextOptionChange = new EventEmitter<number>();
+@Input() selectedTextOption: number | undefined | string;
+@Output() selectedTextOptionChange = new EventEmitter<number | string>();
 
 @Input() searchvalue : string = '';
 @Output() searchvalueChange = new EventEmitter<string>();

@@ -1,0 +1,30 @@
+/* Base comune */
+:host ::ng-deep .p-tag {
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 0.25rem 0.6rem;
+}
+
+/* Completato - verde */
+:host ::ng-deep .class-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* In elaborazione - giallo */
+:host ::ng-deep .class-elaboration {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* In coda - blu */
+:host ::ng-deep .class-pending {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+/* Default - grigio */
+:host ::ng-deep .class-default {
+  background-color: #e5e7eb;
+  color: #374151;
+}
