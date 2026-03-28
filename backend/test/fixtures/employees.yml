@@ -1,0 +1,37 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  department: HR
+  user: one
+  company: one
+
+two:
+  department: Finance
+  user: two
+  company: two
+
+# Named fixtures used by recipient_resolver tests (all in company one)
+mario_rossi:
+  department: Operations
+  user: mario_rossi
+  company: one
+
+mueller:
+  department: Engineering
+  user: mueller
+  company: one
+
+eric_blanc:
+  department: Marketing
+  user: eric_blanc
+  company: one
+
+giovanni_rossini:
+  department: Legal
+  user: giovanni_rossini
+  company: one
+
+luigi_bianchi:
+  department: Sales
+  user: luigi_bianchi
+  company: one

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  error_message: MyText
+  status: queued
+  sequence: 1
+  filename: MyString
+  extracted_document: one
+  processing_run: one
+
+two:
+  error_message: MyText
+  status: queued
+  sequence: 2
+  filename: MyString
+  extracted_document: two
+  processing_run: two

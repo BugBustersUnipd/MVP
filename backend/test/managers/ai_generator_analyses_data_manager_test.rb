@@ -3,6 +3,27 @@ require "test_helper"
 class AiGeneratorAnalysesDataManagerTest < ActiveSupport::TestCase
   # Il blocco setup prepara i dati finti prima di OGNI test
   setup do
+
+    # Livello 4: Foglie estreme
+    ProcessingItem.destroy_all
+    Post.destroy_all
+    Sending.destroy_all
+
+    # Livello 3: Dati e Processi
+    ProcessingRun.destroy_all
+    ExtractedDocument.destroy_all
+    GeneratedDatum.destroy_all
+
+    # Livello 2: Documenti Base e Configurazioni
+    UploadedDocument.destroy_all
+    Tone.destroy_all
+    Style.destroy_all
+
+    # Livello 1: Anagrafiche
+    Employee.destroy_all
+    User.destroy_all
+    Company.destroy_all
+
     # 1. Corretto 'business_name' in 'name'
     @company = Company.create!(name: "Test Company")
     @tone = Tone.create!(name: "Professionale", company: @company)

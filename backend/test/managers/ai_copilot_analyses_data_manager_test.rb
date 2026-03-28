@@ -2,6 +2,27 @@ require "test_helper"
 
 class AiCopilotAnalysesDataManagerTest < ActiveSupport::TestCase
   setup do
+
+    # Livello 4: Foglie estreme
+    ProcessingItem.destroy_all
+    Post.destroy_all
+    Sending.destroy_all
+
+    # Livello 3: Dati e Processi
+    ProcessingRun.destroy_all
+    ExtractedDocument.destroy_all
+    GeneratedDatum.destroy_all
+
+    # Livello 2: Documenti Base e Configurazioni
+    UploadedDocument.destroy_all
+    Tone.destroy_all
+    Style.destroy_all
+
+    # Livello 1: Anagrafiche
+    Employee.destroy_all
+    User.destroy_all
+    Company.destroy_all
+
     # 1. Creiamo le anagrafiche base con le colonne corrette
     @user = User.create!(
       cf: "RSSMRA80A01H501U", username: "mario.rossi", 

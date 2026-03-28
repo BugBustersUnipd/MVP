@@ -1,18 +1,9 @@
 module DocumentProcessing
   module Lookups
     class CompaniesFetcher
-      # Restituisce un array di nomi azienda unici, ordinati.
-      # Aggrega valori da UploadedDocument.override_company e da ExtractedDocument.metadata["company"].
+      # Restituisce un array di nomi azienda dalla tabella companies, ordinati.
       def call
-        companies = UploadedDocument.where.not(override_company: [nil, ""]).pluck(:override_company)
-
-        # metadata e JSON; estraiamo il campo company se presente
-        meta_companies = ExtractedDocument.pluck(:metadata).map do |m|
-          next unless m.is_a?(Hash)
-          m["company"]
-        end.compact
-
-        (companies + meta_companies).map(&:to_s).map(&:strip).reject(&:empty?).uniq.sort
+        Company.where.not(name: [nil, ""]).order(:name).pluck(:name)
       end
     end
   end

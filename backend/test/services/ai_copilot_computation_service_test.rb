@@ -15,9 +15,9 @@ class AiCopilotComputationServiceTest < ActiveSupport::TestCase
     risultato = service.retrieve_all_information
 
     # 4. VERIFICA: Controlliamo che l'Hash finale contenga i dati attesi
-    # I nomi delle chiavi riflettono la traduzione in snake_case dell'UML
-    assert_equal 95.5, risultato[:average_confidence_value]
-    assert_equal 12, risultato[:human_intervention_value]
+    # Usiamo le chiavi esatte che il Service sta costruendo e che il Controller invia al frontend
+    assert_equal 95.5, risultato[:average_confidence]
+    assert_equal 12, risultato[:average_human_intervention]
     assert_equal 88.0, risultato[:mapping_accuracy]
     assert_equal 3.5, risultato[:average_time_analyses]
   end

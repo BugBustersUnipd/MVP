@@ -1,0 +1,35 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  title: MyString
+  text_result: MyText
+  img_path: MyString
+  generation_time: 9.99
+  data_time: 2026-03-26 16:26:58
+  rating: 9.99
+  prompt: MyText
+  height: 1
+  width: 1
+  seed: MyString
+  status: MyString
+  tone: one
+  style: one
+  company: one
+  version_id: 
+
+two:
+  title: MyString
+  text_result: MyText
+  img_path: MyString
+  generation_time: 9.99
+  data_time: 2026-03-26 16:26:58
+  rating: 9.99
+  prompt: MyText
+  height: 1
+  width: 1
+  seed: MyString
+  status: MyString
+  tone: two
+  style: two
+  company: two
+  version_id: 

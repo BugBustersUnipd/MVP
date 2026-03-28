@@ -5,11 +5,7 @@ class LookupsControllerTest < ActionDispatch::IntegrationTest
   # GET /lookups/companies
   # ---------------------------------------------------------------------------
 
-  test "companies returns empty array when no data" do
-    # Ensure no override_company or metadata companies exist
-    UploadedDocument.update_all(override_company: nil)
-    ExtractedDocument.update_all(metadata: {})
-
+  test "companies returns an array" do
     get lookups_companies_path
 
     assert_response :success
@@ -17,16 +13,8 @@ class LookupsControllerTest < ActionDispatch::IntegrationTest
     assert body["companies"].is_a?(Array)
   end
 
-  test "companies aggregates override_company from uploaded documents" do
-    company = Company.first || Company.create!(name: "TestCo")
-    u = User.create!(email: "lk1@test.com", name: "LK1", username: "lk1#{SecureRandom.hex(3)}")
-    emp = Employee.create!(user: u, company: company)
-
-    UploadedDocument.create!(
-      original_filename: "a.pdf", storage_path: "/tmp/a", page_count: 1,
-      checksum: "lk-company-#{SecureRandom.hex(4)}", file_kind: "pdf",
-      override_company: "ACME SpA", employee: emp
-    )
+  test "companies includes companies from companies table" do
+    Company.create!(name: "ACME SpA")
 
     get lookups_companies_path
 
@@ -35,25 +23,16 @@ class LookupsControllerTest < ActionDispatch::IntegrationTest
     assert_includes body["companies"], "ACME SpA"
   end
 
-  test "companies aggregates companies from extracted document metadata" do
-    company = Company.first || Company.create!(name: "TestCo")
-    u = User.create!(email: "lk2@test.com", name: "LK2", username: "lk2#{SecureRandom.hex(3)}")
-    emp = Employee.create!(user: u, company: company)
-
-    ud = UploadedDocument.create!(
-      original_filename: "b.pdf", storage_path: "/tmp/b", page_count: 1,
-      checksum: "lk-meta-#{SecureRandom.hex(4)}", file_kind: "pdf", employee: emp
-    )
-    ud.extracted_documents.create!(
-      sequence: 1, page_start: 1, page_end: 1,
-      metadata: { "company" => "Beta Srl" }
-    )
+  test "companies returns names sorted alphabetically" do
+    Company.create!(name: "Zeta Srl")
+    Company.create!(name: "Alpha Srl")
 
     get lookups_companies_path
 
     assert_response :success
     body = JSON.parse(response.body)
-    assert_includes body["companies"], "Beta Srl"
+    names = body["companies"]
+    assert_equal names, names.sort
   end
 
   # ---------------------------------------------------------------------------

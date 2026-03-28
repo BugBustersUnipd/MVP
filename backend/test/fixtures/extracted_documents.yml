@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  page_start: 1
+  page_end: 1
+  sequence: 1
+  status: queued
+  uploaded_document: one
+  matched_employee: one
+
+two:
+  page_start: 1
+  page_end: 1
+  sequence: 1
+  status: queued
+  uploaded_document: two
+  matched_employee: two

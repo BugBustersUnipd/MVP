@@ -49,6 +49,7 @@ group :test do
   gem "simplecov", require: false
   gem "minitest"
   gem 'minitest-mock'
+  gem 'mocha'
 end
 
 group :development, :test do
