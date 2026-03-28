@@ -9,8 +9,8 @@ class AIGeneratorService
 
   def create_content(generationID)
     generationData = @aiGeneratorDataManager.fetchGenerationData(generationID)
-    toneDescription = @aiGeneratorDataManager.fetchToneDescription(generationData.tone_name, generationData.company_id)
-    styleDescription = @aiGeneratorDataManager.fetchStyleDescription(generationData.style_name, generationData.company_id)
+    toneDescription = @aiGeneratorDataManager.fetchToneDescription(generationData.tone_id)
+    styleDescription = @aiGeneratorDataManager.fetchStyleDescription(generationData.style_id)
     companyDescription = @aiGeneratorDataManager.fetchCompanyDescription(generationData.company_id)
     companyName = Company.find(generationData.company_id).name
 

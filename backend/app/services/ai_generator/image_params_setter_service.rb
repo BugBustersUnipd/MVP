@@ -54,9 +54,12 @@ class ImageParamsSetterService
 
   def getData
     {
+      #prompt: @prompt,
+      #company_id: @company_id,
       seed: @seed,
       width: @width,
-      height: @height
+      height: @height,
+      errors: @errors
     }
   end
 end

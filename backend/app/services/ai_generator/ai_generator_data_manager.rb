@@ -7,22 +7,22 @@ class AIGeneratorDataManager
   end
 
   def fetchToneDescription(toneId)
-    tone = Tone.find(toneId)
-    tone ? tone.instructions : nil
+    tone = Tone.find_by(id: toneId)
+    tone ? tone.description : nil
   end
 
   def fetchStyleDescription(styleId)
-    style = Style.find(styleId)
+    style = Style.find_by(id: styleId)
     style ? style.description : nil
   end
 
   def fetchGenerationData(generationID)
-    generationData = GenerationDatum.find(generationID)
+    generationData = GeneratedDatum.find(generationID)
     return generationData
   end
 
   def saveContent(generationID, aiResponseData)
-    generationData = GenerationDatum.find(generationID)
+    generationData = GeneratedDatum.find(generationID)
 
     if aiResponseData[:image].present?
       base64_string = aiResponseData[:image]
