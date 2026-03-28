@@ -1,7 +1,7 @@
 class GeneratedDataController < ApplicationController
   def create
     # L'Orchestrator si occupa di tutto: salvataggio record e lancio Job
-    @generation = AiJobOrchestrator.orchestrate(generation_params)
+    @generation = AiGenerator::AiJobOrchestrator.orchestrate(generation_params)
 
     if @generation.persisted? # Verifichiamo se l'Orchestrator è riuscito a salvare
       render json: { 

@@ -1,3 +1,4 @@
+module AiGenerator
 class ImageParamsSetterService
 
   def initialize(paramsData)
@@ -20,9 +21,8 @@ class ImageParamsSetterService
   ].freeze
 
   def valid?
-    @errors << "prompt e company_id sono obbligatori" if @prompt.blank? #|| company_id.blank? company_id da dove?
+    @errors << "prompt e company_id sono obbligatori" if @prompt.blank?
 
-    # Valida che dimensioni fornite siano supportate da Nova Canvas
     is_valid = VALID_SIZES.any? { |s| s[:w] == @width && s[:h] == @height }
 
     unless is_valid
@@ -35,22 +35,17 @@ class ImageParamsSetterService
 
   def buildImagePrompt(aiTextGeneratorResponse)
     promptWithAITextGeneratorResponse = @prompt + ". Risposta alla domanda che può servire alla creazione dell'immagine: " + aiTextGeneratorResponse
-    cutResponse = promptWithAITextGeneratorResponse.truncate(1000) # Nova Canvas ha un limite di 1024 caratteri per il prompt, teniamo un margine per sicurezza
+    cutResponse = promptWithAITextGeneratorResponse.truncate(1000)
     {
-      # Symbol keys vengono serializzate come string keys in JSON
       taskType: "TEXT_IMAGE",
       textToImageParams: {
         text: cutResponse,
-        # negativeText = prompt negativo per filtrare elementi indesiderati
         negativeText: "low quality, bad anatomy, distorted, watermark, text, signature, blur, grainy"
       },
       imageGenerationConfig: {
-        numberOfImages: 1,  # Nova supporta max 5, ma usiamo 1 per costi
+        numberOfImages: 1,
         height: @height,
         width: @width,
-        # cfgScale (Classifier-Free Guidance): quanto aderire al prompt
-        # 1.0 = ignora prompt (casuale), 20.0 = segui letteralmente
-        # 7.0 = compromesso qualità/creatività (valore raccomandato AWS)
         cfgScale: 7.0,
         seed: @seed
       }
@@ -59,11 +54,10 @@ class ImageParamsSetterService
 
   def getData
     {
-      #prompt: @prompt,
-      #company_id: @company_id,
       seed: @seed,
       width: @width,
       height: @height
     }
   end
+end
 end

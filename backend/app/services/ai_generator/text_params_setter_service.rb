@@ -1,3 +1,4 @@
+module AiGenerator
 class TextParamsSetterService
 
   def initialize(paramsData)
@@ -37,8 +38,6 @@ class TextParamsSetterService
     PROMPT
   end
 
-  # Normalizzazione messaggi?
-
   def getData
     {
       prompt: @prompt,
@@ -50,4 +49,5 @@ class TextParamsSetterService
     }
   end
 
+end
 end

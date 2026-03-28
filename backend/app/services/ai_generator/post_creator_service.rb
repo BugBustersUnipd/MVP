@@ -1,3 +1,4 @@
+module AiGenerator
 class PostCreatorService
     def create_post(safe_params)
       if safe_params[:id].blank?
@@ -17,4 +18,5 @@ class PostCreatorService
       dateTime = safe_params[:date_time].presence || generation.date_time
       return Post.create(title: title, body_text: text, img_path: image_url, date_time: dateTime, generated_datum_id: generation.id)
     end
+end
 end

@@ -1,3 +1,4 @@
+module AiGenerator
 class AIGeneratorDataManager
 
   def fetchCompanyDescription(companyID)
@@ -48,4 +49,5 @@ class AIGeneratorDataManager
 
     return generationData
   end
+end
 end

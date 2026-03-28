@@ -1,3 +1,4 @@
+module AiGenerator
 class AIGeneratorService
   def initialize(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory)
     @imgGenerator = imgGenerator
@@ -7,7 +8,6 @@ class AIGeneratorService
   end
 
   def create_content(generationID)
-    #da togliere secondo me queste cosa e interamente eliminare aigenerationDataManager
     generationData = @aiGeneratorDataManager.fetchGenerationData(generationID)
     toneDescription = @aiGeneratorDataManager.fetchToneDescription(generationData.tone_name, generationData.company_id)
     styleDescription = @aiGeneratorDataManager.fetchStyleDescription(generationData.style_name, generationData.company_id)
@@ -42,9 +42,8 @@ class AIGeneratorService
       title = match_data[1].strip
       content = match_data[2].strip
     else
-      # Se l'IA non usa i due pipe, proviamo lo split singolo o il default
       if textResult.include?('|')
-        parts = textResult.split('|').reject(&:blank?) # Rimuove pezzi vuoti
+        parts = textResult.split('|').reject(&:blank?)
         title = parts[0].strip
         content = parts[1..-1].join('|').strip
       else
@@ -54,8 +53,6 @@ class AIGeneratorService
     end
 
     @aiGenerationDataManager.saveContent(generationID, {image: imageResult, title: title, text: content, width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: nil, dateTime: Time.now})
-
-    #return nonsocheint 
   end
 
   private
@@ -71,4 +68,5 @@ class AIGeneratorService
     generatedImage = @imgGenerator.generate_image(imagePrompt)
     return generatedImage
   end
+end
 end

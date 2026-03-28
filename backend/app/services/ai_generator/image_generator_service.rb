@@ -1,6 +1,7 @@
 require "aws-sdk-bedrockruntime"
 require "json"
 
+module AiGenerator
 class ImageGeneratorService
 
   def initialize(region:)
@@ -26,7 +27,7 @@ class ImageGeneratorService
   def invokeNovaCanvas(model_id, image_prompt_json)
     @client.invoke_model(
       model_id: model_id,
-      body: image_prompt_json,  # JSON string da buildImagePrompt
+      body: image_prompt_json,
       content_type: "application/json",
       accept: "application/json"
     )
@@ -42,44 +43,23 @@ class ImageGeneratorService
   end
 
   def extract_image_data(response)
-    # response.body = StringIO (oggetto simile a file)
-    # .read = legge tutto contenuto come stringa
-    # JSON.parse = converte JSON string in Hash Ruby
     payload = JSON.parse(response.body.read)
 
-    # Log chiavi presenti per debug (utile se Nova cambia formato ancora)
-    # payload.keys = array chiavi Hash
-    # .join(', ') = unisce array in stringa separata da virgole
     Rails.logger.info("Nova Canvas Response keys: #{payload.keys.join(', ')}")
 
-    # Prova chiave "images" (array di stringhe base64)
-    # &. = safe navigation operator (evita errore se payload["images"] è nil)
-    # .any? = true se array ha almeno un elemento
     if payload["images"]&.any?
-      # .first = primo elemento array
       payload["images"].first
-      
-    # Prova chiave "image" (singola stringa base64)
     elsif payload["image"]
       payload["image"]
-      
-    # Prova chiave "image_base64"
     elsif payload["image_base64"]
       payload["image_base64"]
-      
-    # Prova chiave "imageUriBase64"
     elsif payload["imageUriBase64"]
       payload["imageUriBase64"]
-      
-    # Nessuna chiave trovata: errore
     else
-      # .inspect = rappresentazione debug dell'oggetto (mostra tutta struttura)
       Rails.logger.error("Nova Canvas: Response non contenente immagine. Payload completo: #{payload.inspect}")
-      
-      # raise String = solleva RuntimeError con messaggio
-      # Include chiavi presenti per facilitare debug
       raise "Errore Nova Canvas: Nessuna immagine ritornata. Payload keys: #{payload.keys.join(', ')}"
     end
   end
 
+end
 end

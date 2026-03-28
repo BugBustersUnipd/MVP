@@ -1,7 +1,7 @@
 class PostsController < ApplicationController
   def create
     safe_params = post_params
-    post = PostCreatorService.new.create_post(safe_params)
+    post = AiGenerator::PostCreatorService.new.create_post(safe_params)
 
     if post.persisted?
       render json: { message: "Post creato con successo!", id: post.id }, status: :ok

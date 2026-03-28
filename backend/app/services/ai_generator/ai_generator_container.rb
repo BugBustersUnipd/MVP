@@ -1,3 +1,4 @@
+module AiGenerator
 class AIGeneratorContainer
   REGION_FALLBACK = ENV.fetch("AWS_REGION", "us-east-1")
 
@@ -34,4 +35,5 @@ class AIGeneratorContainer
   def image_generation_region
     ::BEDROCK_CONFIG_IMAGE_GENERATION["region"] || REGION_FALLBACK
   end
+end
 end
