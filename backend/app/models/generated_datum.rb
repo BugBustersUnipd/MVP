@@ -1,4 +1,6 @@
 class GeneratedDatum < ApplicationRecord
+  has_one_attached :generated_image
+
   belongs_to :tone
   belongs_to :style
   belongs_to :company
