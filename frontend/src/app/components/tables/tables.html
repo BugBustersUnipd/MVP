@@ -14,7 +14,6 @@
             <p-sortIcon [field]="col.field"></p-sortIcon>
           </th>
         }
-
         <th style="width: 8%">Azioni</th>
       </tr>
     </ng-template>
@@ -57,10 +56,16 @@
             }
           </td>
         }
-
         <td>
           <p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
           <p-button (click)="menu.toggle($event)" icon="pi pi-ellipsis-h"></p-button>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td [attr.colspan]="columns.length + 1" class="text-center">
+          Nessun dato disponibile
         </td>
       </tr>
     </ng-template>

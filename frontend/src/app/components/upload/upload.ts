@@ -1,4 +1,4 @@
-import { Component, ViewChild, Input, Output, EventEmitter } from "@angular/core";
+import { Component, Input, Output, EventEmitter, ElementRef, ViewChild } from "@angular/core";
 import { FileUpload } from "primeng/fileupload";
 
 @Component({
@@ -8,28 +8,51 @@ import { FileUpload } from "primeng/fileupload";
   imports: [FileUpload]
 })
 export class Upload {
-    @ViewChild('fileUpload') fileUpload!: FileUpload;
+    @ViewChild('nativeFileInput') nativeFileInput!: ElementRef<HTMLInputElement>;
 
     @Input() accept: string = '.pdf,.csv,.jpg';
-    @Input() maxFileSize: number = 1000000; // In byte (es. 1MB)
+    @Input() maxFileSize: number = 10000000; // In byte (es. 10MB)
     @Input() multiple: boolean = true;
     @Input() titleText: string = 'Carica uno o più documenti';
     @Input() subtitleText: string = '(pdf, csv, jpg)';
 
     @Output() filesSelected = new EventEmitter<File[]>();
     
-    onSelectFiles(event: any) {
-    this.filesSelected.emit(event.files);
+    onPrimeSelect(event: any) {
+    const files = this.extractFiles(event);
+    this.filesSelected.emit(files);
+    }
+
+    onNativeSelect(event: Event) {
+      const input = event.target as HTMLInputElement;
+      const files = Array.from(input.files ?? []);
+      this.filesSelected.emit(files);
+
+      // Permette di riselezionare lo stesso file consecutivamente.
+      input.value = '';
     }
 
     triggerClick() {
-    // Cerca l'input file nativo dentro il componente PrimeNG e lo clicca
-      if (this.fileUpload) {
-      const fileInput = this.fileUpload.el.nativeElement.querySelector('input[type="file"]');
-        if (fileInput) {
-        fileInput.click();
-        }
+      if (this.nativeFileInput?.nativeElement) {
+        this.nativeFileInput.nativeElement.click();
       }
+    }
+
+    private extractFiles(event: any): File[] {
+      if (Array.isArray(event?.files)) {
+        return event.files;
+      }
+
+      if (Array.isArray(event?.currentFiles)) {
+        return event.currentFiles;
+      }
+
+      const nativeFiles = event?.originalEvent?.target?.files;
+      if (nativeFiles) {
+        return Array.from(nativeFiles);
+      }
+
+      return [];
     }
 
 }

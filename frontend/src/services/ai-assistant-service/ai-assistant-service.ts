@@ -253,36 +253,36 @@ export class AiAssistantService {
 
     // chiamata al backend per ottenere la lista delle generazioni passate
     // per ora mocko i dati
-    const mockData: ResultAiAssistant[] = [
-      {
-        id: 1,
-        title: 'Generazione 1',
-        // provo a vedere se il truncate va, metto un content luuuuuuuuuuuuuuuuuuuuuuungo
-        content: 'Contenuto della generazione 1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-        imagePath: null,
-        tone: { id: 1, name: 'Simpatico' },
-        style: { id: 3, name: 'Articolato' },
-        company: { id: 2, name: 'AlbertoSrl' },
-        data: new Date('2024-09-11'),
-        prompt: 'Prompt della generazione 1',
-        evaluation: 4,
-        isPost: true
-      },
-      {
-        id: 2,
-        title: 'Generazione 2',
-        content: 'Contenuto della generazione 2',
-        imagePath: null,
-        tone: { id: 2, name: 'Formale' },
-        style: { id: 2, name: 'Essenziale' },
-        company: { id: 3, name: 'PiruzSrl' },
-        data: new Date('2024-09-12'),
-        prompt: 'Prompt della generazione 2',
-        evaluation: 5,
-        isPost: true
-      }
-    ];
-
+    const mockData: ResultAiAssistant[] = [];
+      // {
+    //     id: 1,
+    //     title: 'Generazione 1',
+    //     // provo a vedere se il truncate va, metto un content luuuuuuuuuuuuuuuuuuuuuuungo
+    //     content: 'Contenuto della generazione 1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    //     imagePath: null,
+    //     tone: { id: 1, name: 'Simpatico' },
+    //     style: { id: 3, name: 'Articolato' },
+    //     company: { id: 2, name: 'AlbertoSrl' },
+    //     data: new Date('2024-09-11'),
+    //     prompt: 'Prompt della generazione 1',
+    //     evaluation: 4,
+    //     isPost: true
+    //   },
+    //   {
+    //     id: 2,
+    //     title: 'Generazione 2',
+    //     content: 'Contenuto della generazione 2',
+    //     imagePath: null,
+    //     tone: { id: 2, name: 'Formale' },
+    //     style: { id: 2, name: 'Essenziale' },
+    //     company: { id: 3, name: 'PiruzSrl' },
+    //     data: new Date('2024-09-12'),
+    //     prompt: 'Prompt della generazione 2',
+    //     evaluation: 5,
+    //     isPost: true
+    //   }
+    // ];
+      //mockdata vuoto
     this.ResultsHistorySubject.next(mockData);
   }
 

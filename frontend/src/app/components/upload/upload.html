@@ -1,15 +1,21 @@
 <div class="upload-wrapper">
   <p-fileUpload
-    #fileUpload
     name="files[]"
     [multiple]="multiple"
     [accept]="accept"
     [maxFileSize]="maxFileSize"
-    (onSelect)="onSelectFiles($event)"
+    (onSelect)="onPrimeSelect($event)"
     styleClass="custom-p-fileupload">
 
     <ng-template pTemplate="empty">
       <div class="empty-drop-area" (click)="triggerClick()">
+        <input
+          #nativeFileInput
+          class="native-file-input"
+          type="file"
+          [attr.accept]="accept"
+          [attr.multiple]="multiple ? '' : null"
+          (change)="onNativeSelect($event)" />
         <i class="pi pi-upload"></i>
         <div class="text-container">
             <span class="title">{{ titleText }}</span>
