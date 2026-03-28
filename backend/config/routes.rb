@@ -34,6 +34,12 @@ Rails.application.routes.draw do
   get "/templates/:id", to: "templates#show", as: :template
   post "/templates", to: "templates#create", as: :create_template
 
+  # Data Analyst
+
+  get 'ai_generator_data_analyst', to: 'ai_generator_data_analyst#index'
+  get 'ai_copilot_data_analyst', to: 'ai_copilot_data_analyst#index'
+
+
   # Defines the root path route ("/")
   root "documents#test"
 end
