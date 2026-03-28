@@ -17,6 +17,8 @@
 # Ignore all logfiles and tempfiles (Backend).
 /backend/log/*
 /backend/tmp/*
+/backend/storage/*
+/backend/bin/*
 !/backend/log/.keep
 !/backend/tmp/.keep
 

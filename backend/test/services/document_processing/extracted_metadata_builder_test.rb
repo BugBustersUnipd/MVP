@@ -33,4 +33,26 @@ class ExtractedMetadataBuilderTest < ActiveSupport::TestCase
     assert_equal "2026-04", result[:date]
     assert_equal "2026-04", result[:competence]
   end
+
+  test "build falls back to metadata when uploaded_document overrides are blank" do
+    # override_company and override_department are blank → fall back to metadata
+    uploaded = UploadedDocument.new(
+      override_company: "",
+      override_department: nil,
+      category: nil,
+      competence_period: nil
+    )
+
+    result = DocumentProcessing::ExtractedMetadataBuilder.new(
+      metadata: { company: "Fallback Co", department: "Fallback Dept", type: "fallback_type",
+                  date: "2026-01", competence: "2026-01" },
+      uploaded_document: uploaded
+    ).build
+
+    assert_equal "Fallback Co",   result[:company]
+    assert_equal "Fallback Dept", result[:department]
+    assert_equal "fallback_type", result[:type]
+    assert_equal "2026-01",       result[:date]
+    assert_equal "2026-01",       result[:competence]
+  end
 end

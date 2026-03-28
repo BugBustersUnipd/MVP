@@ -47,34 +47,27 @@ class DocumentProcessing::Persistence::DbManagerTest < ActiveSupport::TestCase
     assert list.first.key?(:file_kind)
   end
 
-  test "update_extracted_metadata merges metadata and sets confidence to 100 for updated keys" do
-    # Clear any residual data from previous tests - delete in correct FK order
-    Sending.delete_all
-    ProcessingItem.delete_all
-    ExtractedDocument.delete_all
-    ProcessingRun.delete_all
-    UploadedDocument.delete_all
-    Employee.delete_all
-
-    company = Company.first || Company.create!(name: "TestCo")
-    u = User.create!(email: "mario@test.it", name: "Mario Rossi", username: "mario_dbm")
-    employee = Employee.create!(user: u, company: company)
-    uploaded = UploadedDocument.create!(original_filename: "u.pdf", storage_path: "/tmp/u", page_count: 1, checksum: "dbm-3", file_kind: "pdf", employee: employee)
-    extracted = ExtractedDocument.create!(
-      uploaded_document: uploaded,
-      sequence: 1,
-      page_start: 1,
-      page_end: 1,
-      metadata: { "company" => "Old" },
-      confidence: { "company" => 20 }
-    )
-
-    manager = DocumentProcessing::Persistence::DbManager.new(
+  def build_manager(user)
+    DocumentProcessing::Persistence::DbManager.new(
       data_item_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      recipient_resolver: FakeRecipientResolver.new(u)
+      recipient_resolver: FakeRecipientResolver.new(user)
     )
+  end
 
-    result = manager.update_extracted_metadata(
+  def build_extracted(employee, checksum:, metadata: {})
+    ud = UploadedDocument.create!(original_filename: "u.pdf", storage_path: "/tmp/u",
+                                   page_count: 1, checksum: checksum, file_kind: "pdf", employee: employee)
+    ExtractedDocument.create!(uploaded_document: ud, sequence: 1, page_start: 1, page_end: 1,
+                               metadata: metadata, confidence: {})
+  end
+
+  test "update_extracted_metadata merges metadata and sets confidence to 100 for updated keys" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u = User.create!(email: "mario#{SecureRandom.hex(3)}@test.it", name: "Mario Rossi", username: "mario_dbm#{SecureRandom.hex(3)}")
+    employee = Employee.create!(user: u, company: company)
+    extracted = build_extracted(employee, checksum: "dbm-3-#{SecureRandom.hex(4)}", metadata: { "company" => "Old" })
+
+    result = build_manager(u).update_extracted_metadata(
       extracted_document_id: extracted.id,
       metadata_updates: { "company" => "New Co", "recipient" => "Mario Rossi" }
     )
@@ -83,12 +76,65 @@ class DocumentProcessing::Persistence::DbManagerTest < ActiveSupport::TestCase
     assert_equal 100, result.confidence["company"]
     assert_equal "Mario Rossi", result.recipient
     assert_equal u.id, result.matched_employee_id
-  ensure
-    Sending.delete_all
-    ProcessingItem.delete_all
-    ExtractedDocument.delete_all
-    ProcessingRun.delete_all
-    UploadedDocument.delete_all
-    Employee.delete_all
+  end
+
+  test "update_extracted_metadata with raw_recipient uses it as recipient" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u = User.create!(email: "raw#{SecureRandom.hex(3)}@test.it", name: "Raw User", username: "rawuser#{SecureRandom.hex(3)}")
+    employee = Employee.create!(user: u, company: company)
+    extracted = build_extracted(employee, checksum: "dbm-raw-#{SecureRandom.hex(4)}")
+
+    result = build_manager(u).update_extracted_metadata(
+      extracted_document_id: extracted.id,
+      metadata_updates: { "raw_recipient" => "Raw User Name" }
+    )
+
+    assert_equal "Raw User Name", result.recipient
+  end
+
+  test "update_extracted_metadata with recipients array uses first element" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u = User.create!(email: "arr#{SecureRandom.hex(3)}@test.it", name: "Array User", username: "arrayuser#{SecureRandom.hex(3)}")
+    employee = Employee.create!(user: u, company: company)
+    extracted = build_extracted(employee, checksum: "dbm-arr-#{SecureRandom.hex(4)}")
+
+    result = build_manager(u).update_extracted_metadata(
+      extracted_document_id: extracted.id,
+      metadata_updates: { "recipients" => ["First User", "Second User"] }
+    )
+
+    assert_equal "First User", result.recipient
+  end
+
+  test "update_extracted_metadata with no recipient fields uses existing recipient" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u = User.create!(email: "existing#{SecureRandom.hex(3)}@test.it", name: "Existing", username: "existing#{SecureRandom.hex(3)}")
+    employee = Employee.create!(user: u, company: company)
+    ud = UploadedDocument.create!(original_filename: "u.pdf", storage_path: "/tmp/u",
+                                   page_count: 1, checksum: "dbm-norecip-#{SecureRandom.hex(4)}", file_kind: "pdf", employee: employee)
+    extracted = ExtractedDocument.create!(uploaded_document: ud, sequence: 1, page_start: 1, page_end: 1,
+                                          metadata: {}, confidence: {}, recipient: "Original Recipient")
+
+    result = build_manager(u).update_extracted_metadata(
+      extracted_document_id: extracted.id,
+      metadata_updates: { "company" => "Some Co" }
+    )
+
+    assert_equal "Original Recipient", result.recipient
+  end
+
+  test "update_extracted_metadata raises ArgumentError for non-hash updates" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u = User.create!(email: "err#{SecureRandom.hex(3)}@test.it", name: "Err", username: "erruser#{SecureRandom.hex(3)}")
+    employee = Employee.create!(user: u, company: company)
+    extracted = build_extracted(employee, checksum: "dbm-err-#{SecureRandom.hex(4)}")
+    manager = build_manager(u)
+
+    assert_raises(ArgumentError) { manager.update_extracted_metadata(extracted_document_id: extracted.id, metadata_updates: "not-a-hash") }
+  end
+
+  test "update_extracted_metadata raises RecordNotFound for missing id" do
+    manager = build_manager(nil)
+    assert_raises(ActiveRecord::RecordNotFound) { manager.update_extracted_metadata(extracted_document_id: 0, metadata_updates: {}) }
   end
 end

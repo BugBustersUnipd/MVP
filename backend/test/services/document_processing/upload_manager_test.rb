@@ -52,4 +52,93 @@ class UploadManagerTest < ActiveSupport::TestCase
 
     assert_equal c1, c2
   end
+
+  # ---------------------------------------------------------------------------
+  # detect_upload_kind — edge cases
+  # ---------------------------------------------------------------------------
+
+  test "detect_upload_kind returns unknown for unsupported extension" do
+    manager = DocumentProcessing::UploadManager.new
+    fake = FakeUpload.new(original_filename: "file.docx", content_type: "application/msword", content: "x")
+    assert_equal :unknown, manager.detect_upload_kind(fake)
+  end
+
+  test "detect_upload_kind detects jpeg as image" do
+    manager = DocumentProcessing::UploadManager.new
+    fake = FakeUpload.new(original_filename: "photo.jpg", content_type: "image/jpeg", content: "x")
+    assert_equal :image, manager.detect_upload_kind(fake)
+  end
+
+  test "detect_upload_kind uses content_type when extension ambiguous" do
+    manager = DocumentProcessing::UploadManager.new
+    # Wrong extension but correct content-type for PDF
+    fake = FakeUpload.new(original_filename: "noext", content_type: "application/pdf", content: "%PDF-")
+    assert_equal :pdf, manager.detect_upload_kind(fake)
+  end
+
+  # ---------------------------------------------------------------------------
+  # validate_pdf_upload! — coverage of error branches
+  # ---------------------------------------------------------------------------
+
+  test "persist_temp_pdf raises when file has wrong extension" do
+    manager = DocumentProcessing::UploadManager.new
+    fake = FakeUpload.new(original_filename: "file.csv", content_type: "application/pdf", content: "%PDF-1.4")
+
+    assert_raises(DocumentProcessing::UploadManager::ValidationError) do
+      manager.persist_temp_pdf(fake)
+    end
+  end
+
+  test "persist_temp_pdf raises for wrong content_type" do
+    manager = DocumentProcessing::UploadManager.new
+    fake = FakeUpload.new(original_filename: "file.pdf", content_type: "text/plain", content: "%PDF-1.4")
+
+    assert_raises(DocumentProcessing::UploadManager::ValidationError) do
+      manager.persist_temp_pdf(fake)
+    end
+  end
+
+  test "persist_source_pdf raises when pdf signature is invalid" do
+    manager = DocumentProcessing::UploadManager.new
+    fake = FakeUpload.new(original_filename: "bad.pdf", content_type: "application/pdf", content: "INVALID")
+
+    assert_raises(DocumentProcessing::UploadManager::ValidationError) do
+      manager.persist_source_pdf(fake)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # persist_supported_source_file — validation paths
+  # ---------------------------------------------------------------------------
+
+  test "persist_supported_source_file raises for unknown file kind" do
+    manager = DocumentProcessing::UploadManager.new
+    fake = FakeUpload.new(original_filename: "file.docx", content_type: "application/msword", content: "x")
+
+    assert_raises(DocumentProcessing::UploadManager::ValidationError) do
+      manager.persist_supported_source_file(fake)
+    end
+  end
+
+  test "persist_supported_source_file raises for csv with wrong extension and content_type" do
+    manager = DocumentProcessing::UploadManager.new
+    # Has csv content_type but wrong extension, yet ALLOWED_CSV_CONTENT_TYPES includes text/csv
+    # Let's test a file that looks like csv by type but extension is wrong
+    fake = FakeUpload.new(original_filename: "file.xlsx", content_type: "application/msword", content: "x")
+    # detect_upload_kind will return :unknown → ValidationError "Formato non supportato"
+    assert_raises(DocumentProcessing::UploadManager::ValidationError) do
+      manager.persist_supported_source_file(fake)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # compute_checksum — works with plain IO objects too
+  # ---------------------------------------------------------------------------
+
+  test "compute_checksum works with a plain IO (no tempfile)" do
+    manager = DocumentProcessing::UploadManager.new
+    io = StringIO.new("content-without-tempfile")
+    checksum = manager.compute_checksum(io)
+    assert_equal Digest::SHA256.hexdigest("content-without-tempfile"), checksum
+  end
 end

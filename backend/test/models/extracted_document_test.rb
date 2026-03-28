@@ -90,4 +90,38 @@ class ExtractedDocumentTest < ActiveSupport::TestCase
   test "matched_employee association is optional" do
     assert valid_ed(matched_employee: nil).valid?
   end
+
+  # ---------------------------------------------------------------------------
+  # Predicate methods
+  # ---------------------------------------------------------------------------
+
+  test "done? returns true only when status is done" do
+    assert valid_ed(status: "done").done?
+    assert_not valid_ed(status: "queued").done?
+    assert_not valid_ed(status: "in_progress").done?
+    assert_not valid_ed(status: "failed").done?
+    assert_not valid_ed(status: "sent").done?
+    assert_not valid_ed(status: "validated").done?
+  end
+
+  test "failed? returns true only when status is failed" do
+    assert valid_ed(status: "failed").failed?
+    assert_not valid_ed(status: "done").failed?
+    assert_not valid_ed(status: "queued").failed?
+  end
+
+  test "validated? returns true only when status is validated" do
+    assert valid_ed(status: "validated").validated?
+    assert_not valid_ed(status: "done").validated?
+    assert_not valid_ed(status: "queued").validated?
+  end
+
+  # ---------------------------------------------------------------------------
+  # STATUSES constant
+  # ---------------------------------------------------------------------------
+
+  test "STATUSES contains all expected statuses" do
+    expected = %w[queued in_progress done failed sent validated]
+    assert_equal expected, ExtractedDocument::STATUSES
+  end
 end
