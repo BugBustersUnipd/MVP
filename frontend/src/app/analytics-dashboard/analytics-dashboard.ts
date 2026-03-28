@@ -62,20 +62,25 @@ export class AnalyticsDashboard implements OnInit {
     this.aiCoPilotMetrics$ = this.aiCoPilotAnalyticsService.getAnalysis(initialPeriodo);
   }
 
-  onAiAssistantRangeChange(dates: Date[] | undefined) {
-    const periodo: AnalyticsPeriod = {
-      startDate: dates?.[0],
-      endDate: dates?.[1]
+  private buildPeriod(dates: Date[] | undefined): AnalyticsPeriod {
+    if (!dates || dates.length < 2) {
+      return { periodoKey: 'sempre' };
+    }
+
+    return {
+      startDate: dates[0],
+      endDate: dates[1],
     };
+  }
+
+  onAiAssistantRangeChange(dates: Date[] | undefined) {
+    const periodo = this.buildPeriod(dates);
     // Trigger refresh: lo stream resta stabile e la view si aggiorna via async pipe.
     this.aiAssistantAnalyticsService.getAnalysis(periodo);
   }
 
   onAiCoPilotRangeChange(dates: Date[] | undefined) {
-    const periodo: AnalyticsPeriod = {
-      startDate: dates?.[0],
-      endDate: dates?.[1]
-    };
+    const periodo = this.buildPeriod(dates);
     // Trigger refresh: lo stream resta stabile e la view si aggiorna via async pipe.
     this.aiCoPilotAnalyticsService.getAnalysis(periodo);
   }
