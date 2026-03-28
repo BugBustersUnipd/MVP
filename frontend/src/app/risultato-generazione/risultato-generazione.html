@@ -56,13 +56,16 @@
                 </div>
             }
             <div class="parametri-fields">
+                 <div class="menu-row">
+                    
+                     <menutendina [options]="[result.tone]" [selected]="result.tone"
+                         label="Tono" placeholder="Nessun tono selezionato" [disabled]="true"></menutendina>
+     
+                     <menutendina [options]="[result.style]" [selected]="result.style"
+                         label="Stile" placeholder="Nessuno stile selezionato" [disabled]="true"></menutendina>
+                 </div>
                 <app-prompt [prompt]="result.prompt" label="Prompt" [autoResize]="true" [disabled]="true"></app-prompt>
 
-                <menutendina [options]="[result.tone]" [selected]="result.tone"
-                    label="Tono" placeholder="Nessun tono selezionato" [disabled]="true"></menutendina>
-
-                <menutendina [options]="[result.style]" [selected]="result.style"
-                    label="Stile" placeholder="Nessuno stile selezionato" [disabled]="true"></menutendina>
             </div>
         </div>
     

@@ -14,7 +14,7 @@
 /* p-image wrappa l'img in un <span> — usiamo ::ng-deep per forzare la larghezza */
 .hero-banner ::ng-deep .hero-image img {
   width: 100%;
-  height: 25rem;
+  height: 23rem;
   display: block;
   object-fit: cover; /* mantiene proporzioni e riempie l'area */
 }
