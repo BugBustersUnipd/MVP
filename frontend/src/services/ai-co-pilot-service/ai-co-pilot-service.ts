@@ -10,6 +10,7 @@ import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-a
 const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
 const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 
+
 @Injectable({
   providedIn: 'root',
 })
@@ -142,36 +143,81 @@ export class AiCoPilotService {
   } */
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string) : ResultAiCopilot {
       const reactiveResult  = this.serializer.creaStatoIniziale(file, company, department, category, competence_period);
+      reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire il nuovo documento in lista
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const endpoint = isPdf ? `${API_BASE}/documents/split` : `${API_BASE}/documents/process_file`;
+      const fileParam = isPdf ? 'pdf' : 'file';
+
       const formData = new FormData(); 
-      formData.append('pdf', file);
+      formData.append(fileParam, file);
       formData.append('category', category);
       formData.append('company', company);
       formData.append('department', department);
       formData.append('competence_period', competence_period);
       
-      this.http.post<any>('URL_API/documents/split', formData).subscribe({
+      this.http.post<any>(endpoint, formData).subscribe({
         next: (response) => {
+          const uploadedDocumentId = Number(response?.uploaded_document_id) || 0;
+          reactiveResult.id = uploadedDocumentId;
           reactiveResult.state = DocumentState.InElaborazione; // Stato iniziale
-          const socket = new WebSocket(WS_URL);
+          // Use ActionCable subprotocols for better compatibility with Rails cable server.
+          const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
           const identifier = JSON.stringify({ channel: 'DocumentProcessingChannel', job_id: response.job_id });
           socket.onopen = () => {
             socket.send(JSON.stringify({ command: 'subscribe', identifier }));
           };
           socket.onmessage = (event) => {
             const cable = JSON.parse(event.data);
+
+            if (cable.type === 'welcome' || cable.type === 'ping') {
+              return;
+            }
+
+            if (cable.type === 'confirm_subscription') {
+              // Immediate sync avoids UI lag if split artifacts are already persisted.
+              if (uploadedDocumentId > 0) {
+                this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+              }
+              return;
+            }
+
+            if (cable.type === 'reject_subscription') {
+              console.error('Sottoscrizione ActionCable rifiutata per job:', response.job_id);
+              socket.close();
+              return;
+            }
+
             if(!cable.message) return; // Ignora messaggi di sistema
 
-            const { event: evt, extracted_document } = cable.message;
-            if (evt === 'document_processed' && extracted_document) {
-              const nuovoEstratto = this.serializer.deserializeExtractedDocument(extracted_document);
-              reactiveResult.ResultSplit = [...reactiveResult.ResultSplit, nuovoEstratto];
+            const payload = cable.message;
+            const evt = payload.event;
+
+            if (evt === 'document_processed') {
+              const extractedDocumentId = Number(payload.extracted_document_id) || 0;
+              if (extractedDocumentId > 0) {
+                this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+              }
+            }
+            if (evt === 'split_completed') {
+              if (uploadedDocumentId > 0) {
+                // Show extracted rows as soon as split artifacts are created.
+                this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+                this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
+              }
             }
             if (evt === 'processing_completed') {
               reactiveResult.state = DocumentState.Completato;
+              if (uploadedDocumentId > 0) {
+                this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+                this.updateParentStateInHistory(uploadedDocumentId, State.Pronto);
+              }
               socket.close();
             }
             if (evt === 'processing_failed') {
               console.error('Elaborazione fallita per il documento:', cable.message.error);
+              if (uploadedDocumentId > 0) {
+                this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
+              }
               socket.close();
             }
           };
@@ -198,6 +244,43 @@ export class AiCoPilotService {
       copy[idx] = split;
       this.resultsHistorySubject.next(copy);
     }
+    this.refreshDynamicFilterOptions();
+  }
+
+  private refreshDynamicFilterOptions(): void {
+    this.fetchCategories();
+    this.fetchDepartment();
+  }
+
+  private fetchExtractedDocumentAndUpsert(extractedDocumentId: number): void {
+    this.http.get<any>(`${API_BASE}/documents/extracted/${extractedDocumentId}`).subscribe({
+      next: ({ extracted_document }) => {
+        const split = this.serializer.deserializeExtractedDocument(extracted_document);
+        this.upsertInHistory(split);
+      },
+      error: (err) => console.error(`Errore nel recupero realtime del documento estratto ${extractedDocumentId}:`, err),
+    });
+  }
+
+  private refreshExtractedDocumentsForUpload(uploadedDocumentId: number): void {
+    this.http.get<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}/extracted`).subscribe({
+      next: (response) => {
+        (response.extracted_documents ?? [])
+          .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
+          .forEach((split: ResultSplit) => this.upsertInHistory(split));
+      },
+      error: (err) => console.error(`Errore nel refresh realtime degli estratti per upload ${uploadedDocumentId}:`, err),
+    });
+  }
+
+  private updateParentStateInHistory(parentId: number, state: State): void {
+    const current = this.resultsHistorySubject.value ?? [];
+    if (current.length === 0) return;
+
+    const updated = current.map((row) =>
+      row.parentId === parentId ? { ...row, state } : row
+    );
+    this.resultsHistorySubject.next(updated);
   }
 
     /** GET /documents/extracted/:id */

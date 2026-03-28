@@ -125,7 +125,7 @@ export class RiconoscimentoDocumenti {
 
       return {
         id: parentId,
-        name: `Documento da splittare ${first.name}`,
+        name: `${first.name}`,
         ResultSplit: children,
         pages: maxPage - minPage + 1,
         state: this.mapSplitStateToDocumentState(first.state),
@@ -144,8 +144,7 @@ export class RiconoscimentoDocumenti {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((results) => {
         this.DocumentiSplittati = [...(results ?? [])];
-        this.DocumentiSplittatiFiltrati = [...this.DocumentiSplittati];
-        this.nestedDocuments = this.buildNestedDocuments(this.DocumentiSplittatiFiltrati);
+        this.applyFilters();
       });
     
       this.items = [

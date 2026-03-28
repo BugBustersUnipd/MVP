@@ -29,25 +29,57 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
   }
 
    deserializeExtractedDocument(raw: any): ResultSplit {
+    const metadata = raw.metadata ?? {};
+    const category = metadata['category'] ?? metadata['type'] ?? '';
+    const competence = metadata['month_year'] ?? metadata['competence'] ?? metadata['date'] ?? '';
+    const recipientName = raw.matched_employee?.name ?? raw.recipient ?? '';
+
     return {
       id: raw.id,
-      name: raw.matched_employee?.name ?? `Documento ${raw.id}`,
+      name: recipientName || `Documento ${raw.id}`,
       state: this.mapStatus(raw.status),
-      confidence: raw.confidence ?? 0,
+      confidence: this.normalizeConfidence(raw.confidence),
       recipientId: raw.matched_employee?.id ?? 0,
-      recipientName: raw.matched_employee?.name ?? '',
+      recipientName: recipientName,
       recipientEmail: raw.matched_employee?.email ?? '',
       recipientCode: raw.matched_employee?.employee_code ?? '',
       time_Analysis: raw.process_time_seconds ?? 0,
       page_start: raw.page_start,
       page_end: raw.page_end,
-      company: raw.metadata?.['company'] ?? '',
-      department: raw.metadata?.['department'] ?? '',
-      month_year: raw.metadata?.['month_year'] ?? '',
-      category: raw.metadata?.['category'] ?? '',
+      company: metadata['company'] ?? '',
+      department: metadata['department'] ?? '',
+      month_year: competence,
+      category: category,
       data: new Date(raw.created_at),
       parentId: raw.uploaded_document_id,
     };
+  }
+
+  private normalizeConfidence(confidence: unknown): number {
+    if (typeof confidence === 'number' && Number.isFinite(confidence)) {
+      return confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence);
+    }
+
+    if (typeof confidence === 'string') {
+      const parsed = Number(confidence);
+      if (Number.isFinite(parsed)) {
+        return parsed <= 1 ? Math.round(parsed * 100) : Math.round(parsed);
+      }
+      return 0;
+    }
+
+    if (confidence && typeof confidence === 'object') {
+      const values = Object.values(confidence as Record<string, unknown>)
+        .map((v) => (typeof v === 'number' ? v : Number(v)))
+        .filter((v) => Number.isFinite(v));
+
+      if (values.length === 0) return 0;
+
+      const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
+      return avg <= 1 ? Math.round(avg * 100) : Math.round(avg);
+    }
+
+    return 0;
   }
 
 // ─── helpers ──────────────────────────────────────────────────────────────
@@ -62,9 +94,12 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
  
   private mapStatus(status: string): State {
     switch (status) {
+      case 'done':       return State.Pronto;
       case 'validated':  return State.Pronto;
       case 'sent':       return State.Inviato;
       case 'scheduled':  return State.Programmato;
+      case 'queued':
+      case 'in_progress':
       default:           return State.DaValidare;
     }
   }

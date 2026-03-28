@@ -82,11 +82,11 @@ export class Estrattore implements OnInit {
     }
     this.aiService.uploadFiles(
     this.selectedFiles,
-    this.selectedCompany.name, // oppure id se serve
+    this.selectedCompany?.name ?? '', // azienda opzionale
     this.selectedDepartment,
     this.selectedCategory ?? '',
     this.selectedCompetenceMonthYear
   );
-    this.router.navigate(['/storico-ai-copilot']);
+  this.router.navigate(['/riconoscimento-documenti']);
   }
 }
