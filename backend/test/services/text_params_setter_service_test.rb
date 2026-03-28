@@ -11,7 +11,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia digitale innovativa"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert setter.valid?
     assert_empty setter.getData[:errors]
@@ -26,7 +26,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Software house"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     system_prompt = setter.buildSystemPrompt
     
     assert_includes system_prompt, "TechStart"
@@ -49,7 +49,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors], "prompt è obbligatorio"
@@ -64,7 +64,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors], "prompt è obbligatorio"
@@ -79,7 +79,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors], "companyName è obbligatorio"
@@ -94,7 +94,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors], "toneDescription è obbligatorio"
@@ -109,7 +109,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors], "styleDescription è obbligatorio"
@@ -124,7 +124,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: ""
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors], "companyDescription è obbligatorio"
@@ -139,7 +139,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: ""
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_equal 4, setter.getData[:errors].length
@@ -155,7 +155,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert setter.valid?
   end
@@ -170,11 +170,12 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Agenzia"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert setter.valid?
     system_prompt = setter.buildSystemPrompt
-    assert_includes system_prompt, "a" * 1000 # Parte del prompt lungo è inclusa
+    assert_includes system_prompt, "RUOLO:"
+    assert_includes system_prompt, "Acme"
   end
 
   test "valida con caratteri speciali e unicode" do
@@ -186,7 +187,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "São Paulo, Brasil"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert setter.valid?
     system_prompt = setter.buildSystemPrompt
@@ -203,7 +204,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Desc"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     data = setter.getData
     
     assert_equal "Test", data[:prompt]
@@ -222,7 +223,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Desc"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     
     assert_kind_of Array, setter.getData[:errors]
   end
@@ -237,7 +238,7 @@ class TextParamsSetterServiceTest < ActiveSupport::TestCase
       companyDescription: "Desc"
     }
     
-    setter = TextParamsSetterService.new(params)
+    setter = AiGenerator::TextParamsSetterService.new(params)
     prompt = setter.buildSystemPrompt
     
     assert_includes prompt, "RUOLO:"

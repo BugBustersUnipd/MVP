@@ -44,7 +44,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
   test "genera immagine correttamente da Bedrock con formato 'images'" do
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
     
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success(base64_image))
     
     result = service.generate_image('{"taskType": "TEXT_IMAGE"}')
@@ -54,7 +54,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
 
   test "estrae immagine quando Bedrock ritorna formato 'images' (array)" do
     base64 = "ABC123DEF456"
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success(base64))
     
     result = service.generate_image('{"taskType": "TEXT_IMAGE"}')
@@ -65,7 +65,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
   # === FORMATI ALTERNATIVI ===
   test "supporta formato 'image' (singolo elemento)" do
     base64 = "XYZ789"
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_alternative_format(base64, "image"))
     
     result = service.generate_image('{"taskType": "TEXT_IMAGE"}')
@@ -75,7 +75,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
 
   test "supporta formato 'image_base64'" do
     base64 = "QWERTY123"
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_alternative_format(base64, "image_base64"))
     
     result = service.generate_image('{"taskType": "TEXT_IMAGE"}')
@@ -85,7 +85,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
 
   test "supporta formato 'imageUriBase64'" do
     base64 = "ASDFGH456"
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_alternative_format(base64, "imageUriBase64"))
     
     result = service.generate_image('{"taskType": "TEXT_IMAGE"}')
@@ -105,7 +105,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
     )
     base64 = "MULTILINE_IMAGE_BASE64"
     
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success(base64))
     
     result = service.generate_image(json_prompt)
@@ -115,7 +115,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
 
   # === GESTIONE ERRORI ===
   test "solleva ArgumentError per ValidationException" do
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, failing_bedrock(
       Aws::BedrockRuntime::Errors::ValidationException.new(nil, "Invalid dimensions")
     ))
@@ -129,7 +129,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
 
   test "propaga ServiceError da Bedrock" do
     skip "AWS SDK not available" unless defined?(Aws)
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, failing_bedrock(
       Aws::BedrockRuntime::Errors::ServiceError.new(nil, "InternalServerError")
     ))
@@ -140,7 +140,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
   end
 
   test "solleva errore se risposta Bedrock non contiene immagine" do
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, bedrock_invalid_response)
     
     error = assert_raises(RuntimeError) do
@@ -157,7 +157,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
     client = Object.new
     client.define_singleton_method(:invoke_model) { |_args| response }
     
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, client)
     
     error = assert_raises(RuntimeError) do
@@ -174,7 +174,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
     client = Object.new
     client.define_singleton_method(:invoke_model) { |_args| response }
     
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, client)
     
     error = assert_raises(RuntimeError) do
@@ -186,7 +186,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
 
   test "propaga errore se client Bedrock non è raggiungibile" do
     skip "AWS SDK not available" unless defined?(Aws)
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, failing_bedrock(Errno::ECONNREFUSED.new))
     
     assert_raises(Errno::ECONNREFUSED) do
@@ -208,7 +208,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
       response
     end
     
-    service = ImageGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, client)
     
     service.generate_image(json_prompt)
@@ -219,7 +219,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
   end
 
   test "usa la regione configurata" do
-    service = ImageGeneratorService.new(region: "eu-central-1")
+    service = AiGenerator::ImageGeneratorService.new(region: "eu-central-1")
     
     assert_equal "eu-central-1", service.instance_variable_get(:@region)
   end

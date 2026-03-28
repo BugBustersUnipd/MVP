@@ -3,7 +3,7 @@ require "test_helper"
 class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   # === SETUP - CREA DATI DI TEST ===
   def setup
-    @company = Company.create!(name: "Test Company")
+    @company = Company.create!(name: "Test Company", description: "A test company")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
     @style = Style.create!(company: @company, name: "Modern", description: "Modern style")
     
@@ -18,7 +18,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
 
   # === FETCH METHODS ===
   test "fetchCompanyDescription ritorna descrizione azienda" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     description = manager.fetchCompanyDescription(@company.id)
     
@@ -26,7 +26,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "fetchToneDescription ritorna istruzioni tone" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     instructions = manager.fetchToneDescription(@tone.id)
     
@@ -34,7 +34,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "fetchStyleDescription ritorna descrizione style" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     description = manager.fetchStyleDescription(@style.id)
     
@@ -42,7 +42,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "fetchGenerationData ritorna il record GeneratedDatum" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     data = manager.fetchGenerationData(@generation_datum.id)
     
@@ -52,7 +52,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
 
   # === ERROR HANDLING FETCH ===
   test "fetchCompanyDescription solleva errore se azienda non esiste" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     assert_raises(ActiveRecord::RecordNotFound) do
       manager.fetchCompanyDescription(9999)
@@ -60,7 +60,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "fetchToneDescription ritorna nil se tone non esiste" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     result = manager.fetchToneDescription(9999)
     
@@ -68,7 +68,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "fetchStyleDescription ritorna nil se style non esiste" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     result = manager.fetchStyleDescription(9999)
     
@@ -76,7 +76,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "fetchGenerationData solleva errore se generazione non esiste" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     assert_raises(ActiveRecord::RecordNotFound) do
       manager.fetchGenerationData(9999)
@@ -85,7 +85,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
 
   # === SAVE CONTENT ===
   test "saveContent aggiorna il record con testo e titolo" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     response_data = {
       image: nil,
@@ -106,7 +106,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent salva larghezza, altezza e seed" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     response_data = {
       image: nil,
@@ -123,11 +123,11 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
     
     assert_equal 1280, result.width
     assert_equal 720, result.height
-    assert_equal 42, result.seed
+    assert_equal "42", result.seed
   end
 
   test "saveContent aggiorna data_time e generation_time" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     now = Time.now
     
     response_data = {
@@ -148,7 +148,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent imposta status a 'completed'" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     response_data = {
       image: nil,
@@ -172,7 +172,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
 
   # === IMAGE HANDLING ===
   test "saveContent salva immagine base64 come file allegato" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     # PNG 1x1 pixel rosso
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PaAAAADElEQVQIHWP4z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
@@ -194,7 +194,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent gestisce immagine con data URI prefix" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     base64_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PaAAAADElEQVQIHWP4z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
     
@@ -215,7 +215,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent non salva immagine se nil" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     # Assicurati che non c'è immagine inizialmente
     @generation_datum.reload
@@ -238,7 +238,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent non salva immagine se stringa vuota" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     response_data = {
       image: "",
@@ -258,7 +258,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
 
   # === EDGE CASES ===
   test "saveContent con testo molto lungo" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     long_text = "a" * 10000
     
@@ -279,7 +279,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent con titolo molto lungo" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     long_title = "T" * 500
     
@@ -300,7 +300,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent con caratteri speciali e unicode" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     response_data = {
       image: nil,
@@ -320,7 +320,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
   end
 
   test "saveContent ritorna l'oggetto aggiornato" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     response_data = {
       image: nil,
@@ -341,7 +341,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
 
   # === FILENAME IMAGE ===
   test "saveContent assegna filename corretto all'immagine" do
-    manager = AIGeneratorDataManager.new
+    manager = AiGenerator::AIGeneratorDataManager.new
     
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PaAAAADElEQVQIHWP4z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
     

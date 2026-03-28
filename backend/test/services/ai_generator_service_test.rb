@@ -1,7 +1,7 @@
 require "test_helper"
-require_relative "../../app/services/ai_generator_service"
-require_relative "../../app/services/ai_generator_data_manager"
-require_relative "../../app/services/setter_factory"
+require_relative "../../app/services/ai_generator/ai_generator_service"
+require_relative "../../app/services/ai_generator/ai_generator_data_manager"
+require_relative "../../app/services/ai_generator/setter_factory"
 
 class AIGeneratorServiceTest < ActiveSupport::TestCase
   def setup
@@ -39,16 +39,16 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
   end
 
   def create_service(text_gen_client = nil, img_gen_client = nil)
-    text_gen = TextGeneratorService.new(region: "us-east-1")
+    text_gen = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     text_gen_client && text_gen.instance_variable_set(:@client, text_gen_client)
     
-    img_gen = ImageGeneratorService.new(region: "us-east-1")
+    img_gen = AiGenerator::ImageGeneratorService.new(region: "us-east-1")
     img_gen_client && img_gen.instance_variable_set(:@client, img_gen_client)
     
-    data_manager = AIGeneratorDataManager.new
-    factory = SetterFactory.new
+    data_manager = AiGenerator::AIGeneratorDataManager.new
+    factory = AiGenerator::SetterFactory.new
     
-    AIGeneratorService.new(img_gen, text_gen, data_manager, factory)
+    AiGenerator::AIGeneratorService.new(img_gen, text_gen, data_manager, factory)
   end
 
   # === CASE NORMALE ===
@@ -174,7 +174,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     
     @generation_datum.reload
     
-    # ImageParamsSetterService usa default 1024x1024
+    # AiGenerator::ImageParamsSetterService usa default 1024x1024
     assert_equal 1024, @generation_datum.width
     assert_equal 1024, @generation_datum.height
     assert_not_nil @generation_datum.seed
@@ -208,27 +208,27 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     img_gen_called = false
     
     text_gen = Object.new
-    text_gen.define_singleton_method(:generate_text) { text_response }
+    text_gen.define_singleton_method(:generate_text) { |_system_prompt, _user_prompt| text_response }
     
     img_gen = Object.new
-    img_gen.define_singleton_method(:generate_image) { base64_image }
+    img_gen.define_singleton_method(:generate_image) { |_image_prompt| base64_image }
     
-    data_manager = AIGeneratorDataManager.new
+    data_manager = AiGenerator::AIGeneratorDataManager.new
     
     factory = Object.new
     factory.define_singleton_method(:create_text_setter) do |params|
-      setter = TextParamsSetterService.new(params)
+      setter = AiGenerator::TextParamsSetterService.new(params)
       text_gen_called = true
       setter
     end
     
     factory.define_singleton_method(:create_image_setter) do |params|
-      setter = ImageParamsSetterService.new(params)
+      setter = AiGenerator::ImageParamsSetterService.new(params)
       img_gen_called = true
       setter
     end
     
-    service = AIGeneratorService.new(img_gen, text_gen, data_manager, factory)
+    service = AiGenerator::AIGeneratorService.new(img_gen, text_gen, data_manager, factory)
     
     service.create_content(@generation_datum.id)
     

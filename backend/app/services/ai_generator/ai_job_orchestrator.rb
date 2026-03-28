@@ -13,7 +13,7 @@ class AiJobOrchestrator
     generation = GeneratedDatum.find_by(id: generationId)
     return unless generation
 
-    generation.update(status: 'processing', date_time: Time.current)
+    generation.update(status: 'processing', data_time: Time.current)
     ActionCable.server.broadcast("generation_channel", { 
       id: generationId, 
       status: 'processing' 

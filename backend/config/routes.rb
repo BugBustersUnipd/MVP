@@ -46,9 +46,6 @@ Rails.application.routes.draw do
   post "/styles", to: "styles#create", as: :create_style
   delete "/styles/:id", to: "styles#destroy", as: :destroy_style
 
-  # Companies
-  get "/companies", to: "companies#index", as: :companies
-
   # Posts
   get "/posts", to: "posts#index", as: :posts
   post "/posts", to: "posts#create", as: :create_post

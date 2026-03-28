@@ -1,18 +1,18 @@
 require "test_helper"
-require_relative "../../app/services/ai_generator_container"
+require_relative "../../app/services/ai_generator/ai_generator_container"
 
 class AIGeneratorContainerTest < ActiveSupport::TestCase
   # === LAZY INITIALIZATION ===
   test "aiGeneratorService lazyloads e ritorna istanza valida" do
-    container = AIGeneratorContainer.new
+    container = AiGenerator::AIGeneratorContainer.new
     
     service = container.aiGeneratorService
     
-    assert_kind_of AIGeneratorService, service
+    assert_kind_of AiGenerator::AIGeneratorService, service
   end
 
   test "aiGeneratorService ritorna la stessa istanza se chiamato più volte" do
-    container = AIGeneratorContainer.new
+    container = AiGenerator::AIGeneratorContainer.new
     
     service1 = container.aiGeneratorService
     service2 = container.aiGeneratorService
@@ -21,41 +21,41 @@ class AIGeneratorContainerTest < ActiveSupport::TestCase
   end
 
   # === COMPONENT CREATION ===
-  test "crea TextGeneratorService" do
-    container = AIGeneratorContainer.new
+  test "crea AiGenerator::TextGeneratorService" do
+    container = AiGenerator::AIGeneratorContainer.new
     
     text_gen = container.send(:textGenerator)
     
-    assert_kind_of TextGeneratorService, text_gen
+    assert_kind_of AiGenerator::TextGeneratorService, text_gen
   end
 
-  test "crea ImageGeneratorService" do
-    container = AIGeneratorContainer.new
+  test "crea AiGenerator::ImageGeneratorService" do
+    container = AiGenerator::AIGeneratorContainer.new
     
     img_gen = container.send(:imgGenerator)
     
-    assert_kind_of ImageGeneratorService, img_gen
+    assert_kind_of AiGenerator::ImageGeneratorService, img_gen
   end
 
-  test "crea AIGeneratorDataManager" do
-    container = AIGeneratorContainer.new
+  test "crea AiGenerator::AIGeneratorDataManager" do
+    container = AiGenerator::AIGeneratorContainer.new
     
     data_mgr = container.send(:aiGeneratorDataManager)
     
-    assert_kind_of AIGeneratorDataManager, data_mgr
+    assert_kind_of AiGenerator::AIGeneratorDataManager, data_mgr
   end
 
-  test "crea SetterFactory" do
-    container = AIGeneratorContainer.new
+  test "crea AiGenerator::SetterFactory" do
+    container = AiGenerator::AIGeneratorContainer.new
     
     factory = container.send(:setterFactory)
     
-    assert_kind_of SetterFactory, factory
+    assert_kind_of AiGenerator::SetterFactory, factory
   end
 
   # === REGIONS ===
   test "usa default region se AWS_REGION non impostata" do
-    container = AIGeneratorContainer.new
+    container = AiGenerator::AIGeneratorContainer.new
     
     text_region = container.send(:text_generation_region)
     
@@ -63,8 +63,8 @@ class AIGeneratorContainerTest < ActiveSupport::TestCase
     assert ["us-east-1", "eu-west-1", ENV["AWS_REGION"]].include?(text_region)
   end
 
-  test "usa image generation region per ImageGeneratorService" do
-    container = AIGeneratorContainer.new
+  test "usa image generation region per AiGenerator::ImageGeneratorService" do
+    container = AiGenerator::AIGeneratorContainer.new
     
     img_gen = container.send(:imgGenerator)
     
@@ -74,8 +74,8 @@ class AIGeneratorContainerTest < ActiveSupport::TestCase
 
   # === SINGLETON PATTERN ===
   test "due container istanze creano istanze diverse di service" do
-    container1 = AIGeneratorContainer.new
-    container2 = AIGeneratorContainer.new
+    container1 = AiGenerator::AIGeneratorContainer.new
+    container2 = AiGenerator::AIGeneratorContainer.new
     
     service1 = container1.aiGeneratorService
     service2 = container2.aiGeneratorService
@@ -86,7 +86,7 @@ class AIGeneratorContainerTest < ActiveSupport::TestCase
 
   # === INTEGRATION ===
   test "aiGeneratorService ha accesso a tutti i componenti di cui ha bisogno" do
-    container = AIGeneratorContainer.new
+    container = AiGenerator::AIGeneratorContainer.new
     
     service = container.aiGeneratorService
     
@@ -98,9 +98,9 @@ class AIGeneratorContainerTest < ActiveSupport::TestCase
   end
 
   # === REGION CONFIGURATION ===
-  test "container passa regione corretta a TextGeneratorService" do
+  test "container passa regione corretta a AiGenerator::TextGeneratorService" do
     # Mockare l'ambiente per testare
-    container = AIGeneratorContainer.new
+    container = AiGenerator::AIGeneratorContainer.new
     
     text_gen = container.send(:textGenerator)
     
@@ -108,8 +108,8 @@ class AIGeneratorContainerTest < ActiveSupport::TestCase
     assert_not_nil text_gen.instance_variable_get(:@region)
   end
 
-  test "container passa regione corretta a ImageGeneratorService" do
-    container = AIGeneratorContainer.new
+  test "container passa regione corretta a AiGenerator::ImageGeneratorService" do
+    container = AiGenerator::AIGeneratorContainer.new
     
     img_gen = container.send(:imgGenerator)
     

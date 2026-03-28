@@ -10,7 +10,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       seed: 42
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert setter.valid?
     assert_empty setter.getData[:errors]
@@ -24,7 +24,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       seed: 123
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     json_prompt = setter.buildImagePrompt("Testo generato")
     
     parsed = JSON.parse(json_prompt)
@@ -45,7 +45,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert setter.valid?
   end
@@ -57,7 +57,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 720
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert setter.valid?
   end
@@ -69,7 +69,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1280
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert setter.valid?
   end
@@ -81,7 +81,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 512
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors].first, "Dimensioni non supportate"
@@ -97,7 +97,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert_not setter.valid?
   end
@@ -109,7 +109,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 800
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert_not setter.valid?
   end
@@ -122,7 +122,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert_not setter.valid?
     assert_includes setter.getData[:errors].first, "prompt e company_id sono obbligatori"
@@ -135,7 +135,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert_not setter.valid?
   end
@@ -147,7 +147,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert_not setter.valid?
   end
@@ -160,7 +160,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: nil
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     data = setter.getData
     
     assert_equal 1024, data[:width]
@@ -175,8 +175,8 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       seed: nil
     }
     
-    setter1 = ImageParamsSetterService.new(params)
-    setter2 = ImageParamsSetterService.new(params)
+    setter1 = AiGenerator::ImageParamsSetterService.new(params)
+    setter2 = AiGenerator::ImageParamsSetterService.new(params)
     
     # I seed dovrebbero essere diversi (con altissima probabilità)
     assert_not_equal setter1.getData[:seed], setter2.getData[:seed]
@@ -191,7 +191,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
     }
     
     10.times do
-      setter = ImageParamsSetterService.new(params)
+      setter = AiGenerator::ImageParamsSetterService.new(params)
       seed = setter.getData[:seed]
       
       assert seed >= 0
@@ -208,7 +208,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       seed: "42"
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     data = setter.getData
     
     assert_kind_of Integer, data[:width]
@@ -225,7 +225,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     json_prompt = setter.buildImagePrompt("Testo")
     
     # Controlla che il prompt è troncato a 1000 caratteri
@@ -240,7 +240,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     
     assert setter.valid?
   end
@@ -252,7 +252,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     json_prompt = setter.buildImagePrompt("un tramonto bellissimo")
     
     parsed = JSON.parse(json_prompt)
@@ -271,7 +271,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       seed: 100
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     json_output = setter.buildImagePrompt("Testo")
     
     # Non dovrebbe sollevare eccezione
@@ -286,7 +286,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     json_prompt = setter.buildImagePrompt("Testo")
     
     parsed = JSON.parse(json_prompt)
@@ -304,7 +304,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       height: 1024
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     json_prompt = setter.buildImagePrompt("Testo")
     
     parsed = JSON.parse(json_prompt)
@@ -321,7 +321,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
       seed: 999
     }
     
-    setter = ImageParamsSetterService.new(params)
+    setter = AiGenerator::ImageParamsSetterService.new(params)
     data = setter.getData
     
     assert_equal 1280, data[:width]

@@ -1,3 +1,9 @@
+require_relative "ai_generator_service"
+require_relative "ai_generator_data_manager"
+require_relative "setter_factory"
+require_relative "text_generator_service"
+require_relative "image_generator_service"
+
 module AiGenerator
 class AIGeneratorContainer
   REGION_FALLBACK = ENV.fetch("AWS_REGION", "us-east-1")

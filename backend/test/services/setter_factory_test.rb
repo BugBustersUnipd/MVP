@@ -1,9 +1,10 @@
 require "test_helper"
+require_relative "../../app/services/ai_generator/setter_factory"
 
 class SetterFactoryTest < ActiveSupport::TestCase
   # === FACTORY METHODS ===
   test "create_text_setter ritorna istanza di TextParamsSetterService" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Test",
@@ -15,11 +16,11 @@ class SetterFactoryTest < ActiveSupport::TestCase
     
     result = factory.create_text_setter(params)
     
-    assert_kind_of TextParamsSetterService, result
+    assert_kind_of AiGenerator::TextParamsSetterService, result
   end
 
   test "create_image_setter ritorna istanza di ImageParamsSetterService" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Test",
@@ -30,12 +31,12 @@ class SetterFactoryTest < ActiveSupport::TestCase
     
     result = factory.create_image_setter(params)
     
-    assert_kind_of ImageParamsSetterService, result
+    assert_kind_of AiGenerator::ImageParamsSetterService, result
   end
 
   # === TEXT SETTER CREATION ===
   test "create_text_setter passa i parametri correttamente" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Scrivi email",
@@ -56,7 +57,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "text setter creato è valido se parametri completi" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Test",
@@ -72,7 +73,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "text setter creato è invalido se prompt manca" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: nil,
@@ -89,7 +90,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
 
   # === IMAGE SETTER CREATION ===
   test "create_image_setter passa i parametri correttamente" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Un paesaggio",
@@ -107,7 +108,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "image setter creato è valido con dimensioni supportate" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Test image",
@@ -122,7 +123,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "image setter creato è invalido se prompt manca" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "",
@@ -136,7 +137,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "image setter usa defaults se width/height non forniti" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Test"
@@ -151,7 +152,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
 
   # === FACTORY REUSABILITY ===
   test "factory può creare più setters text" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params1 = {
       prompt: "Email 1",
@@ -178,7 +179,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "factory può creare più setters image" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params1 = {
       prompt: "Paesaggio",
@@ -203,7 +204,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "factory può alternare creazione text e image setters" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     text_params = {
       prompt: "Test",
@@ -223,14 +224,14 @@ class SetterFactoryTest < ActiveSupport::TestCase
     image_setter = factory.create_image_setter(image_params)
     text_setter2 = factory.create_text_setter(text_params)
     
-    assert_kind_of TextParamsSetterService, text_setter
-    assert_kind_of ImageParamsSetterService, image_setter
-    assert_kind_of TextParamsSetterService, text_setter2
+    assert_kind_of AiGenerator::TextParamsSetterService, text_setter
+    assert_kind_of AiGenerator::ImageParamsSetterService, image_setter
+    assert_kind_of AiGenerator::TextParamsSetterService, text_setter2
   end
 
   # === EDGE CASES ===
   test "crea text setter con parametri unicode" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Scrivi un'email 中文",
@@ -246,7 +247,7 @@ class SetterFactoryTest < ActiveSupport::TestCase
   end
 
   test "crea image setter con prompt unicode" do
-    factory = SetterFactory.new
+    factory = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Paesaggio 中文 con émojis 🌅",
@@ -261,8 +262,8 @@ class SetterFactoryTest < ActiveSupport::TestCase
 
   # === SINGLETON-LIKE USAGE ===
   test "due istanze di factory creano istanze differenti di setter" do
-    factory1 = SetterFactory.new
-    factory2 = SetterFactory.new
+    factory1 = AiGenerator::SetterFactory.new
+    factory2 = AiGenerator::SetterFactory.new
     
     params = {
       prompt: "Test",

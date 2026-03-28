@@ -1,6 +1,8 @@
 require "test_helper"
 
 class AiJobOrchestratorTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   def setup
     @company = Company.create!(name: "Test Company")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
@@ -16,7 +18,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       style_id: @style.id
     }
     
-    generation = AiJobOrchestrator.orchestrate(params)
+    generation = AiGenerator::AiJobOrchestrator.orchestrate(params)
     
     assert generation.persisted?
     assert_equal "pending", generation.status
@@ -33,7 +35,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
     
     # Verifichiamo che perform_later viene chiamato
     assert_enqueued_with(job: AiGeneratorJob) do
-      AiJobOrchestrator.orchestrate(params)
+      AiGenerator::AiJobOrchestrator.orchestrate(params)
     end
   end
 
@@ -45,7 +47,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       style_id: @style.id
     }
     
-    result = AiJobOrchestrator.orchestrate(params)
+    result = AiGenerator::AiJobOrchestrator.orchestrate(params)
     
     assert_kind_of GeneratedDatum, result
     assert_not_nil result.id
@@ -61,31 +63,31 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       status: "pending"
     )
     
-    AiJobOrchestrator.signal_process_start(generation.id)
+    AiGenerator::AiJobOrchestrator.signal_process_start(generation.id)
     
     generation.reload
     
     assert_equal "processing", generation.status
   end
 
-  test "signal_process_start aggiorna date_time" do
+  test "signal_process_start aggiorna data_time" do
     generation = GeneratedDatum.create!(
       company: @company,
       tone: @tone,
       style: @style,
       prompt: "Test",
       status: "pending",
-      date_time: nil
+      data_time: nil
     )
     
     time_before = Time.current
     
-    AiJobOrchestrator.signal_process_start(generation.id)
+    AiGenerator::AiJobOrchestrator.signal_process_start(generation.id)
     
     generation.reload
     
-    assert_not_nil generation.date_time
-    assert generation.date_time >= time_before
+    assert_not_nil generation.data_time
+    assert generation.data_time >= time_before
   end
 
   test "signal_process_start trasmette via ActionCable" do
@@ -107,7 +109,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       true
     end
     
-    AiJobOrchestrator.signal_process_start(generation.id)
+    AiGenerator::AiJobOrchestrator.signal_process_start(generation.id)
     
     # Verifichiamo che il broadcast include lo stato processing
     assert broadcast_called
@@ -117,7 +119,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
 
   test "signal_process_start gestisce ID non esistente gracefully" do
     # Non dovrebbe sollevare eccezione
-    AiJobOrchestrator.signal_process_start(9999)
+    AiGenerator::AiJobOrchestrator.signal_process_start(9999)
     
     # Test passed if no exception
     assert true
@@ -144,7 +146,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       true
     end
     
-    AiJobOrchestrator.complete(generation.id)
+    AiGenerator::AiJobOrchestrator.complete(generation.id)
     
     assert broadcast_called
     assert_equal generation.id, payload_captured[:id]
@@ -179,7 +181,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       true
     end
     
-    AiJobOrchestrator.complete(generation.id)
+    AiGenerator::AiJobOrchestrator.complete(generation.id)
     
     assert_not_nil payload_captured[:image_url]
   end
@@ -202,7 +204,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       true
     end
     
-    AiJobOrchestrator.complete(generation.id)
+    AiGenerator::AiJobOrchestrator.complete(generation.id)
     
     # image_url potrebbe essere nil o non présente
     assert payload_captured[:id].present?
@@ -226,7 +228,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       true
     end
     
-    AiJobOrchestrator.complete(generation.id)
+    AiGenerator::AiJobOrchestrator.complete(generation.id)
     
     assert_not_nil payload_captured[:created_at]
     # Dovrebbe essere in formato stringa "%Y-%m-%d %H:%M:%S"
@@ -235,7 +237,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
 
   test "complete gestisce ID non esistente gracefully" do
     # Non dovrebbe sollevare eccezione
-    AiJobOrchestrator.complete(9999)
+    AiGenerator::AiJobOrchestrator.complete(9999)
     
     assert true
   end
@@ -250,7 +252,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       status: "processing"
     )
     
-    AiJobOrchestrator.signal_failure(generation.id, "Errore generico")
+    AiGenerator::AiJobOrchestrator.signal_failure(generation.id, "Errore generico")
     
     generation.reload
     
@@ -273,7 +275,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       true
     end
     
-    AiJobOrchestrator.signal_failure(generation.id, "Timeout esterno")
+    AiGenerator::AiJobOrchestrator.signal_failure(generation.id, "Timeout esterno")
     
     assert_equal generation.id, payload_captured[:id]
     assert_equal "failed", payload_captured[:status]
@@ -296,14 +298,14 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       true
     end
     
-    AiJobOrchestrator.signal_failure(generation.id)
+    AiGenerator::AiJobOrchestrator.signal_failure(generation.id)
     
     assert_includes payload_captured[:error], "Errore generico"
   end
 
   test "signal_failure gestisce ID non esistente gracefully" do
     # Non dovrebbe sollevare eccezione
-    AiJobOrchestrator.signal_failure(9999, "Errore")
+    AiGenerator::AiJobOrchestrator.signal_failure(9999, "Errore")
     
     assert true
   end
@@ -318,7 +320,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       status: "pending"
     )
     
-    AiJobOrchestrator.signal_process_start(generation.id)
+    AiGenerator::AiJobOrchestrator.signal_process_start(generation.id)
     generation.reload
     
     assert_equal "processing", generation.status
@@ -338,7 +340,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
     # Mock il broadcast
     ActionCable::Server::Base.any_instance.stubs(:broadcast)
     
-    AiJobOrchestrator.complete(generation.id)
+    AiGenerator::AiJobOrchestrator.complete(generation.id)
     
     # L'orchestrator sostanzialmente completa la generazione
     # ma non aggiorna il status (fatto da AIGeneratorDataManager)
@@ -357,7 +359,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
     # Mock il broadcast
     ActionCable::Server::Base.any_instance.stubs(:broadcast)
     
-    AiJobOrchestrator.signal_failure(generation.id, "Errore")
+    AiGenerator::AiJobOrchestrator.signal_failure(generation.id, "Errore")
     
     generation.reload
     

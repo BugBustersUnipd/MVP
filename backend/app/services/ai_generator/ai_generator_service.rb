@@ -44,15 +44,20 @@ class AIGeneratorService
     else
       if textResult.include?('|')
         parts = textResult.split('|').reject(&:blank?)
-        title = parts[0].strip
-        content = parts[1..-1].join('|').strip
+        if parts.any?
+          title = parts[0].strip
+          content = parts[1..-1].join('|').strip
+        else
+          title = "Generazione ##{generationID}"
+          content = textResult
+        end
       else
         title = "Generazione ##{generationID}"
         content = textResult
       end
     end
 
-    @aiGenerationDataManager.saveContent(generationID, {image: imageResult, title: title, text: content, width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: nil, dateTime: Time.now})
+    @aiGeneratorDataManager.saveContent(generationID, {image: imageResult, title: title, text: content, width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: nil, dateTime: Time.now})
   end
 
   private

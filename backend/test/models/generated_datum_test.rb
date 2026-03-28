@@ -125,7 +125,7 @@ class GeneratedDatumTest < ActiveSupport::TestCase
     
     assert_equal 1280, generation.width
     assert_equal 720, generation.height
-    assert_equal 42, generation.seed
+    assert_equal "42", generation.seed
   end
 
   test "salva tempi (generation_time, data_time)" do

@@ -31,7 +31,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   # === CASO NORMALE ===
   test "genera testo correttamente da Bedrock" do
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success("Titolo | Contenuto generato"))
     
     result = service.generate_text("System prompt", "User prompt")
@@ -40,7 +40,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
   end
 
   test "estrae solo il testo dalla risposta strutturata di Bedrock" do
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success("Testo puro"))
     
     result = service.generate_text("System", "User")
@@ -50,7 +50,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   # === EDGE CASES ===
   test "genera testo vuoto se Bedrock ritorna stringa vuota" do
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success(""))
     
     result = service.generate_text("System", "User")
@@ -60,7 +60,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   test "gestisce testo multilinea da Bedrock" do
     multiline_text = "Titolo | Riga 1\nRiga 2\nRiga 3"
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success(multiline_text))
     
     result = service.generate_text("System", "User")
@@ -70,7 +70,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   test "gestisce testo con caratteri speciali" do
     special_text = "Titolo | Testo con €, ñ, 中文, emoji 🚀"
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_success(special_text))
     
     result = service.generate_text("System", "User")
@@ -80,7 +80,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   # === GESTIONE ERRORI ===
   test "solleva eccezione se guardrail interviene" do
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, mock_bedrock_guardrail_blocked)
     
     error = assert_raises(Aws::BedrockRuntime::Errors::GuardrailException) do
@@ -92,7 +92,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   test "propaga eccezione se Bedrock genera errore di servizio" do
     skip "AWS SDK not available" unless defined?(Aws)
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, failing_bedrock(
       Aws::BedrockRuntime::Errors::ServiceError.new(nil, "ThrottlingException")
     ))
@@ -104,7 +104,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   test "propaga eccezione se client Bedrock non è raggiungibile" do
     skip "AWS SDK not available" unless defined?(Aws)
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     service.instance_variable_set(:@client, failing_bedrock(Errno::ECONNREFUSED.new))
     
     assert_raises(Errno::ECONNREFUSED) do
@@ -114,7 +114,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
 
   # === PARAMETRI ===
   test "accetta system_prompt e user_prompt come parametri" do
-    service = TextGeneratorService.new(region: "us-east-1")
+    service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     
     # Mock che cattura i parametri ricevuti
     params_captured = {}
@@ -135,7 +135,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
   end
 
   test "usa la regione configurata" do
-    service = TextGeneratorService.new(region: "eu-west-1")
+    service = AiGenerator::TextGeneratorService.new(region: "eu-west-1")
     
     assert_equal "eu-west-1", service.instance_variable_get(:@region)
   end
