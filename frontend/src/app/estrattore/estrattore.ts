@@ -30,10 +30,6 @@ export class Estrattore implements OnInit {
 
   get canUpload(): boolean {
     return !!(
-      this.selectedCategory?.trim() &&
-      this.selectedCompany &&
-      this.selectedDepartment.trim() &&
-      this.selectedCompetenceMonthYear.trim() &&
       this.selectedFiles.length > 0
     );
   }

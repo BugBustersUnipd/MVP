@@ -7,4 +7,6 @@
 
 :host ::ng-deep .p-inputtext {
 	width: 100%;
+	font-size: 0.875rem;
+	background-color: var(--bg-p-select) !important;
 }
