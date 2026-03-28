@@ -1,8 +1,8 @@
 <div class="filters-menu">
 <app-filters TypeOfFilter="searchbar" [(searchvalue)]="searchvalue" (searchvalueChange)="onSearchChange($event)"></app-filters>
 <app-filters TypeOfFilter="dateRange" DatepickerLabel="Data" [(dates)]="dates" (datesChange)="onDateChange($event)"></app-filters>
-<app-filters TypeOfFilter="text" TextFilterLabel="Documento" [textOptions]="DocumentType" [(selectedTextOption)]="selectedDocument" (selectedTextOptionChange)="onDocumentChange(+$event)"></app-filters>
-<app-filters TypeOfFilter="text" TextFilterLabel="Azienda" [textOptions]="Companies" [(selectedTextOption)]="selectedCompany" (selectedTextOptionChange)="onCompanyChange(+$event)"></app-filters>
+<app-filters TypeOfFilter="text" TextFilterLabel="Documento" [textOptions]="DocumentType" [(selectedTextOption)]="selectedDocument" (selectedTextOptionChange)="onDocumentChange($event)"></app-filters>
+<app-filters TypeOfFilter="text" TextFilterLabel="Azienda" [textOptions]="Companies" [(selectedTextOption)]="selectedCompany" (selectedTextOptionChange)="onCompanyChange($event)"></app-filters>
 </div>
 <app-tables
 [columns]="columns"
