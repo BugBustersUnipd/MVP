@@ -1,0 +1,27 @@
+:host ::ng-deep .p-select{
+    width: 100%;
+    background-color: var(--bg-p-select) !important;
+}
+:host ::ng-deep .p-datepicker {
+    width: 100%;
+    background-color: var(--bg-p-select) !important;
+}
+
+
+:host ::ng-deep .p-select-label {
+    font-size: 0.875rem !important;
+}
+:host ::ng-deep .p-overlay span{
+    font-weight: 400;
+    font-size: 0.875rem;
+}
+
+
+.item-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+}
+
