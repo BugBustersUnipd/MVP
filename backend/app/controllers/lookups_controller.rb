@@ -10,6 +10,6 @@ class LookupsController < ApplicationController
   def users
     company = params[:company]
     result = DocumentProcessing::Lookups::UsersFetcher.new.call(company: company)
-    render json: { users: result.map { |u| { id: u.id, name: u.name, email: u.email, employee_code: u.employee_code } } }
+    render json: { users: result.includes(:user).map { |emp| u = emp.user; { id: u.id, name: u.name, email: u.email, employee_code: u.employee_code } } }
   end
 end
