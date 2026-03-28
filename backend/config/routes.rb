@@ -32,6 +32,32 @@ Rails.application.routes.draw do
   get "/templates/:id", to: "templates#show", as: :template
   post "/templates", to: "templates#create", as: :create_template
 
+  # Modulo AI generativo
+  # 
+  # Tones
+  get "/tones", to: "tones#index", as: :tones
+  post "/tones", to: "tones#create", as: :create_tone
+  delete "/tones/:id", to: "tones#destroy", as: :destroy_tone
+
+  # Styles
+  get "/styles", to: "styles#index", as: :styles
+  post "/styles", to: "styles#create", as: :create_style
+  delete "/styles/:id", to: "styles#destroy", as: :destroy_style
+
+  # Companies
+  get "/companies", to: "companies#index", as: :companies
+
+  # Posts
+  get "/posts", to: "posts#index", as: :posts
+  post "/posts", to: "posts#create", as: :create_post
+  delete "/posts/:id", to: "posts#destroy", as: :destroy_post
+
+  # Generated Data
+  post "/generated_data", to: "generated_data#create", as: :create_generated_data
+  get "/generated_data/:id", to: "generated_data#show", as: :generated_data
+  patch "/generated_data/:id/rating", to: "generated_data#rating", as: :rating_generated_data
+  delete "/generated_data/:id", to: "generated_data#destroy", as: :destroy_generated_data
+
   # Defines the root path route ("/")
   root "documents#test"
 end
