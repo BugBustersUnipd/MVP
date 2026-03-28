@@ -5,11 +5,14 @@ import { catchError, map } from 'rxjs/operators';
 import { AnalyticsAbstractService, AnalyticsMetric, AnalyticsPeriod } from '../analytics-abstract-service'
 
 export interface AiAssistantAnalyticsResponse {
-  promptsGenerati: number;
-  ratingMedioPrompt: number;
-  rigenerazioniMedie: number;
-  toniPiuUsati: { tono: string; count: number }[];
-  stiliPiuUsati: { stile: string; count: number }[];
+  status: string;
+  data: {
+    prompt_amount: number;
+    average_rate_prompt: number;
+    average_regeneration_amount: number;
+    tone_usage: Record<string, number>;
+    style_usage: Record<string, number>;
+  };
 }
 
 @Injectable({
@@ -18,8 +21,6 @@ export interface AiAssistantAnalyticsResponse {
 export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
   private apiUrl = '/api/analytics/ai-assistant'; // TODO: configurare endpoint vero
   private readonly metricsSubject = new BehaviorSubject<AnalyticsMetric[]>([]);
-  private readonly toniSubject = new BehaviorSubject<{ tono: string; count: number }[]>([]);
-  private readonly stiliSubject = new BehaviorSubject<{ stile: string; count: number }[]>([]);
 
   constructor(private httpClient: HttpClient) {
     super();
@@ -37,35 +38,13 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
     return this.metricsSubject.asObservable();
   }
 
-  getToniPiuUsati(periodo: AnalyticsPeriod): Observable<{ tono: string; count: number }[]> {
-    this.httpClient
-      .post<{ data: { tono: string; count: number }[] }>(`${this.apiUrl}/toni`, periodo)
-      .pipe(
-        map((response) => response.data ?? []),
-        catchError(() => of([] as { tono: string; count: number }[])),
-      )
-      .subscribe((toni) => this.toniSubject.next(toni));
-
-    return this.toniSubject.asObservable();
-  }
-
-  getStiliPiuUsati(periodo: AnalyticsPeriod): Observable<{ stile: string; count: number }[]> {
-    this.httpClient
-      .post<{ data: { stile: string; count: number }[] }>(`${this.apiUrl}/stili`, periodo)
-      .pipe(
-        map((response) => response.data ?? []),
-        catchError(() => of([] as { stile: string; count: number }[])),
-      )
-      .subscribe((stili) => this.stiliSubject.next(stili));
-
-    return this.stiliSubject.asObservable();
-  }
-
   private transformToMetrics(response: AiAssistantAnalyticsResponse): AnalyticsMetric[] {
+    const data = response.data;
+
     return [
-      { label: 'N. PROMPT GENERATI', value: response.promptsGenerati },
-      { label: 'RATING MEDIO PROMPT', value: response.ratingMedioPrompt },
-      { label: 'N. RIGENERAZIONI MEDIE PER PROMPT', value: response.rigenerazioniMedie },
+      { label: 'N. PROMPT GENERATI', value: data.prompt_amount ?? 0 },
+      { label: 'RATING MEDIO PROMPT', value: data.average_rate_prompt ?? 0 },
+      { label: 'N. RIGENERAZIONI MEDIE PER PROMPT', value: data.average_regeneration_amount ?? 0 },
     ];
   }
 }
