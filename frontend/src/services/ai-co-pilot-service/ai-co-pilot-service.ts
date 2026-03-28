@@ -32,7 +32,7 @@ export class AiCoPilotService {
   }
 
   // ESEMPIO DI COME DOVRÀ ESSERE IMPLEMENTATO IL METODO PROCESSDOCUMENT
-  /* elaboraSingoloDocumento(file: File): ResultAiSplit {
+  /* processDocument(file: File, company: string, department: string, category: string, competence_period: string): ResultAiSplit {
     // 1. CREAZIONE ISTANTANEA: Uso il Serializer per creare l'oggetto iniziale.
     // Immagino tu abbia un metodo nel Serializer per lo stato iniziale (es. uploading)
     const risultatoReattivo = this.serializer.creaStatoIniziale(file);

@@ -30,18 +30,23 @@
             <app-editor [(text)]="result.content" [editable]="isEditable"></app-editor>
         </div>
 
-        <div class="valutazione-modifica-container">
+        <div class="d-flex gap-3">
             <div class="valutazione">
                 <app-valutazione [rating]="result.evaluation" (ratingChange)="onRatingChange($event)"></app-valutazione>
-                @if(result.isPost){
-                    <div class="bg-white p-2 mb-3 mt-3 rounded">
-                        <strong>Data di generazione:</strong> {{ result.data | date:'dd/MM/yyyy' }}
+            </div>
+            
+            @if(!result.isPost){
+                <div class="modifica ms-auto d-flex align-items-end">
+                    <app-button label="Modifica" class="btn btn-primary" [fluid]="true" (action)="enableEditing()"></app-button>
+                </div>
+            }@else{
+                <div class="data-container">
+                    <label class="label mb-1">Data di generazione:</label>
+                    <div class="data-generazione bg-white p-1 rounded">
+                        <span>{{ result.data | date:'dd/MM/yyyy' }}</span>
                     </div>
-                }
-            </div>
-            <div class="modifica">
-                <app-button label="Modifica" class="btn btn-primary" [fluid]="true" (action)="enableEditing()"></app-button>
-            </div>
+                </div>
+            }
         </div>
     
         <!-- Sezione riepilogativa dei parametri scelti dall'utente nel Generatore -->

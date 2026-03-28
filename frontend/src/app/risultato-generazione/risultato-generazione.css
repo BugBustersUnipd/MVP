@@ -28,35 +28,42 @@
   margin-top: 2rem;
 }
 .valutazione{
-  margin-right: auto;
-  max-width: fit-content;
-  border-radius: 12px;
   display: flex;
-  flex-direction: column;
   margin-top: 2rem;
 }
-.valutazione-modifica-container{
-    display: flex;
-    align-items: flex-end;
-}
-/* Sezione "PARAMETRI INSERITI" - riepilogo in sola lettura dei dati dal Generatore */
+
 .parametri-container {
   margin-top: 2rem;
 }
 
-/* Riga divisoria che separa visivamente il riepilogo dal resto della pagina */
 .parametri-divider {
   border: none;
   border-top: 1px solid #cccccc;
   margin: 0.5rem 0 1rem 0;
 }
 .parametri-fields {
-  /* background: #ffffff; */
   border-radius: 12px;
-  /* padding: 1rem; */
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+.data-generazione{
+  height: 76%;
+}
+.data-generazione span{
+  width: fit-content;
+  align-items: center;
+  font-size: 1rem;
+  padding: 0rem 2rem;
+  height: 100%;
+}
+
+
+.data-container{
+  /* margin-left: 1rem; */
+  margin-top: 2rem;
+  gap: 0.5rem;
+  height: auto;
 }
 
 
