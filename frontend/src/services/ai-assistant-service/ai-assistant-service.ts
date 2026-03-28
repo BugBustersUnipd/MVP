@@ -353,6 +353,8 @@ export class AiAssistantService {
 
         this.resultSubject.next(updated);
         console.log('[ws] resultSubject aggiornato con title/content da completed');
+        socket.close();
+        console.log('[ws] unsubscribe websocket dopo completed');
       } else {
         console.log('[ws] status ricevuto ma non gestito in update finale:', payload.status);
       }
