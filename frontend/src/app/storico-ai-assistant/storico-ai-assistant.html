@@ -6,14 +6,11 @@
     <app-button [label]="ButtonLabel" (action)="NavigateToGeneratore()" ></app-button>
 </div>
 
-@if (Generazioni.length === 0) {
-    <p class="empty-history">Lo storico è vuoto.</p>
-} @else {
-    <app-tables
-        [columns]="columns"
-        [RisultatoFiltrato]="GenerazioniFiltrate"
-        [items]="items"
-        (titleClick)="openGenerationResult($event)"
-    >
-    </app-tables>
-}
+<app-tables
+    [columns]="columns"
+    [RisultatoFiltrato]="GenerazioniFiltrate"
+    [items]="items"
+    (titleClick)="openGenerationResult($event)"
+>
+</app-tables>
+
