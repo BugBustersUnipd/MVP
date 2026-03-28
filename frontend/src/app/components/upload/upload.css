@@ -1,5 +1,5 @@
-:host ::ng-deep .custom-p-fileupload .p-fileupload-buttonbar {
-  display: none; 
+:host ::ng-deep .custom-p-fileupload .p-fileupload-upload-button {
+  display: none;
 }
 
 :host ::ng-deep .custom-p-fileupload .p-fileupload-content {

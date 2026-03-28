@@ -13,7 +13,7 @@
           <menutendina
             [label]="''"
             [placeholder]="'Seleziona azienda'"
-            [options]="companies"
+            [options]="companies$ | async"
             [showAddNew]="false"
             [selected]="selectedCompany"
             (selectedChange)="onCompanyChange($event)">
@@ -28,7 +28,7 @@
       </app-input>
 
       <div class="competenza-field">
-        <label class="label">MESE/ANNO DI COMPETENZA</label>
+        <label class="label">Mese/anno di competenza</label>
         <div class="competenza-input">
           <app-month-year
             [label]="''"
