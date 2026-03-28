@@ -1,17 +1,23 @@
 require "test_helper"
 
 class CompaniesFetcherTest < ActiveSupport::TestCase
-  test "returns company names from companies table ordered alphabetically" do
-    Company.create!(name: "Zeta")
-    Company.create!(name: "Alpha")
-    Company.create!(name: "Gamma")
+  test "returns company id and name from companies table ordered alphabetically" do
+    zeta  = Company.create!(name: "Zeta")
+    alpha = Company.create!(name: "Alpha")
+    gamma = Company.create!(name: "Gamma")
 
     result = DocumentProcessing::Lookups::CompaniesFetcher.new.call
 
-    assert_includes result, "Zeta"
-    assert_includes result, "Alpha"
-    assert_includes result, "Gamma"
-    assert_equal result, result.sort
+    names = result.map { |c| c[:name] }
+    assert_includes names, "Zeta"
+    assert_includes names, "Alpha"
+    assert_includes names, "Gamma"
+    assert_equal names, names.sort
+
+    ids = result.map { |c| c[:id] }
+    assert_includes ids, zeta.id
+    assert_includes ids, alpha.id
+    assert_includes ids, gamma.id
   end
 
   test "excludes companies with null or empty name" do
@@ -21,18 +27,19 @@ class CompaniesFetcherTest < ActiveSupport::TestCase
 
     result = DocumentProcessing::Lookups::CompaniesFetcher.new.call
 
-    assert_not_includes result, nil
-    assert_not_includes result, ""
+    names = result.map { |c| c[:name] }
+    assert_not_includes names, nil
+    assert_not_includes names, ""
   end
 
   test "does not include companies with blank name" do
     Company.create!(name: "Visibile")
-    # name non può essere nil per vincolo DB, ma può essere stringa vuota
     Company.where(name: "").delete_all rescue nil
 
     result = DocumentProcessing::Lookups::CompaniesFetcher.new.call
 
-    assert_includes result, "Visibile"
-    assert_not_includes result, ""
+    names = result.map { |c| c[:name] }
+    assert_includes names, "Visibile"
+    assert_not_includes names, ""
   end
 end

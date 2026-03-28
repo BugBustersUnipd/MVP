@@ -20,7 +20,8 @@ class LookupsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = JSON.parse(response.body)
-    assert_includes body["companies"], "ACME SpA"
+    names = body["companies"].map { |c| c["name"] }
+    assert_includes names, "ACME SpA"
   end
 
   test "companies returns names sorted alphabetically" do
@@ -31,7 +32,7 @@ class LookupsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = JSON.parse(response.body)
-    names = body["companies"]
+    names = body["companies"].map { |c| c["name"] }
     assert_equal names, names.sort
   end
 
