@@ -1,4 +1,12 @@
+router-outlet + * {
+  display: block;
+  animation: fade 1s;
+}
 
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 :root{
   --bs-body-font-size: 0.875rem !important;
   --p-select-focus-border-color: #383838 !important;
@@ -131,4 +139,10 @@ body{
   --p-select-disabled-background: #f8f9fa !important;
   --p-textarea-disabled-background: white !important;
   /* --p-textarea-border-color: white !important; */
+}
+
+
+/* tutte le tables */
+:root{
+  --p-datatable-body-cell-padding: 1rem !important;
 }

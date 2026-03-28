@@ -49,6 +49,7 @@
                 <a href="#" class="truncate-content" [title]="row[col.field]" (click)="$event.preventDefault(); onTitleClick(row)">
                   {{ row[col.field] }}
                 </a>
+                <i class="pi pi-link"></i>
             } @else {
                 <span class="truncate-content" [title]="row[col.field]">
                   {{ row[col.field] }}
