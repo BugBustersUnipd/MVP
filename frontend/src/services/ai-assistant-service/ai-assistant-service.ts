@@ -234,9 +234,15 @@ export class AiAssistantService {
   }
 
   // todo implementare chiamata al backend
-  requireGeneration(prompt: string, tone: Tone, style: Style, company: Company, id?: number): number {
+  requireGeneration(prompt: string, tone: Tone, style: Style, company: Company): number {
     console.log('Rigenerazione richiesta');
-    //la chiamata al backend OVVIAMENTE viene fatta passando solo il number id, non anche name
+    console.log('[requireGeneration] input:', {
+      promptLength: prompt?.length ?? 0,
+      toneId: tone?.id,
+      styleId: style?.id,
+      companyId: company?.id,
+    });
+
     const pendingResult: ResultAiAssistant = {
         id: -1, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
         title: '',
@@ -252,10 +258,119 @@ export class AiAssistantService {
     };
 
     this.resultSubject.next(pendingResult);
+    console.log('[requireGeneration] pending result pubblicato con id temporaneo:', pendingResult.id);
 
-    //chiamata al backend
-    return 0;
+    console.log('[requireGeneration] POST /generated_data payload:', {
+      generation_datum: {
+        prompt,
+        company_id: company.id,
+        style_id: style.id,
+        tone_id: tone.id
+      }
+    });
+    this.http.post<any>(`${API_BASE}/generated_data`, {
+      generation_datum: {
+        prompt,
+        company_id: company.id,
+        style_id: style.id,
+        tone_id: tone.id
+      }
+    }).subscribe({
+      next: (response) => {
+        console.log('[requireGeneration] risposta POST /generated_data:', response);
+        const generatedId = Number(response?.id) || 0;
+        if (generatedId <= 0) {
+          console.error('Risposta create_generated_data senza id valido:', response);
+          return;
+        }
+
+        const createdResult: ResultAiAssistant = {
+          ...pendingResult,
+          id: generatedId
+        };
+
+        this.resultSubject.next(createdResult);
+        console.log('[requireGeneration] result aggiornato con id backend:', generatedId);
+        this.subscribeToGenerationChannel(generatedId);
+      },
+      error: (err) => {
+        console.error('Errore nella POST /generated_data:', err);
+      }
+    });
+
+    return pendingResult.id;
   }
+
+  private subscribeToGenerationChannel(generationId: number): void {
+    console.log('[ws] apertura websocket verso:', WS_URL, 'per generationId:', generationId);
+    const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
+    const identifier = JSON.stringify({ channel: 'GenerationChannel' });
+    console.log('[ws] identifier subscribe:', identifier);
+
+    socket.onopen = () => {
+      socket.send(JSON.stringify({ command: 'subscribe', identifier }));
+      console.log('Subscription inviata a GenerationChannel per id:', generationId);
+    };
+
+    socket.onmessage = (event) => {
+      console.log('[ws] raw message:', event.data);
+      const cable = JSON.parse(event.data);
+
+      if (cable.type === 'welcome' || cable.type === 'ping' || cable.type === 'confirm_subscription') {
+        console.log('[ws] messaggio di sistema ignorato:', cable.type);
+        return;
+      }
+
+      if (!cable.message) {
+        console.log('[ws] messaggio senza payload applicativo, ignorato:', cable);
+        return;
+      }
+
+      const payload = cable.message;
+      const payloadId = Number(payload.id) || 0;
+      console.log('[ws] payload applicativo:', payload, 'payloadId:', payloadId, 'generationId atteso:', generationId);
+
+      // Il canale e condiviso: aggiorniamo solo la generazione appena creata via POST.
+      if (payloadId !== generationId) {
+        console.log('[ws] payload ignorato per id diverso');
+        return;
+      }
+
+      if (payload.status === 'completed') {
+        console.log('[ws] completed ricevuto per id corretto');
+        const current = this.resultSubject.value;
+        if (!current) {
+          console.log('[ws] nessun current result disponibile, skip update');
+          return;
+        }
+
+        const updated: ResultAiAssistant = {
+          ...current,
+          id: payloadId,
+          title: typeof payload.title === 'string' ? payload.title : current.title,
+          content: typeof payload.text === 'string' ? payload.text : current.content,
+        };
+
+        this.resultSubject.next(updated);
+        console.log('[ws] resultSubject aggiornato con title/content da completed');
+      } else {
+        console.log('[ws] status ricevuto ma non gestito in update finale:', payload.status);
+      }
+    };
+
+    socket.onclose = (event) => {
+      console.log('[ws] connessione chiusa:', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+      });
+    };
+
+    socket.onerror = (error) => {
+      console.error('Errore nella connessione WebSocket:', error);
+    };
+  }
+
   // todo implementare
   getGeneration(jobid: number) : void {}
 

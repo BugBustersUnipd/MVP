@@ -5,7 +5,7 @@ class AiGeneratorJob < ApplicationJob
     AiGenerator::AiJobOrchestrator.signal_process_start(generation_id)
     
     begin
-      service = AiGenerator::AIGeneratorContainer.new.aiGeneratorService
+      service = AiGenerator::AiGeneratorContainer.new.aiGeneratorService
       service.create_content(generation_id)
 
       AiGenerator::AiJobOrchestrator.complete(generation_id)

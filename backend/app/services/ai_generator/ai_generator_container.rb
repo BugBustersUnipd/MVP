@@ -5,7 +5,7 @@ require_relative "text_generator_service"
 require_relative "image_generator_service"
 
 module AiGenerator
-class AIGeneratorContainer
+class AiGeneratorContainer
   REGION_FALLBACK = ENV.fetch("AWS_REGION", "us-east-1")
 
   def aiGeneratorService

@@ -35,7 +35,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     AiGenerator::AiJobOrchestrator.expects(:signal_process_start).with(@generation_datum.id)
     
     # Mock gli altri metodi per evitare errori
-    AiGenerator::AIGeneratorContainer.any_instance.stubs(:aiGeneratorService)
+    AiGenerator::AiGeneratorContainer.any_instance.stubs(:aiGeneratorService)
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
     
@@ -50,7 +50,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
@@ -65,7 +65,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
     AiGenerator::AiJobOrchestrator.expects(:complete).with(@generation_datum.id)
@@ -83,7 +83,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.expects(:signal_failure).with(@generation_datum.id, includes("Errore generazione"))
@@ -102,7 +102,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
@@ -125,7 +125,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.expects(:signal_failure).with(@generation_datum.id, anything)
@@ -142,7 +142,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.expects(:signal_failure).with(@generation_datum.id, includes("Record non trovato"))
@@ -162,7 +162,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
@@ -180,7 +180,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
   test "perform crea nuovo container per il job" do
     containers_created = []
 
-    container = AiGenerator::AIGeneratorContainer.new
+    container = AiGenerator::AiGeneratorContainer.new
     containers_created << container
 
     mock_service = Object.new
@@ -191,7 +191,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
 
-    stub_new(AiGenerator::AIGeneratorContainer, container) do
+    stub_new(AiGenerator::AiGeneratorContainer, container) do
       AiGeneratorJob.new.perform(@generation_datum.id)
     end
     
@@ -208,7 +208,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
-    AiGenerator::AIGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
     AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
