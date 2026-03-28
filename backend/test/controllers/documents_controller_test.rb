@@ -1,9 +1,12 @@
 require "test_helper"
+require "base64"
 
 # Unit/integration tests for DocumentsController.
 # Tests that require the container stubbed use a FakeContainer instead of the real one,
 # to avoid AWS dependencies. Tests that only need DB access use the real container.
 class DocumentsControllerTest < ActionDispatch::IntegrationTest
+  ONE_PAGE_PDF_BASE64 = "JVBERi0xLjQKJcTl8uXrCjEgMCBvYmoKPDwvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcyAvQ291bnQgMSAvS2lkcyBbMyAwIFJdPj4KZW5kb2JqCjMgMCBvYmoKPDwvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDIwMCAyMDBdIC9Db250ZW50cyA0IDAgUiAvUmVzb3VyY2VzIDw8Pj4+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggMTI+PgpzdHJlYW0KQlQKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyMzAgMDAwMDAgbiAKdHJhaWxlcgo8PC9TaXplIDUgL1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKMjkxCiUlRU9G"
+
   # ---------------------------------------------------------------------------
   # Shared helpers
   # ---------------------------------------------------------------------------
@@ -574,6 +577,145 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
 
   test "validate_extracted returns not_found for missing document" do
     patch validate_extracted_document_path(id: 0)
+    assert_response :not_found
+  end
+
+  # ---------------------------------------------------------------------------
+  # POST /documents/uploads/:id/retry
+  # ---------------------------------------------------------------------------
+
+  test "retry_processing resets run and returns queued for a failed PDF run" do
+    temp = Tempfile.new(["src", ".pdf"])
+    temp.write("fake")
+    temp.flush
+
+    ud  = create_uploaded_document(file_kind: "pdf", storage_path: temp.path)
+    run = ProcessingRun.create!(job_id: "retry-pdf-#{SecureRandom.hex(4)}", status: "failed",
+                                error_message: "boom", uploaded_document: ud)
+
+    post retry_processing_path(id: ud.id)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "queued",   body["status"]
+    assert_equal run.job_id, body["job_id"]
+
+    run.reload
+    assert_equal "queued", run.status
+    assert_nil run.error_message
+  ensure
+    temp&.close!
+  end
+
+  test "retry_processing resets run and returns queued for a failed CSV run" do
+    temp = Tempfile.new(["src", ".csv"])
+    temp.write("col\nval")
+    temp.flush
+
+    ud  = create_uploaded_document(file_kind: "csv", storage_path: temp.path)
+    run = ProcessingRun.create!(job_id: "retry-csv-#{SecureRandom.hex(4)}", status: "failed",
+                                uploaded_document: ud)
+
+    post retry_processing_path(id: ud.id)
+
+    assert_response :success
+    run.reload
+    assert_equal "queued", run.status
+  ensure
+    temp&.close!
+  end
+
+  test "retry_processing returns unprocessable_entity when run is not failed" do
+    ud = create_uploaded_document
+    ProcessingRun.create!(job_id: "retry-ok-#{SecureRandom.hex(4)}", status: "completed",
+                          uploaded_document: ud)
+
+    post retry_processing_path(id: ud.id)
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal "error", body["status"]
+  end
+
+  test "retry_processing returns not_found when no run exists" do
+    ud = create_uploaded_document
+
+    post retry_processing_path(id: ud.id)
+
+    assert_response :not_found
+  end
+
+  test "retry_processing returns not_found for missing uploaded document" do
+    post retry_processing_path(id: 0)
+    assert_response :not_found
+  end
+
+  test "retry_processing returns bad_request when source file is missing" do
+    ud = create_uploaded_document(storage_path: "/tmp/this_does_not_exist_#{SecureRandom.hex}.pdf")
+    ProcessingRun.create!(job_id: "retry-miss-#{SecureRandom.hex(4)}", status: "failed",
+                          uploaded_document: ud)
+
+    post retry_processing_path(id: ud.id)
+
+    assert_response :bad_request
+    body = JSON.parse(response.body)
+    assert_equal "error", body["status"]
+  end
+
+  # ---------------------------------------------------------------------------
+  # POST /documents/extracted/:id/retry
+  # ---------------------------------------------------------------------------
+
+  test "retry_extracted resets statuses and returns queued for a failed extracted document" do
+    temp = Tempfile.new(["source", ".pdf"])
+    temp.binmode
+    temp.write(Base64.decode64(ONE_PAGE_PDF_BASE64))
+    temp.flush
+
+    ud   = create_uploaded_document(storage_path: temp.path)
+    ed   = create_extracted_document(uploaded_document: ud, status: "failed", page_start: 1, page_end: 1)
+    run  = ProcessingRun.create!(job_id: "retry-ext-#{SecureRandom.hex(4)}", status: "processing",
+                                 uploaded_document: ud)
+    item = ProcessingItem.create!(processing_run: run, extracted_document: ed,
+                                  sequence: 1, status: "failed")
+
+    post retry_extracted_path(id: ed.id)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "queued", body["status"]
+    assert_equal ed.id,    body["extracted_document_id"]
+
+    ed.reload
+    item.reload
+    assert_equal "queued", ed.status
+    assert_equal "queued", item.status
+  ensure
+    temp&.close!
+  end
+
+  test "retry_extracted returns unprocessable_entity when document is not failed" do
+    ud = create_uploaded_document
+    ed = create_extracted_document(uploaded_document: ud, status: "done")
+
+    post retry_extracted_path(id: ed.id)
+
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_equal "error", body["status"]
+  end
+
+  test "retry_extracted returns not_found when processing item is missing" do
+    ud = create_uploaded_document
+    ed = create_extracted_document(uploaded_document: ud, status: "failed")
+
+    post retry_extracted_path(id: ed.id)
+
+    assert_response :not_found
+  end
+
+  test "retry_extracted returns not_found for missing extracted document" do
+    post retry_extracted_path(id: 0)
     assert_response :not_found
   end
 end

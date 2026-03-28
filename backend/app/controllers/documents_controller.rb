@@ -186,6 +186,70 @@ class DocumentsController < ActionController::Base
     render json: { status: "error", message: "Documento estratto non trovato" }, status: :not_found
   end
 
+  # POST /documents/uploads/:id/retry
+  # Riaccoda il processing per un UploadedDocument il cui ProcessingRun è in stato failed.
+  def retry_processing
+    uploaded = UploadedDocument.find(params[:id])
+    run = ProcessingRun.where(uploaded_document: uploaded).order(:created_at).last
+
+    return render json: { status: "error", message: "Nessun processing run trovato" }, status: :not_found unless run
+    return render json: { status: "error", message: "Solo i run in stato 'failed' possono essere riprovati" }, status: :unprocessable_entity unless run.status == "failed"
+    return render_error("File sorgente non disponibile") unless file_storage.exist?(uploaded.storage_path)
+
+    run.update!(status: "queued", error_message: nil, started_at: nil, completed_at: nil)
+
+    if uploaded.file_kind == "pdf"
+      PdfSplitJob.perform_later(uploaded.storage_path, run.job_id)
+    else
+      GenericFileProcessingJob.perform_later(uploaded.storage_path, {
+        job_id: run.job_id,
+        uploaded_document_id: uploaded.id,
+        file_kind: uploaded.file_kind
+      })
+    end
+
+    render json: { status: "queued", message: "Riprocessamento avviato", job_id: run.job_id }
+  rescue ActiveRecord::RecordNotFound
+    render json: { status: "error", message: "Documento sorgente non trovato" }, status: :not_found
+  end
+
+  # POST /documents/extracted/:id/retry
+  # Riaccoda la data extraction per un singolo ExtractedDocument in stato failed.
+  def retry_extracted
+    extracted = ExtractedDocument.find(params[:id])
+
+    unless extracted.failed?
+      return render json: { status: "error", message: "Solo i documenti in stato 'failed' possono essere riprovati" }, status: :unprocessable_entity
+    end
+
+    item = ProcessingItem.find_by(extracted_document: extracted)
+    return render json: { status: "error", message: "Processing item non trovato" }, status: :not_found unless item
+
+    run = item.processing_run
+    source_path = extracted.uploaded_document.storage_path
+    return render_error("PDF sorgente non disponibile") unless file_storage.exist?(source_path)
+
+    temp_pdf_path = page_range_pdf_service(source_path).build_temp_pdf(
+      page_start: extracted.page_start,
+      page_end: extracted.page_end
+    )
+
+    extracted.update!(status: "queued", error_message: nil, processed_at: nil)
+    item.update!(status: "queued")
+
+    DataExtractionJob.perform_later(temp_pdf_path, {
+      job_id: run.job_id,
+      processing_item_id: item.id,
+      extracted_document_id: extracted.id
+    })
+
+    render json: { status: "queued", message: "Rianalisi avviata", extracted_document_id: extracted.id }
+  rescue ActiveRecord::RecordNotFound
+    render json: { status: "error", message: "Documento estratto non trovato" }, status: :not_found
+  rescue ArgumentError => e
+    render_error(e.message)
+  end
+
   # POST /documents/process_file
   # Receives a single file (csv, jpeg, png) and processes it without performing split.
   # Returns: { status: 'ok', job_id: '<uuid>' }
