@@ -71,4 +71,118 @@ class ContainerTest < ActiveSupport::TestCase
     assert_equal 1, container.notifier.calls.size
     assert_equal "job-x", container.notifier.calls.first[0]
   end
+
+  # ---------------------------------------------------------------------------
+  # Persistence services
+  # ---------------------------------------------------------------------------
+
+  test "file_storage is memoized" do
+    container = DocumentProcessing::Container.new(file_storage_class: FakeFileStorage)
+    assert_same container.file_storage, container.file_storage
+  end
+
+  test "data_item_repository returns DataItemRepository instance" do
+    container = DocumentProcessing::Container.new(
+      data_item_repository_class: DocumentProcessing::Persistence::DataItemRepository
+    )
+    assert_instance_of DocumentProcessing::Persistence::DataItemRepository, container.data_item_repository
+  end
+
+  test "data_item_repository is memoized" do
+    container = DocumentProcessing::Container.new
+    assert_same container.data_item_repository, container.data_item_repository
+  end
+
+  test "split_run_repository returns SplitRunRepository instance" do
+    container = DocumentProcessing::Container.new
+    assert_instance_of DocumentProcessing::Persistence::SplitRunRepository, container.split_run_repository
+  end
+
+  test "split_run_repository is memoized" do
+    container = DocumentProcessing::Container.new
+    assert_same container.split_run_repository, container.split_run_repository
+  end
+
+  test "recipient_resolver is memoized" do
+    container = DocumentProcessing::Container.new
+    assert_same container.recipient_resolver, container.recipient_resolver
+  end
+
+  test "upload_manager is memoized" do
+    container = DocumentProcessing::Container.new
+    assert_same container.upload_manager, container.upload_manager
+  end
+
+  test "db_manager is memoized" do
+    container = DocumentProcessing::Container.new
+    assert_same container.db_manager, container.db_manager
+  end
+
+  test "page_range_pdf_service_class returns the class" do
+    container = DocumentProcessing::Container.new
+    assert_equal DocumentProcessing::PageRangePdf, container.page_range_pdf_service_class
+  end
+
+  # ---------------------------------------------------------------------------
+  # Command builders
+  # ---------------------------------------------------------------------------
+
+  test "initialize_processing_command returns InitializeProcessing instance" do
+    container = DocumentProcessing::Container.new
+    cmd = container.initialize_processing_command
+    assert_instance_of DocumentProcessing::Commands::InitializeProcessing, cmd
+  end
+
+  test "initialize_file_processing_command returns InitializeFileProcessing instance" do
+    container = DocumentProcessing::Container.new
+    cmd = container.initialize_file_processing_command
+    assert_instance_of DocumentProcessing::Commands::InitializeFileProcessing, cmd
+  end
+
+  test "reassign_extracted_range_command returns ReassignExtractedRange instance" do
+    container = DocumentProcessing::Container.new
+    cmd = container.reassign_extracted_range_command
+    assert_instance_of DocumentProcessing::Commands::ReassignExtractedRange, cmd
+  end
+
+  # ---------------------------------------------------------------------------
+  # Processor service builders
+  # ---------------------------------------------------------------------------
+
+  test "process_data_item_service returns ProcessDataItem instance" do
+    container = DocumentProcessing::Container.new(
+      ocr_service_class: FakeOcr,
+      data_extractor_class: FakeExtractor,
+      llm_service_class: FakeLlm,
+      notifier_class: FakeNotifier,
+      file_storage_class: FakeFileStorage,
+      textract_client: Object.new,
+      bedrock_client: Object.new
+    )
+    svc = container.process_data_item_service
+    assert_instance_of DocumentProcessing::ProcessDataItem, svc
+  end
+
+  test "process_split_run_service returns ProcessSplitRun instance" do
+    container = DocumentProcessing::Container.new(
+      notifier_class: FakeNotifier,
+      file_storage_class: FakeFileStorage
+    )
+    svc = container.process_split_run_service
+    assert_instance_of DocumentProcessing::ProcessSplitRun, svc
+  end
+
+  test "process_generic_file_service returns ProcessGenericFile instance" do
+    container = DocumentProcessing::Container.new(
+      ocr_service_class: FakeOcr,
+      data_extractor_class: FakeExtractor,
+      llm_service_class: FakeLlm,
+      notifier_class: FakeNotifier,
+      file_storage_class: FakeFileStorage,
+      textract_client: Object.new,
+      bedrock_client: Object.new
+    )
+    svc = container.process_generic_file_service
+    assert_instance_of DocumentProcessing::ProcessGenericFile, svc
+  end
 end

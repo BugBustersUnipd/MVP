@@ -6,7 +6,8 @@
       "Read(//c/Users/marco/Desktop/MVP/**)",
       "Bash(done)",
       "Bash(docker compose:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(bundle exec:*)"
     ]
   }
 }

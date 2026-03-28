@@ -1,5 +1,6 @@
 require "simplecov"
 SimpleCov.start "rails" do
+  enable_coverage :branch
   add_filter "/test/"
   add_filter "/config/"
   add_filter "/vendor/"
@@ -11,6 +12,7 @@ end
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require 'mocha/minitest'
 
 module ActiveSupport
   class TestCase
@@ -30,5 +32,15 @@ module ActiveSupport
     fixtures :all
 
     # Add more helper methods to be used by all tests here...
+
+    # Temporarily replaces klass.new with a proc returning instance for the
+    # duration of the block. Thread-safe enough for serial test runs.
+    def stub_new(klass, instance)
+      original = klass.method(:new)
+      klass.define_singleton_method(:new) { |*_args, **_kwargs| instance }
+      yield
+    ensure
+      klass.define_singleton_method(:new, original)
+    end
   end
 end

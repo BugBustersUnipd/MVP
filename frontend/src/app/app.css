@@ -1,0 +1,45 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* TOP BAR */
+.topbar {
+  background: #242424;
+  color: white;
+  height: 60px;
+  border: none;
+}
+
+.logo {
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: white;
+}
+.topbar-logo img { /* DIMENSIONE LOGO */
+  height: 80%;   
+  width: auto;
+  padding: 0.6rem 0 0 0.6rem; 
+}
+/* BODY */
+.layout-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+
+
+
+
+/* CONTENUTO */
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+
+
+/* La classe base che definisce lo spazio dell'icona */

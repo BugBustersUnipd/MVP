@@ -1,0 +1,10 @@
+.section-title {
+	margin: 0 0 1rem;
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: var(--txt-color);
+}
+
+.actions-cell {
+	text-align: right;
+}

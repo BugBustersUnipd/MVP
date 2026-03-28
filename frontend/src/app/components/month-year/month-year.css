@@ -1,0 +1,23 @@
+.month-year-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.picker-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+:host ::ng-deep .month-year-picker {
+  width: 100%;
+}
+
+:host ::ng-deep .month-year-picker .p-inputtext {
+  width: 100%;
+  font-size: 0.875rem;
+  background-color: var(--bg-p-select) !important;
+}

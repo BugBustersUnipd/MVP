@@ -1,0 +1,37 @@
+.preview-layout {
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.doc-summary-container{
+    flex: 1 1 0;
+    min-width: 320px;
+    max-width: 600px;
+}
+
+.info-container{
+    flex: 1 1 0;
+    min-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.extracted-info-container {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    padding: 0.75rem;
+}
+
+.other-info-container {
+    flex: 1 1 0;
+    min-width: 420px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    padding: 0.75rem;
+}
+
+.other-documents-section {
+    margin-top: 0;
+    padding-top: 0;
+}

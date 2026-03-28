@@ -1,0 +1,6 @@
+
+<!-- [disabled] rende il campo non modificabile e non focalizzabile quando @Input disabled è true -->
+<label class="label" for="Prompt">{{label}}</label>
+<div class="prompt-body">
+    <textarea id="Prompt" [placeholder]="placeholder" [value]="value" pTextarea [(ngModel)]="prompt" (ngModelChange)="promptChange.emit($event)" autocomplete="off" [autoResize]="autoResize" [disabled]="disabled"></textarea>
+</div>

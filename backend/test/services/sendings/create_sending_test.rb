@@ -99,4 +99,60 @@ class DocumentProcessing::Sendings::CreateSendingTest < ActiveSupport::TestCase
     assert result.success?
     assert_equal "Explicit Subject", result.result[:sending].subject
   end
+
+  test "explicit body is kept when template is used" do
+    company = Company.first || Company.create!(name: "TestCo")
+    user = User.create!(email: "sara#{SecureRandom.hex(3)}@x.it", name: "Sara", username: "sara#{SecureRandom.hex(3)}")
+    emp = Employee.create!(user: user, company: company)
+    ud = UploadedDocument.create!(original_filename: "d.pdf", storage_path: "/tmp/d", page_count: 1, checksum: "ch-sara-#{SecureRandom.hex(4)}", file_kind: "pdf", employee: emp)
+    ed = ExtractedDocument.create!(uploaded_document: ud, sequence: 1, page_start: 1, page_end: 1)
+    template = Template.create!(subject: "Tpl Subject", body: "Template Body")
+
+    result = DocumentProcessing::Sendings::CreateSending.new(
+      extracted_document_id: ed.id,
+      recipient_id: user.id,
+      sent_at: Time.current,
+      body: "Corpo esplicito",
+      template_id: template.id
+    ).call
+
+    assert result.success?
+    # Subject inherited from template (not passed), body kept from params
+    assert_equal "Tpl Subject", result.result[:sending].subject
+    assert_equal "Corpo esplicito", result.result[:sending].body
+  end
+
+  test "sending without template_id and without subject succeeds with nil subject" do
+    company = Company.first || Company.create!(name: "TestCo")
+    user = User.create!(email: "notpl#{SecureRandom.hex(3)}@x.it", name: "NoTpl", username: "notpl#{SecureRandom.hex(3)}")
+    emp = Employee.create!(user: user, company: company)
+    ud = UploadedDocument.create!(original_filename: "e.pdf", storage_path: "/tmp/e", page_count: 1, checksum: "ch-notpl-#{SecureRandom.hex(4)}", file_kind: "pdf", employee: emp)
+    ed = ExtractedDocument.create!(uploaded_document: ud, sequence: 1, page_start: 1, page_end: 1)
+
+    result = DocumentProcessing::Sendings::CreateSending.new(
+      extracted_document_id: ed.id,
+      recipient_id: user.id,
+      sent_at: Time.current
+    ).call
+
+    assert result.success?
+    assert_nil result.result[:sending].subject
+  end
+
+  test "marks extracted_document as sent after success" do
+    company = Company.first || Company.create!(name: "TestCo")
+    user = User.create!(email: "sent#{SecureRandom.hex(3)}@x.it", name: "Sent", username: "sentuser#{SecureRandom.hex(3)}")
+    emp = Employee.create!(user: user, company: company)
+    ud = UploadedDocument.create!(original_filename: "f.pdf", storage_path: "/tmp/f", page_count: 1, checksum: "ch-sent-#{SecureRandom.hex(4)}", file_kind: "pdf", employee: emp)
+    ed = ExtractedDocument.create!(uploaded_document: ud, sequence: 1, page_start: 1, page_end: 1, status: "done")
+
+    result = DocumentProcessing::Sendings::CreateSending.new(
+      extracted_document_id: ed.id,
+      recipient_id: user.id,
+      sent_at: Time.current
+    ).call
+
+    assert result.success?
+    assert_equal "sent", ed.reload.status
+  end
 end

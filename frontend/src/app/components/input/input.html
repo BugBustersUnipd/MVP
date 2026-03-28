@@ -1,0 +1,17 @@
+<label class="label" [for]="id">{{ label }}</label>
+<div class="input-container">
+  <input
+    pInputText
+    [id]="id"
+    [type]="type"
+    [attr.min]="min"
+    [attr.max]="max"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    [class]="class"
+    [(ngModel)]="value"
+    [disabled]="!editable"
+    (ngModelChange)="onValueChange($event)"
+    autocomplete="off"
+  />
+</div>

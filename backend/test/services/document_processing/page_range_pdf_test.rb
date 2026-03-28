@@ -29,4 +29,26 @@ class PageRangePdfTest < ActiveSupport::TestCase
       assert_raises(ArgumentError) { service.build_temp_pdf(page_start: 2, page_end: 1) }
     end
   end
+
+  test "build_temp_pdf raises when page_start is zero" do
+    with_fake_pdf do |source|
+      service = DocumentProcessing::PageRangePdf.new(source_pdf_path: source)
+      assert_raises(ArgumentError) { service.build_temp_pdf(page_start: 0, page_end: 1) }
+    end
+  end
+
+  test "build_temp_pdf raises when page_end exceeds total pages" do
+    with_fake_pdf do |source|
+      # PDF has 1 page; requesting page 2+ should raise
+      service = DocumentProcessing::PageRangePdf.new(source_pdf_path: source)
+      assert_raises(ArgumentError) { service.build_temp_pdf(page_start: 1, page_end: 5) }
+    end
+  end
+
+  test "build_temp_pdf raises when page_start is not an integer" do
+    with_fake_pdf do |source|
+      service = DocumentProcessing::PageRangePdf.new(source_pdf_path: source)
+      assert_raises(ArgumentError) { service.build_temp_pdf(page_start: "one", page_end: 1) }
+    end
+  end
 end

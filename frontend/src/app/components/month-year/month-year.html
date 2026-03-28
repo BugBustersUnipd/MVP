@@ -1,0 +1,18 @@
+<div class="month-year-field">
+  <label *ngIf="label" class="label">{{ label }}</label>
+
+  <div class="picker-container">
+    <p-datepicker
+      [(ngModel)]="selectedMonthYear"
+      view="month"
+      dateFormat="mm/yy"
+      [showIcon]="true"
+      [placeholder]="placeholder || 'Seleziona mese/anno'"
+      [readonlyInput]="true"
+      appendTo="body"
+      (ngModelChange)="onMonthYearChange()"
+      inputId="monthYearInput"
+      styleClass="month-year-picker"
+    ></p-datepicker>
+  </div>
+</div>

@@ -1,0 +1,40 @@
+<div class="hero-banner">
+  <p-image
+    preview="true"
+    [src]="imageUrl"
+    [alt]="altText"
+    class="hero-image"
+  />
+  <div class="hero-overlay">
+    <input
+      pInputText
+      type="text"
+      name="imageTitle"
+      [ngModel]="_imageTitle"
+      (ngModelChange)="onTitleChange($event)"
+      placeholder="Titolo della generazione"
+      class="hero-input"
+      fluid
+      [disabled]="!editable"
+    />
+  </div>
+@if(editable){
+  <div class="hero-imagemodifier">
+    <p-fileUpload
+     [hidden]="hidden"
+     mode="basic"
+     styleClass="btn btn-primary" 
+     chooseIcon="pi pi-paperclip" 
+     name="file" 
+     url="./upload" 
+     accept="image/*" 
+     [auto]="true" 
+     [showUploadButton]="false" 
+     [showCancelButton]="false" 
+     chooseLabel="Modifica Immagine" 
+     [customUpload]="true"
+     (uploadHandler)="onImageChange($event)">
+    </p-fileUpload>
+  </div>
+}
+</div>

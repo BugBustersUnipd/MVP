@@ -1,0 +1,25 @@
+::ng-deep .btn{
+  border-radius: var(--btn-border-radius) !important;
+  font-size:  var(--btn-body-font-size) !important;
+  min-height: 2.5rem;
+}
+
+:host ::ng-deep .btn-primary {
+  background-color: var(--p-button-primary-background) !important;
+  border-color: var(--p-button-primary-border-color) !important;
+}
+
+:host ::ng-deep .btn-secondary{
+  background-color: var(--p-button-secondary-background) !important;
+  color: var(--txt-color) !important;
+  border-color: var(--p-button-secondary-border-color) !important;
+}
+
+
+:host ::ng-deep .btn-secondary:hover {
+  background-color: var(--p-button-secondary-hover-background) !important;
+}
+
+:host ::ng-deep .btn-primary:hover {
+  background-color: var(--p-button-primary-hover-background) !important;
+}

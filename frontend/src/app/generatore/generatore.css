@@ -1,0 +1,37 @@
+
+.generator-container {
+    position: relative;
+    
+}
+/* Pulsante in alto a destra */
+p-button.genera {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+
+
+/* Prompt full width */
+.body .p-float-label,
+.body input[pInputText] {
+    width: 100%;
+}
+
+/* Input stile più moderno */
+.body input[pInputText] {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+
+    p-button {
+        position: static;
+        margin-bottom: 1rem;
+        align-self: flex-end;
+    }
+}

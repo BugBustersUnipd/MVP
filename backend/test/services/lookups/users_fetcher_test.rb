@@ -14,6 +14,25 @@ class UsersFetcherTest < ActiveSupport::TestCase
     assert_includes result, e2
   end
 
+  test "returns all employees when company is empty string" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u = User.create!(email: "empty#{SecureRandom.hex(3)}@x.it", name: "Empty", username: "empty#{SecureRandom.hex(3)}")
+    e = Employee.create!(user: u, company: company)
+
+    result = DocumentProcessing::Lookups::UsersFetcher.new.call(company: "")
+    assert_includes result, e
+  end
+
+  test "skips extracted documents with non-hash metadata" do
+    company = Company.first || Company.create!(name: "TestCo")
+    u = User.create!(email: "nh#{SecureRandom.hex(3)}@x.it", name: "NoHash", username: "nohash#{SecureRandom.hex(3)}")
+    e = Employee.create!(user: u, company: company)
+    ud = UploadedDocument.create!(original_filename: "x.pdf", storage_path: "/tmp/x", page_count: 1, checksum: "uf-nh-#{SecureRandom.hex(4)}", file_kind: "pdf", employee: e)
+    ExtractedDocument.create!(uploaded_document: ud, sequence: 1, page_start: 1, page_end: 1, metadata: nil, matched_employee: u)
+
+    assert_nothing_raised { DocumentProcessing::Lookups::UsersFetcher.new.call(company: "ACME") }
+  end
+
   test "filters employees by override_company and metadata company" do
     company = Company.first || Company.create!(name: "TestCo")
     u1 = User.create!(email: "m@x.it", name: "Mario", username: "m1")

@@ -44,4 +44,144 @@ class ConfidenceCalculatorTest < ActiveSupport::TestCase
     assert_equal 1.0, result[:type]
     assert_equal 1.0, result[:competence]
   end
+
+  test "returns 0.0 for fields with no values to match" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [{ text: "Mario Rossi", confidence: 90 }],
+      recipient_names: [],
+      metadata: { company: nil, date: nil, department: nil },
+      llm_confidence: {}
+    )
+
+    result = calculator.global_confidence
+
+    assert_equal 0.0, result[:recipient]
+    assert_equal 0.0, result[:company]
+  end
+
+  test "returns 0.0 when no lines match the values" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [{ text: "Testo non correlato", confidence: 80 }],
+      recipient_names: ["Mario Rossi"],
+      metadata: { company: "ACME" },
+      llm_confidence: {}
+    )
+
+    result = calculator.global_confidence
+
+    assert_equal 0.0, result[:recipient]
+    assert_equal 0.0, result[:company]
+  end
+
+  test "skips lines with nil confidence" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [
+        { text: "Mario Rossi", confidence: nil },
+        { text: "Mario Rossi", confidence: 80 }
+      ],
+      recipient_names: ["Mario Rossi"],
+      metadata: {},
+      llm_confidence: {}
+    )
+
+    result = calculator.global_confidence
+
+    # Only the line with confidence 80 counts => 0.80 / 2 (avg with llm 0)
+    assert_in_delta 0.4, result[:recipient], 0.01
+  end
+
+  test "date_candidates generates ISO and locale variants" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [{ text: "15/03/2026", confidence: 90 }],
+      recipient_names: [],
+      metadata: { date: "2026-03-15" },
+      llm_confidence: { date: 0.5 }
+    )
+
+    result = calculator.global_confidence
+
+    # The OCR line "15/03/2026" matches date candidate derived from "2026-03-15"
+    assert result[:date] > 0
+  end
+
+  test "nil llm_confidence value falls back to 0.0" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [],
+      recipient_names: [],
+      metadata: {},
+      llm_confidence: { type: nil }
+    )
+
+    result = calculator.global_confidence
+
+    assert_equal 0.0, result[:type]
+  end
+
+  test "uploaded_document nil does not apply overrides" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [],
+      recipient_names: [],
+      metadata: {},
+      llm_confidence: { company: 0.5 },
+      uploaded_document: nil
+    )
+
+    result = calculator.global_confidence
+
+    assert_equal 0.25, result[:company]
+  end
+
+  test "uploaded_document with blank overrides does not force 1.0" do
+    uploaded = UploadedDocument.new(
+      override_company: nil,
+      override_department: "",
+      category: nil,
+      competence_period: nil
+    )
+
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [],
+      recipient_names: [],
+      metadata: {},
+      llm_confidence: { company: 0.4 },
+      uploaded_document: uploaded
+    )
+
+    result = calculator.global_confidence
+
+    # No override present → company stays at merged value, not forced to 1.0
+    assert result[:company] < 1.0
+  end
+
+  test "skips ocr lines with blank text" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [
+        { text: "", confidence: 95 },
+        { text: "   ", confidence: 95 },
+        { text: "Mario Rossi", confidence: 80 }
+      ],
+      recipient_names: ["Mario Rossi"],
+      metadata: {},
+      llm_confidence: {}
+    )
+
+    result = calculator.global_confidence
+
+    # Only "Mario Rossi" line counts (blank lines skipped)
+    assert result[:recipient] > 0
+  end
+
+  test "date_candidates with non-ISO date does not generate extra variants" do
+    calculator = DocumentProcessing::ConfidenceCalculator.new(
+      ocr_lines: [{ text: "March 2026", confidence: 80 }],
+      recipient_names: [],
+      metadata: { date: "March 2026" },
+      llm_confidence: {}
+    )
+
+    result = calculator.global_confidence
+
+    # Non-ISO date: only the raw string is used as candidate (no ISO decomposition)
+    assert_includes [0.0, 0.4, 0.8], result[:date].round(1)
+  end
 end

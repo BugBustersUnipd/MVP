@@ -1,0 +1,46 @@
+@if (TypeOfFilter === 'dateRange') {
+
+    <div class="card flex justify-center">
+      <p-datepicker
+        [(ngModel)]="dates"
+        selectionMode="range"
+        inputId="on_label"
+        [placeholder]="'Filtra per ' + DatepickerLabel.toLowerCase()"
+        [readonlyInput]="true"
+        showClear="true"
+        (ngModelChange)="onDateSelect()"
+        dateFormat="dd/mm/yy"
+      />
+    </div>
+
+}
+@if (TypeOfFilter === 'text') {
+
+    <div class="card flex justify-center">
+      <p-select
+        showClear="true"
+        inputId="text_label"
+        [placeholder]="'Filtra per ' + TextFilterLabel.toLowerCase()"
+        [options]="textOptions"
+        [(ngModel)]="selectedTextOption"
+        (ngModelChange)="onTextOptionChange()"
+        [filter]="true"
+      >
+      </p-select>
+    </div>
+
+}
+@if (TypeOfFilter === 'searchbar') {
+  <div class="card flex flex-wrap justify-center gap-4">
+    <p-iconfield>
+      <p-inputicon iconPosition="left" class="pi pi-search" />
+      <input
+        pInputText
+        [(ngModel)]="searchvalue"
+        (ngModelChange)="onSearchChange()"
+        type="text"
+        placeholder="Cerca per tutto"
+      />
+    </p-iconfield>
+  </div>
+}

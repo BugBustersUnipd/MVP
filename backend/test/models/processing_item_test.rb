@@ -54,4 +54,36 @@ class ProcessingItemTest < ActiveSupport::TestCase
   test "extracted_document is optional" do
     assert valid_item(extracted_document: nil).valid?
   end
+
+  # ---------------------------------------------------------------------------
+  # Predicate methods
+  # ---------------------------------------------------------------------------
+
+  test "done? returns true only when status is done" do
+    assert valid_item(status: "done").done?
+    assert_not valid_item(status: "queued").done?
+    assert_not valid_item(status: "in_progress").done?
+    assert_not valid_item(status: "failed").done?
+  end
+
+  test "failed? returns true only when status is failed" do
+    assert valid_item(status: "failed").failed?
+    assert_not valid_item(status: "done").failed?
+  end
+
+  test "in_progress? returns true only when status is in_progress" do
+    assert valid_item(status: "in_progress").in_progress?
+    assert_not valid_item(status: "done").in_progress?
+    assert_not valid_item(status: "queued").in_progress?
+  end
+
+  test "queued? returns true only when status is queued" do
+    assert valid_item(status: "queued").queued?
+    assert_not valid_item(status: "done").queued?
+  end
+
+  test "STATUSES contains all expected statuses" do
+    expected = %w[queued in_progress done failed]
+    assert_equal expected, ProcessingItem::STATUSES
+  end
 end

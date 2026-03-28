@@ -1,0 +1,25 @@
+<div class="select-employees-dialog">
+	<h2 class="dialog-title">Scegli il destinatario</h2>
+
+	<div class="mapping-row">
+		<div class="extracted-employee-pill">
+			<span>{{ extractedEmployeeName || 'Dipendente non disponibile' }}</span>
+		</div>
+
+		<i class="pi pi-arrow-right arrow-icon" aria-hidden="true"></i>
+
+		<div class="dialog-employee-select">
+			<menutendina
+				[options]="(employees$ | async) || []"
+				[(selected)]="selectedEmployee"
+				placeholder="Seleziona dipendente"
+				[showAddNew]="false"
+			></menutendina>
+
+			<div class="dialog-actions">
+				<app-button label="Annulla" class="btn-secondary" (action)="closeDialog()"></app-button>
+				<app-button label="Salva" class="btn-primary" [disabled]="!selectedEmployee" (action)="saveDialog()"></app-button>
+			</div>
+		</div>
+	</div>
+</div>

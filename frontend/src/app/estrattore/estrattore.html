@@ -1,0 +1,61 @@
+<section class="estrattore-page">
+  <div class="toolbar">
+    <div class="filters-grid">
+      <app-input
+        [label]="'Categoria'"
+        [placeholder]="'Inserisci categoria'"
+        [value]="selectedCategory"
+        (valueChange)="selectedCategory = $event?.toString()">
+      </app-input>
+      <div class="azienda-field">
+        <label class="label">Azienda</label>
+        <div class="azienda-input">
+          <menutendina
+            [label]="''"
+            [placeholder]="'Seleziona azienda'"
+            [options]="companies$ | async"
+            [showAddNew]="false"
+            [selected]="selectedCompany"
+            (selectedChange)="onCompanyChange($event)">
+          </menutendina>
+        </div>
+      </div>
+      <app-input
+        [label]="'Reparto'"
+        [placeholder]="'Inserisci reparto'"
+        [value]="selectedDepartment"
+        (valueChange)="selectedDepartment = $event?.toString() ?? ''">
+      </app-input>
+
+      <div class="competenza-field">
+        <label class="label">Mese/anno di competenza</label>
+        <div class="competenza-input">
+          <app-month-year
+            [label]="''"
+            [placeholder]="'Seleziona mese/anno'"
+            (monthYearChange)="onCompetenceMonthYearChange($event)">
+          </app-month-year>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-area">
+      <app-button
+        [label]="'Carica'"
+        [icon]="'pi pi-upload'"
+        [disabled]="!canUpload"
+        (action)="upload()">
+      </app-button>
+    </div>
+  </div>
+
+  <div class="upload-area">
+    <app-upload
+      [accept]="'.pdf,.csv,.jpg'"
+      [multiple]="true"
+      [titleText]="'Carica uno o piu documenti'"
+      [subtitleText]="'(pdf, csv, jpg)'"
+      (filesSelected)="onFilesSelected($event)">
+    </app-upload>
+  </div>
+</section>

@@ -64,4 +64,23 @@ class ImageProcessorTest < ActiveSupport::TestCase
     assert_equal 0.9, result[:confidence]["recipient"]
     assert_equal "mario@example.com", result[:employee].email
   end
+
+  test "extract returns nil employee when resolution is unmatched" do
+    unmatched_resolver = Object.new
+    unmatched_resolution = Object.new
+    unmatched_resolution.define_singleton_method(:matched?) { false }
+    unmatched_resolution.define_singleton_method(:employee) { nil }
+    unmatched_resolver.define_singleton_method(:resolve) { |**_| unmatched_resolution }
+
+    processor = DocumentProcessing::ImageProcessor.new(
+      ocr_service: FakeOcrService.new,
+      data_extractor: FakeDataExtractor.new,
+      recipient_resolver: unmatched_resolver
+    )
+
+    result = processor.extract("/tmp/fake.png")
+
+    assert_nil result[:employee]
+    assert_equal "Mario Rossi", result[:recipient]
+  end
 end
