@@ -10,6 +10,13 @@ SimpleCov.start "rails" do
 end
 
 ENV["RAILS_ENV"] ||= "test"
+
+# Prevent AWS SDK from querying EC2 instance metadata credentials in local tests.
+ENV["AWS_EC2_METADATA_DISABLED"] = "true"
+ENV["AWS_ACCESS_KEY_ID"] ||= "test"
+ENV["AWS_SECRET_ACCESS_KEY"] ||= "test"
+ENV["AWS_REGION"] ||= "us-east-1"
+
 require_relative "../config/environment"
 require "rails/test_help"
 require 'mocha/minitest'
