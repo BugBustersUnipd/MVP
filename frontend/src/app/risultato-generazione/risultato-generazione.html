@@ -1,9 +1,9 @@
-@if (localResult(); as result) {
+@if (result; as result) {
     <div class="menu">
         @if(!result.isPost && isEditable){
             <div class="actions">
-                <app-button label="Annulla Modifiche" class="btn btn-secondary" [fluid]="true" (action)="isEditable=!isEditable"></app-button>
-                <app-button label="Salva Modifiche" class="btn btn-primary" [fluid]="true" (action)="isEditable=!isEditable;saveChanges()"></app-button>
+                <app-button label="Annulla Modifiche" class="btn btn-secondary" [fluid]="true" (action)="cancelEditing()"></app-button>
+                <app-button label="Salva Modifiche" class="btn btn-primary" [fluid]="true" [disabled]="!hasPendingModifications" (action)="saveChanges()"></app-button>
             </div>
         }@else if(!result.isPost){
             <div class="actions">
@@ -20,14 +20,15 @@
     </div>
     <div class="body">
         <div class="image-container">
-            <bb-image-title [(imageTitle)]="result.title" [imageUrl]="result.imagePath || '/PlaceHolder-GufoBagnato.jpg'" [editable]="isEditable"
+            <bb-image-title [imageTitle]="getTitleValue()" [imageUrl]="getImagePathValue()" [editable]="isEditable"
+                (imageTitleChange)="onFieldModified('title', $event)"
                 (imageChange)="changeImage($event)"
             >
             </bb-image-title>
         </div>
 
         <div class="output-container">
-            <app-editor [(text)]="result.content" [editable]="isEditable"></app-editor>
+            <app-editor [text]="getContentValue()" [editable]="isEditable" (textChange)="onFieldModified('content', $event)"></app-editor>
         </div>
 
         <div class="d-flex gap-3">
