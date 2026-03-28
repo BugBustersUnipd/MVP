@@ -6,7 +6,7 @@ class AiGeneratorDataAnalystController < ApplicationController
 
 
     # istanzia il service specifico per il Copilot
-    service = AiGeneratorComputationService.new(start_date: start_date, end_date: end_date)
+    service = AiAnalyst::AiGeneratorComputationService.new(start_date: start_date, end_date: end_date)
     result = service.retrieve_all_information
 
     # da capire se fare un cambio da snake a camel case per il frontend, o se lasciare così

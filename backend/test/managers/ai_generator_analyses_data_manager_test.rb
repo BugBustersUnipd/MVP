@@ -28,27 +28,27 @@ class AiGeneratorAnalysesDataManagerTest < ActiveSupport::TestCase
     @company = Company.create!(name: "Test Company")
     @tone = Tone.create!(name: "Professionale", company: @company)
     @style = Style.create!(name: "Conciso", company: @company)
-    
+
     # 1. Contenuto Originale
     @parent_content = GeneratedDatum.create!(
-      title: "Testo Originale", 
-      prompt: "Primo prompt di prova inviato all'AI", # Inserito il testo per poterlo contare
-      rating: 8.0, 
+      title: "Testo Originale",
+      prompt: "Primo prompt di prova inviato all'AI",
+      rating: 8.0,
       tone: @tone, style: @style, company: @company, created_at: Time.current
     )
-    
+
     # 2. Contenuto Rigenerato (Versione figlia)
     GeneratedDatum.create!(
-      title: "Versione 2", 
-      prompt: "Secondo prompt di rigenerazione", # Inserito il testo per poterlo contare
-      rating: 9.0, 
-      tone: @tone, style: @style, company: @company, 
-      version: @parent_content, # Corretto 'parent' in 'version'
+      title: "Versione 2",
+      prompt: "Secondo prompt di rigenerazione",
+      rating: 9.0,
+      tone: @tone, style: @style, company: @company,
+      version: @parent_content,
       created_at: Time.current
     )
 
     # Inizializziamo il manager con un range di date ampio
-    @manager = AiGeneratorAnalysesDataManager.new(start_date: 1.day.ago, end_date: 1.day.from_now)
+    @manager = AiAnalyst::Managers::AiGeneratorAnalysesDataManager.new(start_date: 1.day.ago, end_date: 1.day.from_now)
   end
 
   test "calcola correttamente il CONTEGGIO totale dei prompt usati" do
@@ -63,7 +63,7 @@ class AiGeneratorAnalysesDataManagerTest < ActiveSupport::TestCase
   end
 
   test "calcola correttamente il rateo di rigenerazione" do
-    # Abbiamo 1 contenuto originale (version: nil) e 1 rigenerazione (version compilata). 
+    # Abbiamo 1 contenuto originale (version: nil) e 1 rigenerazione (version compilata).
     # Media = 1.0 / 1.0 = 1.0
     assert_equal 1.0, @manager.retrieve_average_regeneration_amount_query
   end

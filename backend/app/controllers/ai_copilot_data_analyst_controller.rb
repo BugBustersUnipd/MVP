@@ -5,7 +5,7 @@ class AiCopilotDataAnalystController < ApplicationController
     end_date = params[:end_date] || Time.current
 
     # istanzia il service specifico per il Copilot
-    service = AiCopilotComputationService.new(start_date: start_date, end_date: end_date)
+    service = AiAnalyst::AiCopilotComputationService.new(start_date: start_date, end_date: end_date)
     
     result = service.retrieve_all_information
 
