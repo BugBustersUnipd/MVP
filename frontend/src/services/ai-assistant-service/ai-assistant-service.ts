@@ -23,7 +23,6 @@ export class AiAssistantService {
   currentResultsHistory$ = this.ResultsHistorySubject.asObservable();
 
   constructor() {
-    // Observer automatico: quando resultSubject cambia, aggiorna lo storico
     this.currentResult$.subscribe((updated) => {
       if (updated && updated.id > 0) {
         const history = this.ResultsHistorySubject.value ?? [];
@@ -52,44 +51,7 @@ export class AiAssistantService {
   private companiesSubject = new BehaviorSubject<Company[]>([]);
   companies$ = this.companiesSubject.asObservable();
 
-  //roba che verrà assolutamente tolta appena facciamo le chiamata al backend
-  private tonesByCompany: Record<number, Tone[]> = {
-    1: [
-      { id: 1, name: 'Simpatico' },
-      { id: 2, name: 'Formale' },
-      { id: 3, name: 'Creativo' }
-    ],
-    2: [
-      { id: 4, name: 'Istituzionale' },
-      { id: 5, name: 'Coinvolgente' },
-      { id: 6, name: 'Tecnico' }
-    ],
-    3: [
-      { id: 7, name: 'Amichevole' },
-      { id: 8, name: 'Diretto' },
-      { id: 9, name: 'Ispirazionale' }
-    ]
-  };
 
-  private stylesByCompany: Record<number, Style[]> = {
-    1: [
-      { id: 1, name: 'Conversazionale' },
-      { id: 2, name: 'Essenziale' },
-      { id: 3, name: 'Articolato' }
-    ],
-    2: [
-      { id: 4, name: 'Commerciale' },
-      { id: 5, name: 'Narrativo' },
-      { id: 6, name: 'Professionale' }
-    ],
-    3: [
-      { id: 7, name: 'Social' },
-      { id: 8, name: 'Minimal' },
-      { id: 9, name: 'Editoriale' }
-    ]
-  };
-
-  // todo implementare con la vera chiamata al backend: string o id?
   fetchTonesByCompany(company: number) : void {
 
     this.http.get<any>(`${API_BASE}/tones`, { params: { company_id: company} }).subscribe({
@@ -101,10 +63,8 @@ export class AiAssistantService {
       },
       error: (err) => console.error('Errore nel recupero dei toni:', err),
     });
-    // this.tonesSubject.next(mockData);
   }
   
-  // todo implementare con la vera chiamata al backendL: string o id?
   fetchStylesByCompany(company: number) : void {
     this.http.get<any>(`${API_BASE}/styles`, { params: { company_id: company} }).subscribe({
         next: (response) => {
@@ -128,26 +88,57 @@ export class AiAssistantService {
     });
   }
   newTone(name: string, code: string, companyId: number) : void {
-    //post al backend, se va a buon fine mi restituisce un id che metto nel mockTone
-    const mockTone = { id: 1, name };//hardcodato id , da cambiare (todo)
-    this.tonesSubject.next([...this.tonesSubject.value, mockTone]);
+    this.http.post<any>(`${API_BASE}/tones`, {
+      tone: {
+        name: name,
+        description: code,
+        company_id: companyId
+      }
+    }).subscribe({
+      next: (response) => {
+        const mockTone = { id: response.id, name };
+        this.tonesSubject.next([...this.tonesSubject.value, mockTone]);
+        console.log('Tono creato:', mockTone);
+      },
+      error: (err) => console.error('Errore nella creazione del tono:', err),
+    });
   }
 
   newStyle(name: string, code: string, companyId: number) : void {
-    //post al backend, aggiunge stile per company
-    const mockStyle = { id: 1, name };//hardcodato id , da cambiare (todo)
-    this.stylesSubject.next([...this.stylesSubject.value, mockStyle]);
+    this.http.post<any>(`${API_BASE}/styles`, {
+      style: {
+        name: name,
+        description: code,
+        company_id: companyId
+      }
+    }).subscribe({
+      next: (response) => {
+        console.log('Risposta alla creazione dello stile:', response);
+        const mockStyle = { id: response.id, name };
+        this.stylesSubject.next([...this.stylesSubject.value, mockStyle]);
+        console.log('Stile creato:', mockStyle);
+      },
+      error: (err) => console.error('Errore nella creazione dello stile:', err),
+    });
   }
 
   removeTone(id: number) : void {
-    //todo implementare con chiamata al backend, se va a buon fine rimuovo il tono da tonesSubject
-    //tolgo dall'array tonesSubject il tono con id passato come parametro solo se la chiamata al backend va a buon fine
-    this.tonesSubject.next(this.tonesSubject.value.filter(t => t.id !== id));
+    this.http.delete<any>(`${API_BASE}/tones/${id}`, {}).subscribe({
+      next: (response) => {
+        console.log('Tono rimosso con successo:', response);
+        this.tonesSubject.next(this.tonesSubject.value.filter(t => t.id !== id));
+      },
+      error: (err) => console.error('Errore nella rimozione del tono:', err),
+    });
   }
   removeStyle(id: number) : void {
-    //todo implementare con chiamata al backend, se va a buon fine rimuovo lo stile da stylesSubject
-    //tolgo dall'array stylesSubject il tono con id passato come parametro solo se la chiamata al backend va a buon fine
-    this.stylesSubject.next(this.stylesSubject.value.filter(s => s.id !== id));
+    this.http.delete<any>(`${API_BASE}/styles/${id}`, {}).subscribe({
+      next: (response) => {
+        console.log('Stile rimosso con successo:', response);
+        this.stylesSubject.next(this.stylesSubject.value.filter(s => s.id !== id));
+      },
+      error: (err) => console.error('Errore nella rimozione dello stile:', err),
+    });
   }
   // todo implementare
   reuse(tone: Tone, style: Style, company: Company, prompt: string) : void {
