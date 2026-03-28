@@ -1,16 +1,21 @@
 import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ResultAiAssistant } from '../../app/shared/models/result-ai-assistant.model';
 import { Tone, Style, Company } from '../../app/shared/models/result-ai-assistant.model';
 import { ResultAiAssistantSerializer } from '../../app/shared/serializers/result-ai-assistant.serializer';
 import { BehaviorSubject } from 'rxjs';
 import { AnalyticsAbstractService } from '../analytics-abstract-service';
+const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
+const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
+
 @Injectable({
   providedIn: 'root',
 })
 export class AiAssistantService {
   private serializer = inject(ResultAiAssistantSerializer);
   private router = inject(Router);
+  private http = inject(HttpClient);
   private resultSubject : BehaviorSubject<ResultAiAssistant | null> = new BehaviorSubject<ResultAiAssistant | null>(null);
   currentResult$ = this.resultSubject.asObservable();
 
@@ -86,23 +91,41 @@ export class AiAssistantService {
 
   // todo implementare con la vera chiamata al backend: string o id?
   fetchTonesByCompany(company: number) : void {
-    const mockData = this.tonesByCompany[company] ?? [];
-    this.tonesSubject.next(mockData);
+
+    this.http.get<any>(`${API_BASE}/tones`, { params: { company_id: company} }).subscribe({
+      next: (response) => {
+        const tonesArray = Array.isArray(response) ? response : response.tones || [];
+        const tones: Tone[] = tonesArray.map((item: any) => ({ id: item.id, name: item.name }));
+        this.tonesSubject.next(tones);
+        console.log('Toni recuperati:', tones);
+      },
+      error: (err) => console.error('Errore nel recupero dei toni:', err),
+    });
+    // this.tonesSubject.next(mockData);
   }
   
   // todo implementare con la vera chiamata al backendL: string o id?
   fetchStylesByCompany(company: number) : void {
-    const mockData = this.stylesByCompany[company] ?? [];
-    this.stylesSubject.next(mockData);
+    this.http.get<any>(`${API_BASE}/styles`, { params: { company_id: company} }).subscribe({
+        next: (response) => {
+        const stylesArray = Array.isArray(response) ? response : response.styles || [];
+        const styles: Style[] = stylesArray.map((item: any) => ({ id: item.id, name: item.name }));
+        this.stylesSubject.next(styles);
+        console.log('Stili recuperati:', styles);
+      },
+      error: (err) => console.error('Errore nel recupero dei toni:', err),
+    });
+
   }
 
   fetchCompanies(): void {
-    const mockCompanies = [
-      { id: 1, name: 'default-company' },
-      { id: 2, name: 'AlbertoSrl' },
-      { id: 3, name: 'PiruzSrl' }
-    ];
-    this.companiesSubject.next(mockCompanies);
+    this.http.get<any>(`${API_BASE}/lookups/companies`).subscribe({
+      next: (response) => {
+        this.companiesSubject.next(response.companies);
+        console.log('Aziende recuperate:', response.companies);
+        },
+      error: (err) => console.error('Errore nel recupero delle aziende:', err),
+    });
   }
   newTone(name: string, code: string, companyId: number) : void {
     //post al backend, se va a buon fine mi restituisce un id che metto nel mockTone
