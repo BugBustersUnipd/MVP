@@ -36,6 +36,7 @@ export class Estrattore implements OnInit {
 
   ngOnInit(): void {
     this.aiService.fetchCompanies();
+    
   }
 
   onCategoryChange(value: string | number | undefined): void {
@@ -64,7 +65,13 @@ export class Estrattore implements OnInit {
     if (!this.canUpload) {
       return;
     }
-    //qui si chiama il backend
+    this.aiService.uploadFiles(
+    this.selectedFiles,
+    this.selectedCompany.name, // oppure id se serve
+    this.selectedDepartment,
+    this.selectedCategory ?? '',
+    this.selectedCompetenceMonthYear
+  );
     this.router.navigate(['/storico-ai-copilot']);
   }
 }

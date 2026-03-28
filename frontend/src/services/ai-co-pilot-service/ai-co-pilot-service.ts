@@ -4,6 +4,11 @@ import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-a
 import { ResultSplit, State} from '../../app/shared/models/result-split.model';
 import { BehaviorSubject } from 'rxjs';
 import { Company } from '../../app/shared/models/result-ai-assistant.model';
+import { RisultatoGenerazione } from '../../app/risultato-generazione/risultato-generazione';
+import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-ai-copilot.model';
+
+const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
+const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +22,7 @@ export class AiCoPilotService {
 
   private resultsHistorySubject: BehaviorSubject<ResultSplit[] | null> = new BehaviorSubject<ResultSplit[] | null>(null);
   currentResultsHistory$ = this.resultsHistorySubject.asObservable();
+
 
   private templatesSubject = new BehaviorSubject<{ name: string; content: string }[]>([]);
   templates$ = this.templatesSubject.asObservable();
@@ -39,7 +45,7 @@ export class AiCoPilotService {
   private ConfidenceSubject = new BehaviorSubject<string[]>([]);
   confidence$ = this.ConfidenceSubject.asObservable();
 // aggiunto MA VEDIAMO SE VA BENE; SERVE PER ALTRI DOCUMENTI ESTRATTI
-  private otherExtractedDocumentsSubject = new BehaviorSubject<{ id: number; destinatario: string; confidenza: number }[]>([]);
+  private otherExtractedDocumentsSubject = new BehaviorSubject<ResultSplit[]>([]);
   otherExtractedDocuments$ = this.otherExtractedDocumentsSubject.asObservable();
 
 
@@ -134,115 +140,112 @@ export class AiCoPilotService {
       );
     }
   } */
-  private processDocument(file: File, company: string, department: string, category: string, competence_period: string) : void {
+  private processDocument(file: File, company: string, department: string, category: string, competence_period: string) : ResultAiCopilot {
+      const reactiveResult  = this.serializer.creaStatoIniziale(file, company, department, category, competence_period);
+      const formData = new FormData(); 
+      formData.append('pdf', file);
+      formData.append('category', category);
+      formData.append('company', company);
+      formData.append('department', department);
+      formData.append('competence_period', competence_period);
+      
+      this.http.post<any>('URL_API/documents/split', formData).subscribe({
+        next: (response) => {
+          reactiveResult.state = DocumentState.InElaborazione; // Stato iniziale
+          const socket = new WebSocket(WS_URL);
+          const identifier = JSON.stringify({ channel: 'DocumentProcessingChannel', job_id: response.job_id });
+          socket.onopen = () => {
+            socket.send(JSON.stringify({ command: 'subscribe', identifier }));
+          };
+          socket.onmessage = (event) => {
+            const cable = JSON.parse(event.data);
+            if(!cable.message) return; // Ignora messaggi di sistema
+
+            const { event: evt, extracted_document } = cable.message;
+            if (evt === 'document_processed' && extracted_document) {
+              const nuovoEstratto = this.serializer.deserializeExtractedDocument(extracted_document);
+              reactiveResult.ResultSplit = [...reactiveResult.ResultSplit, nuovoEstratto];
+            }
+            if (evt === 'processing_completed') {
+              reactiveResult.state = DocumentState.Completato;
+              socket.close();
+            }
+            if (evt === 'processing_failed') {
+              console.error('Elaborazione fallita per il documento:', cable.message.error);
+              socket.close();
+            }
+          };
+          socket.onerror = (error) => {
+            console.error('Errore nella connessione WebSocket:', error);
+            socket.close();
+          };
+        },
+        error: (error) => {
+          throw new Error('Errore durante l\'upload del documento: ' + error.message);
+        }
+      });
+      return reactiveResult;
       //qui dentro chiama addCategory
       //poi faccio anche addDepartment 
   }
+  private upsertInHistory(split: ResultSplit): void {
+    const current = this.resultsHistorySubject.value ?? [];
+    const idx = current.findIndex((r) => r.id === split.id);
+    if (idx === -1) {
+      this.resultsHistorySubject.next([...current, split]);
+    } else {
+      const copy = [...current];
+      copy[idx] = split;
+      this.resultsHistorySubject.next(copy);
+    }
+  }
 
-  public getDocumentsByParent(parentId: number, currentResultId?: number) : void {
-    //todo implementare con chiamata al backend
-    //serializer
-    //BISOGNA USARE I WEBSOCKET ANCHE QUI EHH, PRECHÈ LO USIAMO PER PRENDERE DOCUMENTI PER PADRE MA È POSSIBILE CHE NON SIANO STATI PROCESSATI
+    /** GET /documents/extracted/:id */
+  public fetchExtractedDocument(id: number): void {
+    this.http.get<any>(`${API_BASE}/documents/extracted/${id}`).subscribe({
+      next: ({ extracted_document }) =>
+        this.resultSubject.next(this.serializer.deserializeExtractedDocument(extracted_document)),
+      error: (err) => console.error('Errore nel recupero del documento estratto:', err),
+    });
+  }
+   /** GET /documents/uploads/:parentId/extracted */
+  public getDocumentsByParent(parentId: number, currentResultId?: number): void {
     if (!parentId) {
       this.otherExtractedDocumentsSubject.next([]);
       return;
     }
-
-    // Mock: simula ResultSplit dal backend
-    const mockResultSplits: ResultSplit[] = [
-      {
-        name: 'Result 1',
-        state: 'Pronto' as any,
-        confidence: 96,
-        recipientId: parentId * 10 + 1,
-        recipientName: 'Anna Blu',
-        recipientEmail: 'anna.blu@azienda.it',
-        recipientCode: 'EMP010',
-        time_Analysis: 1200,
-        page_end: 5,
-        page_start: 1,
-        company: 'AziendaA',
-        department: 'HR',
-        month_year: '202603',
-        category: 'Buste paga',
-        data: new Date(),
-        parentId: parentId,
-        id: parentId * 10 + 1,
-      } as ResultSplit,
-      {
-        name: 'Result 2',
-        state: 'Pronto' as any,
-        confidence: 91,
-        recipientId: parentId * 10 + 2,
-        recipientName: 'Paolo Neri',
-        recipientEmail: 'paolo.neri@azienda.it',
-        recipientCode: 'EMP011',
-        time_Analysis: 1100,
-        page_end: 4,
-        page_start: 1,
-        company: 'AziendaA',
-        department: 'Finance',
-        month_year: '202603',
-        category: 'Cedolini',
-        data: new Date(),
-        parentId: parentId,
-        id: parentId * 10 + 2,
-      } as ResultSplit,
-      {
-        name: 'Result 3',
-        state: 'Pronto' as any,
-        confidence: 87,
-        recipientId: parentId * 10 + 3,
-        recipientName: 'Lucia Verdi',
-        recipientEmail: 'lucia.verdi@azienda.it',
-        recipientCode: 'EMP012',
-        time_Analysis: 1000,
-        page_end: 3,
-        page_start: 1,
-        company: 'AziendaA',
-        department: 'Operations',
-        month_year: '202603',
-        category: 'Stipendi',
-        data: new Date(),
-        parentId: parentId,
-        id: parentId * 10 + 3,
-      } as ResultSplit,
-    ];
-
-    // Escludere il result corrente dalla lista
-    const filtered = mockResultSplits.filter(r => r.recipientId !== currentResultId);
-
-    // Mappare a OtherExtractDocumentRow
-    const displayRows = filtered.map(r => ({
-      id: r.recipientId,
-      destinatario: r.recipientName,
-      confidenza: r.confidence,
-    }));
-
-    this.otherExtractedDocumentsSubject.next(displayRows);
+    this.http.get<any>(`${API_BASE}/documents/uploads/${parentId}/extracted`).subscribe({
+      next: (response) => {
+        const splits: ResultSplit[] = response.extracted_documents
+          .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
+          .filter((s: ResultSplit) => s.id !== currentResultId);
+        this.otherExtractedDocumentsSubject.next(splits);
+      },
+      error: (err) => console.error('Errore nel recupero dei documenti fratelli:', err),
+    });
   }
 
 
-  public newTemplate(name: string, content: string): void{
-    //post al backend
-    const mockStyle = { name, content };
-    //aggiungi all'array stylesSubject il nuovo stile (in un caso reale, dopo aver ricevuto conferma dal backend)
-    this.templatesSubject.next([...this.templatesSubject.value, mockStyle]);
-
+  /** POST /templates */
+  public newTemplate(name: string, content: string): void {
+    this.http.post<any>(`${API_BASE}/templates`, { name, content }).subscribe({
+      next: ({ template }) =>
+        this.templatesSubject.next([
+          ...this.templatesSubject.value,
+          { name: template.name, content: template.content },
+        ]),
+      error: (err) => console.error('Errore nella creazione del template:', err),
+    });
   }
-
-  public fetchTemplates() : void {
-    const mockData = [
-      { name: 'Template 1', content: 'Descrizione del template 1' },
-      { name: 'Template 2', content: 'Descrizione del template 2' },
-      { name: 'Template 3', content: 'Descrizione del template 3' },
-      { name: 'Template 4', content: 'Descrizione del template 4' },
-      { name: 'Template 5', content: 'Descrizione del template 5' },
-      { name: 'Template 6', content: 'Descrizione del template 6' },
-    ];
-    this.templatesSubject.next(mockData);
-     
+  /** GET /templates */
+  public fetchTemplates(): void {
+    this.http.get<any>(`${API_BASE}/templates`).subscribe({
+      next: ({ templates }) =>
+        this.templatesSubject.next(templates.map((t: any) => ({ name: t.name, content: t.content }))),
+      error: (err) => console.error('Errore nel recupero dei template:', err),
+    });
   }
+ 
   /*public addCategory() : void {
     //todo implementare con chiamata al backend
 
@@ -253,183 +256,100 @@ export class AiCoPilotService {
   }*/
 
   
-    public fetchCategories() : void {
-    const mockCategories = ['Categoria 1', 'Categoria 2', 'Categoria 3'];
-    this.categorySubject.next(mockCategories);
+  public fetchCategories(): void {
+    const unique = [...new Set((this.resultsHistorySubject.value ?? []).map((r) => r.category).filter(Boolean))];
+    this.categorySubject.next(unique);
   }
-  public fetchDepartment() : void {
-    const mockDepartment = ['Reparto 1', 'Reparto 2', 'Reparto 3'];
-    this.departmentSubject.next(mockDepartment);
+  public fetchDepartment(): void {
+    const unique = [...new Set((this.resultsHistorySubject.value ?? []).map((r) => r.department).filter(Boolean))];
+    this.departmentSubject.next(unique);
   }
-  public fetchState() : void {
-    const mockState = ['Pronto', 'Inviato', 'Programmato', 'Da validare'];
-    this.StateSubject.next(mockState);
+  public fetchState(): void {
+    this.StateSubject.next(Object.values(State));
   }
-  public fetchConfidence() : void {
-    const mockConfidence = ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'];
-    this.ConfidenceSubject.next(mockConfidence);
+  public fetchConfidence(): void {
+    this.ConfidenceSubject.next(['0-20%', '20-40%', '40-60%', '60-80%', '80-100%']);
   }
-  public fetchCompanies() : void {
-    const mockCompanies = [
-      { id: 1, name: 'default-company' },
-      { id: 2, name: 'AlbertoSrl' },
-      { id: 3, name: 'PiruzSrl' }
-    ];
-    this.companiesSubject.next(mockCompanies);
+  /** GET /lookups/companies */
+  public fetchCompanies(): void {
+    this.http.get<any>(`${API_BASE}/lookups/companies`).subscribe({
+      next: (response) => {
+        this.companiesSubject.next(response.companies);
+        console.log('Aziende recuperate:', response.companies);
+        },
+      error: (err) => console.error('Errore nel recupero delle aziende:', err),
+    });
   }
 
   
-  getOriginalPdfById(id: number) : void {
-    // window.open('/Candidatura RTB.pdf', '_blank');
+  public getOriginalPdfById(id: number): void {
+    window.open(`${API_BASE}/documents/uploads/${id}/file`, '_blank');
   }
-  getPdfById(id: number) : void {
-    // window.open('/Candidatura RTB.pdf', '_blank');
-  }
-
-  modifyDocumentRange(id: number, page_start: number, page_end: number) : void {
-    //todo implementare con chiamata al backend
+  public getPdfById(id: number): void {
+    window.open(`${API_BASE}/documents/extracted/${id}/pdf`, '_blank');
   }
 
-  fetchHistoryResults(): void {
-    if ((this.resultsHistorySubject.value ?? []).length > 0) {
-      return;
-    }
-
-    const mockData: ResultSplit[] = [
-      {
-        id: 101,
-        name: 'Mini documento 1',
-        state: State.Pronto,
-        confidence: 96,
-        recipientId: 1001,
-        recipientName: 'Anna Blu',
-        recipientEmail: 'anna.blu@azienda.it',
-        recipientCode: 'EMP010',
-        time_Analysis: 1200,
-        page_end: 5,
-        page_start: 1,
-        company: 'AlbertoSrl',
-        department: 'HR',
-        month_year: '202603',
-        category: 'Buste paga',
-        data: new Date('2026-03-10'),
-        parentId: 5001,
-      },
-      {
-        id: 102,
-        name: 'Mini documento 2',
-        state: State.Pronto,
-        confidence: 91,
-        recipientId: 1004,
-        recipientName: 'Marco Gialli',
-        recipientEmail: 'marco.gialli@azienda.it',
-        recipientCode: 'EMP013',
-        time_Analysis: 1320,
-        page_end: 8,
-        page_start: 6,
-        company: 'AlbertoSrl',
-        department: 'HR',
-        month_year: '202603',
-        category: 'Bonus',
-        data: new Date('2026-03-10'),
-        parentId: 5001,
-      },
-      {
-        id: 103,
-        name: 'Mini documento 1',
-        state: State.DaValidare,
-        confidence: 89,
-        recipientId: 1002,
-        recipientName: 'Paolo Neri',
-        recipientEmail: 'paolo.neri@azienda.it',
-        recipientCode: 'EMP011',
-        time_Analysis: 1450,
-        page_end: 4,
-        page_start: 1,
-        company: 'PiruzSrl',
-        department: 'Finance',
-        month_year: '202603',
-        category: 'Cedolini',
-        data: new Date('2026-03-12'),
-        parentId: 5002,
-      },
-      {
-        id: 104,
-        name: 'Mini documento 2',
-        state: State.DaValidare,
-        confidence: 84,
-        recipientId: 1005,
-        recipientName: 'Giada Rosa',
-        recipientEmail: 'giada.rosa@azienda.it',
-        recipientCode: 'EMP014',
-        time_Analysis: 1510,
-        page_end: 7,
-        page_start: 5,
-        company: 'PiruzSrl',
-        department: 'Finance',
-        month_year: '202603',
-        category: 'Rimborsi',
-        data: new Date('2026-03-12'),
-        parentId: 5002,
-      },
-      {
-        id: 105,
-        name: 'Mini documento 1',
-        state: State.Inviato,
-        confidence: 93,
-        recipientId: 1003,
-        recipientName: 'Lucia Verdi',
-        recipientEmail: 'lucia.verdi@azienda.it',
-        recipientCode: 'EMP012',
-        time_Analysis: 980,
-        page_end: 3,
-        page_start: 1,
-        company: 'default-company',
-        department: 'Operations',
-        month_year: '202603',
-        category: 'Stipendi',
-        data: new Date('2026-03-14'),
-        parentId: 5003,
-      },
-      {
-        id: 106,
-        name: 'Mini documento 2',
-        state: State.Pronto,
-        confidence: 90,
-        recipientId: 1006,
-        recipientName: 'Dario Bianchi',
-        recipientEmail: 'dario.bianchi@azienda.it',
-        recipientCode: 'EMP015',
-        time_Analysis: 1105,
-        page_end: 6,
-        page_start: 4,
-        company: 'default-company',
-        department: 'Operations',
-        month_year: '202603',
-        category: 'Premi',
-        data: new Date('2026-03-14'),
-        parentId: 5003,
-      },
-    ];
-
-    this.resultsHistorySubject.next(mockData);
+  /** PATCH /documents/extracted/:id/reassign_range */
+  public modifyDocumentRange(id: number, page_start: number, page_end: number): void {
+    this.http
+      .patch<any>(`${API_BASE}/documents/extracted/${id}/reassign_range`, { page_start, page_end })
+      .subscribe({
+        next: () => this.fetchExtractedDocument(id),
+        error: (err) => console.error('Errore nella modifica del range:', err),
+      });
+  }
+    /** PATCH /documents/extracted/:id/metadata */
+  public updateDocumentMetadata(id: number, metadataUpdates: Record<string, unknown>): void {
+    this.http
+      .patch<any>(`${API_BASE}/documents/extracted/${id}/metadata`, { metadata_updates: metadataUpdates })
+      .subscribe({
+        next: ({ extracted_document }) => {
+          const updated = this.serializer.deserializeExtractedDocument(extracted_document);
+          this.resultSubject.next(updated);
+          this.upsertInHistory(updated);
+        },
+        error: (err) => console.error('Errore nell\'aggiornamento dei metadati:', err),
+      });
   }
 
-  fetchEmployeesByCompany(idCompany: string) : void {
-    //todo implementare con chiamata al backend
-    const mockEmployees = [
-      { id: 1, name: 'Mario Rossi', email: 'mario.rossi@azienda.it', employeeCode: 'EMP001' },
-      { id: 2, name: 'Giulia Bianchi', email: 'giulia.bianchi@azienda.it', employeeCode: 'EMP002' },
-      { id: 3, name: 'Luca Verdi', email: 'luca.verdi@azienda.it', employeeCode: 'EMP003' },
-      { id: 4, name: 'Sara Neri', email: 'sara.neri@azienda.it', employeeCode: 'EMP004' },
-    ];
+    /** GET /documents/uploads → carica la history iniziale via HTTP */
+  public fetchHistoryResults(): void {
+    if ((this.resultsHistorySubject.value ?? []).length > 0) return;
+ 
+    this.http.get<any>(`${API_BASE}/documents/uploads`).subscribe({
+      next: ({ uploaded_documents }) => {
+        for (const ud of uploaded_documents) {
+          this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`).subscribe({
+            next: (response) =>
+              response.extracted_documents
+                .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
+                .forEach((s: ResultSplit) => this.upsertInHistory(s)),
+            error: (err) => console.error(`Errore estratti per ${ud.id}:`, err),
+          });
+        }
+      },
+      error: (err) => console.error('Errore nel recupero della history:', err),
+    });
+  }
 
-    if (!idCompany) {
+  /** GET /lookups/users?company=<n> */
+  public fetchEmployeesByCompany(company: string): void {
+    if (!company) {
       this.employeesSubject.next([]);
       return;
     }
-
-    this.employeesSubject.next(mockEmployees);
+    this.http.get<any>(`${API_BASE}/lookups/users`, { params: { company } }).subscribe({
+      next: ({ users }) =>
+        this.employeesSubject.next(
+          users.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            employeeCode: u.employee_code,
+          }))
+        ),
+      error: (err) => console.error('Errore nel recupero degli utenti:', err),
+    });
   }
 
   //todo modifica data di un result
@@ -437,7 +357,7 @@ export class AiCoPilotService {
   // todo modifica azienda di un result
   // todo modifica dipartimento di un result
 
-  updateResult(result: ResultSplit): void {
+    public updateResult(result: ResultSplit): void {
     this.resultSubject.next(result);
   }
 

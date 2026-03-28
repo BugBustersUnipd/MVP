@@ -6,8 +6,8 @@ import { TableModule } from 'primeng/table';
 
 export interface OtherExtractDocumentRow {
 	id: number;
-	destinatario: string;
-	confidenza: number;
+	recipientName: string;
+	confidence: number;
 }
 
 @Component({
