@@ -42,7 +42,7 @@ export class DocSummary {
   }
 
   getMonthYearValue(): string {
-    const value = this.getFieldValue('month_year', '');
+    const value = this.getFieldValue('data', '');
     const raw = String(value ?? '').trim();
     if (!raw) {
       return '';

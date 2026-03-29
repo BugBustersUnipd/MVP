@@ -12,7 +12,7 @@ import { OtherExtractDocuments, OtherExtractDocumentRow } from '../components/ot
 import { ToastModule } from 'primeng/toast';
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, combineLatest, map, Observable, of } from 'rxjs';
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -26,18 +26,56 @@ export class AnteprimaDocumento {
   aiService = inject(AiCoPilotService);
   private destroyRef = inject(DestroyRef);
   isEditable: boolean = false;
-  // todo ho idea che diventaerà un observable prima o poi...(quando cambi le pagine estratte fa ripartire l'analisi...)
-  result = (history.state?.result as ResultSplit | null) ?? null;
+  result$ = new BehaviorSubject<ResultSplit | null>((history.state?.result as ResultSplit | null) ?? null);
+  extractedEmployeeRows$ = new BehaviorSubject<ExtractedEmployeeInfoRow[]>([]);
+
+  get result(): ResultSplit | null {
+    return this.result$.value;
+  }
+
+  set result(value: ResultSplit | null) {
+    this.result$.next(value);
+  }
+
   pendingModifications: Partial<ResultSplit> = {};
   pages: number = history.state?.pages;
-  extractedEmployeeRows: ExtractedEmployeeInfoRow[] = [];
   otherExtractedDocumentRows$: Observable<OtherExtractDocumentRow[]> = of([]);
   private removedOtherDocumentIds$ = new BehaviorSubject<number[]>([]);
+
+  get extractedEmployeeRows(): ExtractedEmployeeInfoRow[] {
+    return this.extractedEmployeeRows$.value;
+  }
+
+  set extractedEmployeeRows(value: ExtractedEmployeeInfoRow[]) {
+    this.extractedEmployeeRows$.next(value);
+  }
   
   ngOnInit() {
     this.aiService.fetchTemplates();
     this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
     const currentExtractedDocumentId = this.result?.id;
+
+    this.aiService.currentResult$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((updated) => {
+        if (!updated || !this.result || updated.id !== this.result.id) {
+          return;
+        }
+        this.applyIncomingResult(updated);
+      });
+
+    this.aiService.currentResultsHistory$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((historyRows) => {
+        if (!this.result || !historyRows?.length) {
+          return;
+        }
+        const updated = historyRows.find((row) => row.id === this.result?.id);
+        if (!updated) {
+          return;
+        }
+        this.applyIncomingResult(updated);
+      });
 
     this.otherExtractedDocumentRows$ = combineLatest([
       this.aiService.otherExtractedDocuments$,
@@ -90,19 +128,30 @@ export class AnteprimaDocumento {
     });
 
     if (this.ref) {
-      this.ref.onClose.subscribe((selectedEmployee: SelectEmployeeDialogResult | undefined) => {
+      this.ref.onClose.subscribe(async (selectedEmployee: SelectEmployeeDialogResult | undefined) => {
         if (!selectedEmployee || !this.result) {
           return;
         }
 
-        this.result.recipientId = selectedEmployee.id;
-        this.result.recipientName = selectedEmployee.name;
-        this.result.recipientEmail = selectedEmployee.email || '';
-        this.result.recipientCode = selectedEmployee.employeeCode || '';
+        if (!this.result.id) {
+          this.messageService.add({severity:'error', summary: 'Documento estratto non disponibile'});
+          return;
+        }
 
-        this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
-        this.aiService.updateResult(this.result);
-        this.messageService.add({severity:'success', summary: 'Dipendente aggiornato'});
+        try {
+          const updated = await firstValueFrom(
+            this.aiService.updateDocumentMetadata$(this.result.id, {
+              recipient: selectedEmployee.name,
+              recipients: [selectedEmployee.name],
+            })
+          );
+
+          this.applyIncomingResult(updated);
+          this.messageService.add({severity:'success', summary: 'Dipendente aggiornato'});
+        } catch (error) {
+          console.error('Errore nel salvataggio del dipendente:', error);
+          this.messageService.add({severity:'error', summary: 'Errore salvataggio dipendente'});
+        }
       });
     }
   }
@@ -138,6 +187,11 @@ export class AnteprimaDocumento {
 
     const isEmptyRow = Object.values(row).every((value) => !value?.trim());
     return isEmptyRow ? [] : [row];
+  }
+
+  private applyIncomingResult(updated: ResultSplit): void {
+    this.result = { ...updated };
+    this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
   }
 
   showDialog() {
@@ -240,9 +294,17 @@ export class AnteprimaDocumento {
   }
 
   private buildMetadataUpdates(modifications: Partial<ResultSplit>): Record<string, unknown> {
-    const { page_start, page_end, ...metadataUpdates } = modifications;
-    return metadataUpdates as Record<string, unknown>;
-  }
+  // Solo i campi che il backend accetta in /metadata
+  const METADATA_FIELDS: (keyof ResultSplit)[] = [
+    'category', 'company', 'department', 'month_year', 'name'
+  ];
+  
+  return Object.fromEntries(
+    METADATA_FIELDS
+      .filter(key => key in modifications)
+      .map(key => [key, modifications[key]])
+  );
+}
 
   private buildRangeUpdates(
     modifications: Partial<ResultSplit>,
