@@ -11,7 +11,7 @@ class PostsController < ApplicationController
   end
 
   def index
-    posts = Post.includes(:generated_datum_id).all.order(date_time: :desc)
+    posts = Post.includes(:generated_datum).all.order(date_time: :desc)
     render json: PostSerializer.serialize_collection(posts), status: :ok
   end
 
