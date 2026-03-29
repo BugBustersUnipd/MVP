@@ -8,6 +8,8 @@ class TonesController < ApplicationController
     return render json: { error: "Azienda non trovata" }, status: :not_found unless company
 
     tones = company.tones
+    active_only = params[:is_active] == "true"
+    tones = tones.active if active_only
     
     render json: ToneSerializer.serialize_collection(tones), status: :ok
   end
@@ -16,7 +18,7 @@ class TonesController < ApplicationController
     @tone = Tone.new(tone_params)
     if @tone.save
 
-      render json: { id: @tone.id, name: @tone.name, description: @tone.description }, status: :ok
+      render json: { id: @tone.id, name: @tone.name, description: @tone.description, is_active: @tone.is_active }, status: :ok
     else
       # Gestione errore semplice
       render json: { error: @tone.errors.full_messages.join(', ') }, status: :bad_request
@@ -26,7 +28,8 @@ class TonesController < ApplicationController
   def destroy
     @tone = Tone.find_by(id: params[:id])
 
-    if @tone && @tone.destroy
+    if @tone && @tone.is_active
+      @tone.update(is_active: false)
       render json: { message: "Tono eliminato con successo!" }, status: :ok
     else
       render json: { error: "Errore durante l'eliminazione del tono." }, status: :bad_request
@@ -36,6 +39,6 @@ class TonesController < ApplicationController
   private
 
   def tone_params
-    params.require(:tone).permit(:name, :description, :company_id)
+    params.require(:tone).permit(:name, :description, :company_id, :is_active)
   end
 end
