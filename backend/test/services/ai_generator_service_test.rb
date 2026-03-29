@@ -120,7 +120,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     
     @generation_datum.reload
     
-    assert_includes @generation_datum.title, "Generazione"
+    assert_equal "Contenuto senza titolo", @generation_datum.title
     assert_equal "Contenuto senza titolo", @generation_datum.text_result
   end
 

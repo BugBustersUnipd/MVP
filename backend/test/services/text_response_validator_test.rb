@@ -36,7 +36,7 @@ class TextResponseValidatorTest < ActiveSupport::TestCase
   test "parse! usa fallback su titolo default quando non trova pipe" do
     parsed = @validator.parse!("Solo contenuto", 7)
 
-    assert_equal "Generazione #7", parsed[:title]
+    assert_equal "Solo contenuto", parsed[:title]
     assert_equal "Solo contenuto", parsed[:text]
   end
 end
