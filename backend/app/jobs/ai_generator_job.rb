@@ -16,6 +16,11 @@ class AiGeneratorJob < ApplicationJob
       
       # Avvisiamo l'Orchestrator per sbloccare il frontend
       AiGenerator::AiJobOrchestrator.signal_failure(generation_id, e.message)
+
+      # Se il modello restituisce un messaggio bloccante, eliminiamo il record.
+      if e.is_a?(AiGenerator::AIGeneratorService::BlockedResponseError)
+        GeneratedDatum.find_by(id: generation_id)&.destroy
+      end
     end
   end
 end

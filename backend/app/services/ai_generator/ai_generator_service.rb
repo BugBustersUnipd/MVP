@@ -1,10 +1,15 @@
+require_relative "text_response_validator"
+
 module AiGenerator
 class AIGeneratorService
-  def initialize(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory)
+  BlockedResponseError = TextResponseValidator::BlockedResponseError
+
+  def initialize(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory, textResponseValidator)
     @imgGenerator = imgGenerator
     @textGenerator = textGenerator
     @aiGeneratorDataManager = aiGeneratorDataManager
     @setterFactory = setterFactory
+    @textResponseValidator = textResponseValidator
   end
 
   def create_content(generationID)
@@ -32,32 +37,13 @@ class AIGeneratorService
     imageSetter.valid?
 
     textResult = createText(textSetter, generationData.prompt)
+    parsed_text = @textResponseValidator.parse!(textResult, generationID)
+
     imageResult = createImage(imageSetter, textResult)
 
     otherImageInfos = imageSetter.getData
 
-    match_data = textResult.match(/^\|\s*(.*?)\s*\|\s*(.*)/m)
-
-    if match_data
-      title = match_data[1].strip
-      content = match_data[2].strip
-    else
-      if textResult.include?('|')
-        parts = textResult.split('|').reject(&:blank?)
-        if parts.any?
-          title = parts[0].strip
-          content = parts[1..-1].join('|').strip
-        else
-          title = "Generazione ##{generationID}"
-          content = textResult
-        end
-      else
-        title = "Generazione ##{generationID}"
-        content = textResult
-      end
-    end
-
-    @aiGeneratorDataManager.saveContent(generationID, {image: imageResult, title: title, text: content, width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: nil, dateTime: Time.now})
+    @aiGeneratorDataManager.saveContent(generationID, {image: imageResult, title: parsed_text[:title], text: parsed_text[:text], width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: nil, dateTime: Time.now})
   end
 
   private

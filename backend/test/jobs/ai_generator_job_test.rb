@@ -150,6 +150,27 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     AiGeneratorJob.new.perform(@generation_datum.id)
   end
 
+  test "perform elimina record quando riceve BlockedResponseError" do
+    blocked_message = "Siamo spiacenti, il modello non può rispondere a questa domanda."
+
+    mock_service = Object.new
+    mock_service.define_singleton_method(:create_content) do |_gen_id|
+      raise AiGenerator::AIGeneratorService::BlockedResponseError, blocked_message
+    end
+
+    mock_container = Object.new
+    mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
+
+    AiGenerator::AiGeneratorContainer.stubs(:new).returns(mock_container)
+    AiGenerator::AiJobOrchestrator.stubs(:signal_process_start) {}
+    AiGenerator::AiJobOrchestrator.stubs(:complete) {}
+    AiGenerator::AiJobOrchestrator.expects(:signal_failure).with(@generation_datum.id, includes(blocked_message))
+
+    AiGeneratorJob.new.perform(@generation_datum.id)
+
+    assert_nil GeneratedDatum.find_by(id: @generation_datum.id)
+  end
+
   # === IDEMPOTENCE ===
   test "perform può essere rieseguito senza errori" do
     mock_service = Object.new

@@ -26,7 +26,7 @@ class TextParamsSetterService
       TONO (enfatizzalo): #{@toneDescription}
       STILE (enfatizzalo): #{@styleDescription}
       REGOLE FONDAMENTALI:
-      - Rispondi sempre e solo con un titolo breve, seguito dal carattere '|' e poi dal contenuto.
+      - Rispondi sempre e solo con un titolo breve, seguito dal carattere '|' e poi dal contenuto, non specificare se si tratta di titolo o testo, si capisce dal simbolo.
       - Parla come mittente del messaggio senza presentazioni.
       - NON usare MAI placeholder come [nome], [data], ecc.
       - NON usare parentesi quadre [] o graffe {{}}.
