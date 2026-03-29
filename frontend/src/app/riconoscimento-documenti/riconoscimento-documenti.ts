@@ -92,6 +92,8 @@ export class RiconoscimentoDocumenti {
     const action = event.item.label?.toLowerCase();
     if (action === 'modifica') {
       this.navigateToResult(event.row);
+    } else if (action === 'elimina') {
+      this.aiCoPilotService.deleteUploadedDocument(event.row.parentId);
     }
   }
 

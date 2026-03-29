@@ -334,6 +334,30 @@ export class AiCoPilotService {
     this.fetchDepartment();
   }
 
+  private removeUploadedDocumentFromLocalState(uploadedDocumentId: number): void {
+    const currentHistory = this.resultsHistorySubject.value ?? [];
+    this.resultsHistorySubject.next(currentHistory.filter((row) => row.parentId !== uploadedDocumentId));
+
+    const currentSessionParents = this.sessionParentsSubject.value;
+    this.sessionParentsSubject.next(currentSessionParents.filter((parent) => parent.id !== uploadedDocumentId));
+
+    const currentNames = this.parentNamesSubject.value;
+    if (uploadedDocumentId in currentNames) {
+      const nextNames = { ...currentNames };
+      delete nextNames[uploadedDocumentId];
+      this.parentNamesSubject.next(nextNames);
+    }
+
+    const currentPageCounts = this.parentPageCountsSubject.value;
+    if (uploadedDocumentId in currentPageCounts) {
+      const nextPageCounts = { ...currentPageCounts };
+      delete nextPageCounts[uploadedDocumentId];
+      this.parentPageCountsSubject.next(nextPageCounts);
+    }
+
+    this.refreshDynamicFilterOptions();
+  }
+
   private fetchExtractedDocumentAndUpsert(extractedDocumentId: number): void {
     this.http.get<any>(`${API_BASE}/documents/extracted/${extractedDocumentId}`).subscribe({
       next: ({ extracted_document }) => {
@@ -417,6 +441,18 @@ export class AiCoPilotService {
         this.fetchHistoryResults();
       },
       error: (err) => console.error('Errore nel riavvio della rianalisi:', err),
+    });
+  }
+
+  /** DELETE /documents/uploads/:id */
+  public deleteUploadedDocument(uploadedDocumentId: number): void {
+    if (!uploadedDocumentId) {
+      return;
+    }
+
+    this.http.delete<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}`).subscribe({
+      next: () => this.removeUploadedDocumentFromLocalState(uploadedDocumentId),
+      error: (err) => console.error('Errore durante eliminazione documento:', err),
     });
   }
 

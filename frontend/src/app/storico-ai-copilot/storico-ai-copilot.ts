@@ -194,6 +194,8 @@ export class StoricoAiCopilot {
 
     if (action === 'modifica') {
       this.navigateToResult(event.row);
+    } else if (action === 'elimina') {
+      this.aiCoPilotService.deleteUploadedDocument(event.row.parentId);
     } else if (action === 'riprova' && event.row.state === State.Failed) {
       this.aiCoPilotService.retryExtractedDocumentProcessing(event.row.id!);
     }
