@@ -4,6 +4,7 @@ import { NestedTables } from '../components/nested-tables/nested-tables';
 import { Filters } from '../components/filters/filters';
 import { AsyncPipe } from '@angular/common';
 import { map } from 'rxjs';
+import { Router } from '@angular/router';
 
 //servizi
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
@@ -21,6 +22,7 @@ export class RiconoscimentoDocumenti {
   private aiCoPilotService = inject(AiCoPilotService);
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
+  private router = inject(Router);
   items: MenuItem[] = [];
   sessionParents: ResultAiCopilot[] = [];
   parentNames: Record<number, string> = {};
@@ -84,6 +86,27 @@ export class RiconoscimentoDocumenti {
     this.applyFilters();
   }
 
+  onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void {
+    const action = event.item.label?.toLowerCase();
+    if (action === 'modifica') {
+      this.navigateToResult(event.row);
+    }
+  }
+
+  navigateToResult(targetRow: ResultSplit): void {
+    if (!targetRow) {
+      return;
+    }
+
+    const pages = Math.max(1, targetRow.page_end - targetRow.page_start + 1);
+    this.router.navigate(['/anteprima-documento'], {
+      state: {
+        result: targetRow,
+        pages,
+      },
+    });
+  }
+
   applyFilters() {
     const hasActiveFilters = Boolean(
       this.searchvalue ||
@@ -96,7 +119,7 @@ export class RiconoscimentoDocumenti {
     );
 
     this.DocumentiSplittatiFiltrati = this.DocumentiSplittati.filter((doc) => {
-      const matchesSearch = this.searchvalue ? doc.name.toLowerCase().includes(this.searchvalue.toLowerCase()) : true;
+      const matchesSearch = this.matchesGlobalSearch(doc, this.searchvalue);
       const matchesDate = this.dates ? (doc.data >= this.dates[0] && doc.data <= this.dates[1]) : true;
       const matchesConfidence = this.matchesConfidenceRange(doc.confidence, this.selectedconfidence);
       const matchesCategory = this.selectedCategory ? doc.category === this.selectedCategory : true;
@@ -133,6 +156,38 @@ export class RiconoscimentoDocumenti {
       }
       return !hasActiveFilters;
     });
+  }
+
+  private matchesGlobalSearch(doc: ResultSplit, rawSearch: string): boolean {
+    const search = rawSearch?.trim().toLowerCase();
+    if (!search) {
+      return true;
+    }
+
+    const parentNameFromHistory = this.parentNames[doc.parentId] ?? '';
+    const parentNameFromSession = this.sessionParents.find((parent) => parent.id === doc.parentId)?.name ?? '';
+
+    const searchableFields = [
+      doc.id,
+      doc.parentId,
+      parentNameFromHistory,
+      parentNameFromSession,
+      doc.name,
+      doc.category,
+      doc.company,
+      doc.department,
+      doc.recipientName,
+      doc.recipientCode,
+      doc.recipientEmail,
+      doc.state,
+      doc.confidence,
+      doc.month_year,
+      doc.page_start,
+      doc.page_end,
+      doc.data,
+    ];
+
+    return searchableFields.some((value) => String(value ?? '').toLowerCase().includes(search));
   }
 
   private matchesConfidenceRange(confidence: number, selectedRange: string | number | null | undefined): boolean {

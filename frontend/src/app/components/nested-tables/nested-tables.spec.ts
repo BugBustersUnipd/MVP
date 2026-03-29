@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DocumentState } from '../../shared/models/result-ai-copilot.model';
 
 import { NestedTables } from './nested-tables';
 
@@ -19,5 +20,18 @@ describe('NestedTables', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should map completed state to success class', () => {
+    expect(component.getSeverity(DocumentState.Completato)).toBe('class-success');
+  });
+
+  it('should map in-progress and queued states', () => {
+    expect(component.getSeverity(DocumentState.InElaborazione)).toBe('class-elaboration');
+    expect(component.getSeverity(DocumentState.InCoda)).toBe('class-pending');
+  });
+
+  it('should map unknown state to default class', () => {
+    expect(component.getSeverity('unknown' as DocumentState)).toBe('class-default');
   });
 });

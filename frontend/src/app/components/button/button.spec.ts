@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { Button } from './button';
 
@@ -19,5 +20,15 @@ describe('Button', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should emit action when underlying button is clicked', () => {
+    const emitSpy = vi.spyOn(component.action, 'emit');
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    button.click();
+
+    expect(emitSpy).toHaveBeenCalledOnce();
   });
 });

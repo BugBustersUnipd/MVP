@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { DocSummary } from '../components/doc-summary/doc-summary';
 import { ExtractedEmployeeInfo, ExtractedEmployeeInfoRow } from '../components/extracted-employee-info/extracted-employee-info';
 import { ResultSplit } from '../shared/models/result-split.model';
@@ -12,6 +12,8 @@ import { OtherExtractDocuments, OtherExtractDocumentRow } from '../components/ot
 import { ToastModule } from 'primeng/toast';
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
 import { CommonModule } from '@angular/common';
+import { BehaviorSubject, combineLatest, map, Observable, of } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-anteprima-documento',
@@ -22,27 +24,33 @@ import { CommonModule } from '@angular/common';
 })
 export class AnteprimaDocumento {
   aiService = inject(AiCoPilotService);
+  private destroyRef = inject(DestroyRef);
   isEditable: boolean = false;
   // todo ho idea che diventaerà un observable prima o poi...(quando cambi le pagine estratte fa ripartire l'analisi...)
   result = (history.state?.result as ResultSplit | null) ?? null;
   pendingModifications: Partial<ResultSplit> = {};
   pages: number = history.state?.pages;
   extractedEmployeeRows: ExtractedEmployeeInfoRow[] = [];
-  otherExtractedDocumentRows: OtherExtractDocumentRow[] = [];
+  otherExtractedDocumentRows$: Observable<OtherExtractDocumentRow[]> = of([]);
+  private removedOtherDocumentIds$ = new BehaviorSubject<number[]>([]);
   
   ngOnInit() {
     this.aiService.fetchTemplates();
     this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
-    this.aiService.otherExtractedDocuments$.subscribe((rows) => {
-      this.otherExtractedDocumentRows = rows;
-    });
+    this.otherExtractedDocumentRows$ = combineLatest([
+      this.aiService.otherExtractedDocuments$,
+      this.removedOtherDocumentIds$,
+    ]).pipe(
+      map(([rows, removedIds]) => rows.filter((row) => !removedIds.includes(row.id))),
+      takeUntilDestroyed(this.destroyRef)
+    );
 
     const parentId = this.result?.parentId;
     const currentResultId = this.result?.recipientId;
     if (parentId) {
       this.aiService.getDocumentsByParent(parentId, currentResultId);
     } else {
-      this.otherExtractedDocumentRows = [];
+      this.otherExtractedDocumentRows$ = of([]);
     }
   }
   handleOpenOriginalPdf(): void {
@@ -94,8 +102,12 @@ export class AnteprimaDocumento {
     this.extractedEmployeeRows = this.extractedEmployeeRows.filter((_, index) => index !== rowIndex);
   }
 
-  handleRemoveOtherExtractedDocumentRow(rowIndex: number): void {
-    this.otherExtractedDocumentRows = this.otherExtractedDocumentRows.filter((_, index) => index !== rowIndex);
+  handleRemoveOtherExtractedDocumentRow(rowId: number): void {
+    const current = this.removedOtherDocumentIds$.value;
+    if (current.includes(rowId)) {
+      return;
+    }
+    this.removedOtherDocumentIds$.next([...current, rowId]);
   }
 
   dialogService = inject(DialogService);
