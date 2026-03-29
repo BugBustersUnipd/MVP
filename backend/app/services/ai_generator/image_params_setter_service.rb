@@ -21,6 +21,7 @@ class ImageParamsSetterService
   ].freeze
 
   def valid?
+    @errors = []
     @errors << "prompt e company_id sono obbligatori" if @prompt.blank?
 
     is_valid = VALID_SIZES.any? { |s| s[:w] == @width && s[:h] == @height }

@@ -3,6 +3,7 @@ require_relative "text_response_validator"
 module AiGenerator
 class AIGeneratorService
   BlockedResponseError = TextResponseValidator::BlockedResponseError
+  InvalidSetterParamsError = Class.new(StandardError)
 
   def initialize(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory, textResponseValidator)
     @imgGenerator = imgGenerator
@@ -33,8 +34,7 @@ class AIGeneratorService
       seed: nil
     })
 
-    textSetter.valid?
-    imageSetter.valid?
+    validate_setters!(textSetter, imageSetter)
 
     textResult = createText(textSetter, generationData.prompt)
     parsed_text = @textResponseValidator.parse!(textResult, generationID)
@@ -47,6 +47,21 @@ class AIGeneratorService
   end
 
   private
+
+  def validate_setters!(textSetter, imageSetter)
+    errors = []
+
+    errors.concat(prefixed_errors("text", textSetter.getData[:errors])) unless textSetter.valid?
+    errors.concat(prefixed_errors("image", imageSetter.getData[:errors])) unless imageSetter.valid?
+
+    return if errors.empty?
+
+    raise InvalidSetterParamsError, "Parametri non validi: #{errors.join(', ')}"
+  end
+
+  def prefixed_errors(prefix, error_list)
+    Array(error_list).map { |error| "#{prefix}: #{error}" }
+  end
 
   def createText(textSetter, userPrompt)
     systemPrompt = textSetter.buildSystemPrompt

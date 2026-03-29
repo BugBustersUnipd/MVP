@@ -41,8 +41,9 @@ class StyleTest < ActiveSupport::TestCase
     assert_equal "A casual, friendly tone", style.reload.description
   end
 
-  test "name is optional at model level" do
+  test "name is required at model level" do
     style = build_style(name: nil)
-    assert style.valid?
+    assert_not style.valid?
+    assert style.errors[:name].any?
   end
 end

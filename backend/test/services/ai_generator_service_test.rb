@@ -5,7 +5,7 @@ require_relative "../../app/services/ai_generator/setter_factory"
 
 class AIGeneratorServiceTest < ActiveSupport::TestCase
   def setup
-    @company = Company.create!(name: "Test Corp")
+    @company = Company.create!(name: "Test Corp", description: "Azienda di test")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
     @style = Style.create!(company: @company, name: "Modern", description: "Modern style")
     
@@ -341,5 +341,115 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     end
 
     assert_equal blocked_text, error.message
+  end
+
+  test "solleva InvalidSetterParamsError quando text setter e invalido" do
+    data_manager = Object.new
+    style_description = @style.description
+    company_description = @company.description
+    generation_data = Struct.new(:tone_id, :style_id, :company_id, :prompt).new(
+      @tone.id,
+      @style.id,
+      @company.id,
+      @generation_datum.prompt
+    )
+
+    data_manager.define_singleton_method(:fetchGenerationData) { |_id| generation_data }
+    data_manager.define_singleton_method(:fetchToneDescription) { |_tone_id| nil }
+    data_manager.define_singleton_method(:fetchStyleDescription) { |_style_id| style_description }
+    data_manager.define_singleton_method(:fetchCompanyDescription) { |_company_id| company_description }
+    data_manager.define_singleton_method(:saveContent) { |_generation_id, _payload| raise "saveContent non dovrebbe essere chiamato" }
+
+    text_gen = Object.new
+    text_gen_called = false
+    text_gen.define_singleton_method(:generate_text) do |_system_prompt, _user_prompt|
+      text_gen_called = true
+      "Titolo | Contenuto"
+    end
+
+    img_gen = Object.new
+    img_gen_called = false
+    img_gen.define_singleton_method(:generate_image) do |_image_prompt|
+      img_gen_called = true
+      "ABC123"
+    end
+
+    service = AiGenerator::AIGeneratorService.new(
+      img_gen,
+      text_gen,
+      data_manager,
+      AiGenerator::SetterFactory.new,
+      AiGenerator::TextResponseValidator.new
+    )
+
+    error = assert_raises(AiGenerator::AIGeneratorService::InvalidSetterParamsError) do
+      service.create_content(@generation_datum.id)
+    end
+
+    assert_includes error.message, "text: toneDescription è obbligatorio"
+    assert_not text_gen_called
+    assert_not img_gen_called
+  end
+
+  test "solleva InvalidSetterParamsError quando image setter e invalido" do
+    data_manager = Object.new
+    tone_description = @tone.description
+    style_description = @style.description
+    company_description = @company.description
+    generation_data = Struct.new(:tone_id, :style_id, :company_id, :prompt).new(
+      @tone.id,
+      @style.id,
+      @company.id,
+      @generation_datum.prompt
+    )
+
+    data_manager.define_singleton_method(:fetchGenerationData) { |_id| generation_data }
+    data_manager.define_singleton_method(:fetchToneDescription) { |_tone_id| tone_description }
+    data_manager.define_singleton_method(:fetchStyleDescription) { |_style_id| style_description }
+    data_manager.define_singleton_method(:fetchCompanyDescription) { |_company_id| company_description }
+    data_manager.define_singleton_method(:saveContent) { |_generation_id, _payload| raise "saveContent non dovrebbe essere chiamato" }
+
+    valid_text_setter = Object.new
+    valid_text_setter.define_singleton_method(:valid?) { true }
+    valid_text_setter.define_singleton_method(:getData) { { errors: [] } }
+    valid_text_setter.define_singleton_method(:buildSystemPrompt) { "system" }
+
+    invalid_image_setter = Object.new
+    invalid_image_setter.define_singleton_method(:valid?) { false }
+    invalid_image_setter.define_singleton_method(:getData) { { errors: ["Dimensioni non supportate"] } }
+
+    factory = Object.new
+    factory.define_singleton_method(:create_text_setter) { |_params| valid_text_setter }
+    factory.define_singleton_method(:create_image_setter) { |_params| invalid_image_setter }
+
+    text_gen = Object.new
+    text_gen_called = false
+    text_gen.define_singleton_method(:generate_text) do |_system_prompt, _user_prompt|
+      text_gen_called = true
+      "Titolo | Contenuto"
+    end
+
+    img_gen = Object.new
+    img_gen_called = false
+    img_gen.define_singleton_method(:generate_image) do |_image_prompt|
+      img_gen_called = true
+      "ABC123"
+    end
+
+    service = AiGenerator::AIGeneratorService.new(
+      img_gen,
+      text_gen,
+      data_manager,
+      factory,
+      AiGenerator::TextResponseValidator.new
+    )
+
+    error = assert_raises(AiGenerator::AIGeneratorService::InvalidSetterParamsError) do
+      service.create_content(@generation_datum.id)
+    end
+
+    assert_includes error.message, "image: Dimensioni non supportate"
+    assert_not text_gen_called
+    assert_not img_gen_called
   end
 end
