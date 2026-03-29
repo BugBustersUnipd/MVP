@@ -5,15 +5,23 @@
       <div class="Generico">
         <div class="labels-datepicker">
           <div class="label-container">
-            @for (data of (aiAssistantMetrics$ | async) || AiAssistantData; track data.label) {
-              <div class="card item">
-                <label class="label">{{ data.label }}</label>
-                <p-card class="p-data-body">
-                  <div class="data-container">
-                    <span class="data-value">{{ data.value }}</span>
+            @if (aiAssistantMetrics$ | async; as aiAssistantMetrics) {
+              @if (aiAssistantMetrics.length > 0) {
+                @for (data of aiAssistantMetrics; track data.label) {
+                  <div class="card item">
+                    <label class="label">{{ data.label }}</label>
+                    <p-card class="p-data-body">
+                      <div class="data-container">
+                        <span class="data-value">{{ data.value }}</span>
+                      </div>
+                    </p-card>
                   </div>
-                </p-card>
-              </div>
+                }
+              } @else {
+                <div class="no-data-message">
+                  Non ci sono dati sufficienti per le analisi
+                </div>
+              }
             }
           </div>
           <div class="DatePicker Container">
@@ -27,21 +35,23 @@
         <div class="Charts-Container">
           <div class="chart">
             <label class="label"> Toni più usati</label>
-            <!-- Grafico TONI -->
-            <app-analytics-charts
-              [labels]="['tono1', 'tono2', 'tono3', 'tono4', 'tono5']"
-              [dataValues]="[10, 20, 15, 30, 46]"
-              datasetLabel="Toni più usati"
-            ></app-analytics-charts>
+            @if (aiAssistantToneChart$ | async; as toneChart) {
+              <app-analytics-charts
+                [labels]="toneChart.labels"
+                [dataValues]="toneChart.values"
+                datasetLabel="Toni più usati"
+              ></app-analytics-charts>
+            }
           </div>
           <div class="Chart">
             <label class="label"> Stili più usati</label>
-            <!-- Grafico STILI -->
-            <app-analytics-charts
-              [labels]="['stile1', 'stile2', 'stile3', 'stile4', 'stile5']"
-              [dataValues]="[25, 10, 8, 30, 50]"
-              datasetLabel="Stili più usati"
-            ></app-analytics-charts>
+            @if (aiAssistantStyleChart$ | async; as styleChart) {
+              <app-analytics-charts
+                [labels]="styleChart.labels"
+                [dataValues]="styleChart.values"
+                datasetLabel="Stili più usati"
+              ></app-analytics-charts>
+            }
           </div>
         </div>
       </div>
@@ -54,15 +64,23 @@
       <div class="Generico">
         <div class="labels-datepicker">
           <div class="label-container">
-            @for (data of (aiCoPilotMetrics$ | async) || AiCoPilotData; track data.label) {
-              <div class="card item">
-                <label class="label">{{ data.label }}</label>
-                <p-card class="p-data-body">
-                  <div class="data-container">
-                    <span class="data-value">{{ data.value }}</span>
+            @if (aiCoPilotMetrics$ | async; as aiCoPilotMetrics) {
+              @if (aiCoPilotMetrics.length > 0) {
+                @for (data of aiCoPilotMetrics; track data.label) {
+                  <div class="card item">
+                    <label class="label">{{ data.label }}</label>
+                    <p-card class="p-data-body">
+                      <div class="data-container">
+                        <span class="data-value">{{ data.value }}</span>
+                      </div>
+                    </p-card>
                   </div>
-                </p-card>
-              </div>
+                }
+              } @else {
+                <div class="no-data-message">
+                  Non ci sono dati sufficienti per le analisi
+                </div>
+              }
             }
           </div>
           <div class="DatePicker-Container">

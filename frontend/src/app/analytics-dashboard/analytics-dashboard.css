@@ -16,6 +16,15 @@
   gap: 2rem;
 }
 
+.no-data-message {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #f8f9fa;
+  color: #374151;
+  font-weight: 600;
+}
+
 .data-value {
   font-size: 3rem;
   font-weight: bold;

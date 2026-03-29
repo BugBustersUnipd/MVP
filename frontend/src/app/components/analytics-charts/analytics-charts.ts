@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, PLATFORM_ID, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, OnInit, OnChanges, inject, PLATFORM_ID, ChangeDetectorRef, Input, SimpleChanges } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ChartModule } from 'primeng/chart';
 
@@ -9,7 +9,7 @@ import { ChartModule } from 'primeng/chart';
   templateUrl: './analytics-charts.html',
   styleUrl: './analytics-charts.css',
 })
-export class AnalyticsCharts implements OnInit {
+export class AnalyticsCharts implements OnInit, OnChanges {
   @Input() labels: string[] = [];
   @Input() datasetLabel: string = 'Dataset';
   @Input() dataValues: number[] = [];
@@ -23,6 +23,12 @@ export class AnalyticsCharts implements OnInit {
 
   ngOnInit() {
     this.initChart();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['labels'] || changes['dataValues'] || changes['datasetLabel'] || changes['chartType']) {
+      this.initChart();
+    }
   }
 
   initChart() {

@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 
 import { DateRangePicker } from '../components/date-range-picker/date-range-picker';
 import { AnalyticsMetric, AnalyticsPeriod } from '../../services/analytics-abstract-service';
-import { AiAssistantAnalyticsService } from '../../services/ai-assistant-analytics-service/ai-assistant-analytics-service';
+import { AiAssistantAnalyticsService, AnalyticsChartData } from '../../services/ai-assistant-analytics-service/ai-assistant-analytics-service';
 import { AiCoPilotAnalyticsService } from '../../services/ai-co-pilot-analytics-service/ai-co-pilot-analytics-service';
 
 @Component({
@@ -32,19 +32,8 @@ export class AnalyticsDashboard implements OnInit {
   // Observable per i dati analytics
   aiAssistantMetrics$: Observable<AnalyticsMetric[]>;
   aiCoPilotMetrics$: Observable<AnalyticsMetric[]>;
-  
-  // Dati fallback hardcoded
-  AiAssistantData = [
-    { label: 'N. PROMPT GENERATI', value: 145 },
-    { label: 'RATING MEDIO PROMPT', value: 1.7 },
-    { label: 'N. RIGENERAZIONI MEDIE PER PROMPT', value: 0.4 }
-  ];
-  AiCoPilotData = [
-    { label: 'PERCENTUALE CONFIDENZA MEDIA', value: 71+"%" },
-    { label: 'PERCENTUALE HUMAN-IN-THE-LOOP', value: 2+"%" },
-    { label: 'ACCURATEZZA MAPPING', value: 56+"%" },
-    { label: 'TEMPI MEDI ANALISI', value: 7+"s" }
-  ]
+  aiAssistantToneChart$: Observable<AnalyticsChartData>;
+  aiAssistantStyleChart$: Observable<AnalyticsChartData>;
 
   constructor(
     private aiAssistantAnalyticsService: AiAssistantAnalyticsService,
@@ -52,6 +41,8 @@ export class AnalyticsDashboard implements OnInit {
   ) {
     this.aiAssistantMetrics$ = new Observable();
     this.aiCoPilotMetrics$ = new Observable();
+    this.aiAssistantToneChart$ = this.aiAssistantAnalyticsService.getToneUsageChart();
+    this.aiAssistantStyleChart$ = this.aiAssistantAnalyticsService.getStyleUsageChart();
   }
 
   ngOnInit(): void {
