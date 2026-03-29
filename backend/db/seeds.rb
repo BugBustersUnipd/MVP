@@ -7,8 +7,8 @@ User.destroy_all
 Company.destroy_all
 
 puts "Creazione delle Aziende (Companies)..."
-company_a = Company.create!(name: "TechCorp Italia")
-company_b = Company.create!(name: "Innovazione S.p.A.")
+company_a = Company.create!(name: "TechCorp Italia", description: "Azienda italiana specializzata in soluzioni software e servizi tecnologici per le imprese.")
+company_b = Company.create!(name: "Innovazione S.p.A.", description: "Società leader nell'innovazione digitale e nella trasformazione tecnologica delle organizzazioni.")
 
 puts "Creazione degli Utenti (Users)..."
 user1 = User.create!(
