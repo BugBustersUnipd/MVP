@@ -718,4 +718,60 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     post retry_extracted_path(id: 0)
     assert_response :not_found
   end
+
+  # ---------------------------------------------------------------------------
+  # DELETE /documents/uploads/:id
+  # ---------------------------------------------------------------------------
+
+  test "destroy_upload deletes the uploaded document and returns ok" do
+    ud = create_uploaded_document(checksum: "ctrl-destroy-1")
+
+    delete destroy_upload_path(id: ud.id)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "ok", body["status"]
+    assert_raises(ActiveRecord::RecordNotFound) { ud.reload }
+  end
+
+  test "destroy_upload cascades to extracted documents" do
+    ud = create_uploaded_document(checksum: "ctrl-destroy-cascade")
+    ed = create_extracted_document(uploaded_document: ud)
+
+    delete destroy_upload_path(id: ud.id)
+
+    assert_response :success
+    assert_raises(ActiveRecord::RecordNotFound) { ed.reload }
+  end
+
+  test "destroy_upload removes physical file from storage" do
+    tmp = Tempfile.new(["ctrl-destroy-file", ".pdf"])
+    tmp.write("fake pdf")
+    tmp.flush
+
+    ud = create_uploaded_document(checksum: "ctrl-destroy-file-1", storage_path: tmp.path)
+
+    delete destroy_upload_path(id: ud.id)
+
+    assert_response :success
+    assert_not File.exist?(tmp.path)
+  ensure
+    tmp&.close
+  end
+
+  test "destroy_upload returns ok even when physical file is missing" do
+    ud = create_uploaded_document(checksum: "ctrl-destroy-nofile",
+                                  storage_path: "/tmp/ctrl_destroy_never_exists.pdf")
+
+    delete destroy_upload_path(id: ud.id)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "ok", body["status"]
+  end
+
+  test "destroy_upload returns not_found for unknown id" do
+    delete destroy_upload_path(id: 0)
+    assert_response :not_found
+  end
 end
