@@ -256,8 +256,21 @@ class DocumentsController < ActionController::Base
   # Rimuove anche il file fisico dallo storage se presente.
   def destroy_upload
     uploaded = UploadedDocument.find(params[:id])
-    file_storage.delete(uploaded.storage_path) if file_storage.exist?(uploaded.storage_path)
-    uploaded.destroy!
+    storage_path = uploaded.storage_path
+
+    ActiveRecord::Base.transaction do
+      extracted_ids = uploaded.extracted_documents.pluck(:id)
+
+      # Sendings references extracted_documents with NOT NULL FK, so remove them first.
+      Sending.where(extracted_document_id: extracted_ids).delete_all if extracted_ids.any?
+
+      # Processing runs own processing_items, which can reference extracted_documents.
+      ProcessingRun.where(uploaded_document_id: uploaded.id).destroy_all
+
+      uploaded.destroy!
+    end
+
+    file_storage.delete(storage_path) if storage_path.present? && file_storage.exist?(storage_path)
     render json: { status: "ok", message: "Documento eliminato" }
   rescue ActiveRecord::RecordNotFound
     render json: { status: "error", message: "Documento sorgente non trovato" }, status: :not_found
