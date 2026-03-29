@@ -37,18 +37,19 @@ export class AnteprimaDocumento {
   ngOnInit() {
     this.aiService.fetchTemplates();
     this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
+    const currentExtractedDocumentId = this.result?.id;
+
     this.otherExtractedDocumentRows$ = combineLatest([
       this.aiService.otherExtractedDocuments$,
       this.removedOtherDocumentIds$,
     ]).pipe(
-      map(([rows, removedIds]) => rows.filter((row) => !removedIds.includes(row.id))),
+      map(([rows, removedIds]) => rows.filter((row) => !removedIds.includes(row.id) && row.id !== currentExtractedDocumentId)),
       takeUntilDestroyed(this.destroyRef)
     );
 
     const parentId = this.result?.parentId;
-    const currentResultId = this.result?.recipientId;
     if (parentId) {
-      this.aiService.getDocumentsByParent(parentId, currentResultId);
+      this.aiService.getDocumentsByParent(parentId, currentExtractedDocumentId);
     } else {
       this.otherExtractedDocumentRows$ = of([]);
     }
