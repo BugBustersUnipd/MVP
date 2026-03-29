@@ -24,7 +24,7 @@
           <td>
             @if (col.type === 'date') {
               {{ row[col.field] | date: 'dd/MM/yyyy' }}
-            } @else if (col.field === 'State') {
+            } @else if (col.field === 'State' || col.field === 'state') {
               @if(row[col.field].toLowerCase() === 'pronto'){
                  <p-tag [value]="row[col.field]" class="p-tag-pronto"></p-tag>
               }
@@ -57,8 +57,8 @@
           </td>
         }
         <td>
-          <p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
-          <p-button (click)="menu.toggle($event)" icon="pi pi-ellipsis-h"></p-button>
+          <p-menu #menu [model]="rowMenuItems" [popup]="true" appendTo="body"></p-menu>
+          <p-button (click)="openRowMenu(menu, $event, row)" icon="pi pi-ellipsis-h"></p-button>
         </td>
       </tr>
     </ng-template>

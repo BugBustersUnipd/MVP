@@ -7,20 +7,9 @@ import { Filters } from '../components/filters/filters';
 import { MenuItem} from 'primeng/api';
 import { Button } from '../components/button/button';
 import { ResultSplit } from '../shared/models/result-split.model';
-import {State} from '../shared/models/result-split.model'; 
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
 
-type StoricoSplitRow = {
-  Company: string;
-  TypeofDocument: string;
-  DocumentName: string;
-  Id: string;
-  SplitId: number;
-  Confidence: string;
-  Recepient: string;
-  State: State;
-  Data: Date;
-};
+
 
 @Component({
   selector: 'app-storico-ai-copilot',
@@ -29,15 +18,14 @@ type StoricoSplitRow = {
   styleUrl: './storico-ai-copilot.css',
 })
 export class StoricoAiCopilot {
-  pages: number = 22; //todo questa info si prende dal docuumento originale, viene restituita dal backend in quache modo
   router = inject(Router);
   private aiCoPilotService = inject(AiCoPilotService);
   private destroyRef = inject(DestroyRef);
 
   private resultSplits: ResultSplit[] = [];
   private parentNames: Record<number, string> = {};
-  Documents: StoricoSplitRow[] = [];
-  FilteredDocuments: StoricoSplitRow[] = [];
+  Documents: ResultSplit[] = [];
+  FilteredDocuments: ResultSplit[] = [];
   items : MenuItem[] = [];
   dates: Date[] | undefined;
   searchvalue = '';
@@ -46,12 +34,12 @@ export class StoricoAiCopilot {
   DocumentType: string[] = [];
   selectedDocument: string | undefined;
   columns = [
-    { field: 'DocumentName', header: 'Nome Documento Originale' },
-    { field: 'Id', header: 'Id' },
-    { field: 'Confidence', header: 'Confidenza' },
-    { field: 'Recepient', header: 'Destinatario' },
-    { field: 'State', header: 'Stato' },
-    { field: 'Data', header: 'Data analisi', type: 'date' },
+    { field: 'name', header: 'Nome Documento Originale' },
+    { field: 'id', header: 'Id' },
+    { field: 'confidence', header: 'Confidenza' },
+    { field: 'recipientName', header: 'Destinatario' },
+    { field: 'state', header: 'Stato' },
+    { field: 'data', header: 'Data analisi', type: 'date' },
   ];
   ngOnInit() {
         this.items = [
@@ -76,7 +64,7 @@ export class StoricoAiCopilot {
       .subscribe((results) => {
         this.resultSplits = [...(results ?? [])];
         this.Documents = this.resultSplits.map((split) => this.toStoricoRow(split));
-        this.DocumentType = [...new Set(this.Documents.map((d) => d.TypeofDocument).filter(Boolean))];
+        this.DocumentType = [...new Set(this.Documents.map((d) => d.category).filter(Boolean))];
         this.applyFilters();
       });
 
@@ -114,18 +102,18 @@ export class StoricoAiCopilot {
     this.FilteredDocuments = this.Documents.filter((g) => {
       const matchSearch =
         !this.searchvalue ||
-        g.DocumentName.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.Id.toString().toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.Confidence.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.Recepient.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.State.toLowerCase().includes(this.searchvalue.toLowerCase());
-      const matchDocument = !this.selectedDocument || g.TypeofDocument === this.selectedDocument;
-      const matchCompany = !this.selectedCompany || g.Company === this.selectedCompany;
+        g.name.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
+        g.id.toString().toLowerCase().includes(this.searchvalue.toLowerCase()) ||
+        g.confidence.toString().toLowerCase().includes(this.searchvalue.toLowerCase()) ||
+        g.recipientName.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
+        g.state.toLowerCase().includes(this.searchvalue.toLowerCase());
+      const matchDocument = !this.selectedDocument || g.category === this.selectedDocument;
+      const matchCompany = !this.selectedCompany || g.company === this.selectedCompany;
       const matchDate =
         !this.dates ||
         this.dates.length !== 2 ||
-        (this.normalizeDate(g.Data) >= this.normalizeDate(this.dates[0]) &&
-          this.normalizeDate(g.Data) <= this.normalizeDate(this.dates[1]));
+        (this.normalizeDate(g.data) >= this.normalizeDate(this.dates[0]) &&
+          this.normalizeDate(g.data) <= this.normalizeDate(this.dates[1]));
       return matchCompany && matchDate && matchDocument && matchSearch;
     });
   }
@@ -136,32 +124,47 @@ export class StoricoAiCopilot {
     return date.getTime();
   }
 
-  private toStoricoRow(split: ResultSplit): StoricoSplitRow {
+  private toStoricoRow(split: ResultSplit): ResultSplit {
     const originalDocumentName = this.parentNames[split.parentId] || split.name;
 
     return {
-      Company: split.company,
-      TypeofDocument: split.category,
-      DocumentName: originalDocumentName,
-      Id: `${split.parentId}.${split.id}`,
-      SplitId: split.id,
-      Confidence: `${split.confidence}%`,
-      Recepient: split.recipientName,
-      State: split.state,
-      Data: split.data,
+      company: split.company,
+      category: split.category,
+      name: originalDocumentName,
+      parentId: split.parentId,
+      id: split.id,
+      confidence: split.confidence,
+      recipientName: split.recipientName,
+      state: split.state,
+      data: split.data,
+      recipientId: split.recipientId,
+      recipientEmail: split.recipientEmail,
+      recipientCode: split.recipientCode,
+      time_Analysis: split.time_Analysis,
+      page_end: split.page_end,
+      page_start: split.page_start,
+      department: split.department,
+      month_year: split.month_year,
     };
   }
 
-  // al momento questa funzione mi serve solo per predisporre il passaggio del risultato alla pagina anteprima-documento
-  navigateToResult(){
-    // al momento apriamo il primo result split filtrato disponibile
-    const firstFiltered = this.FilteredDocuments[0];
-    const result = this.resultSplits.find((split) => split.id === firstFiltered?.SplitId);
+  onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void {
+    const action = event.item.label?.toLowerCase();
+
+    if (action === 'modifica') {
+      this.navigateToResult(event.row);
+    }
+  }
+
+  navigateToResult(targetRow?: ResultSplit){
+    const row = targetRow ?? this.FilteredDocuments[0];
+    const result = this.resultSplits.find((split) => split.id === row?.id);
       if (result) {
+        const pages = Math.max(1, result.page_end - result.page_start + 1);
         this.router.navigate(['/anteprima-documento'], {
           state: {
             result: result,
-            pages: this.pages //todo passare le pagine del documento originale, rispetto il ResultSplit cliccato nello storico
+            pages,
           }
         });
       }

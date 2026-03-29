@@ -1,1 +1,13 @@
-<p>pdf-preview works!</p>
+<div class="w-100 h-100">
+@if(safeUrl){
+  <iframe
+    [src]="safeUrl"
+    width="100%"
+    height="100%"
+    style="border: none;">
+  </iframe>
+} @else {
+  <div  class="text-muted text-center">
+    Nessun PDF disponibile
+  </div>}
+</div>

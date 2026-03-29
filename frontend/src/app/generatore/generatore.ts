@@ -8,6 +8,7 @@ import { Prompt } from '../components/prompt/prompt';
 import { AddDialog, AddDialogSaveData, AddDialogType } from '../components/add-dialog/add-dialog';
 import { Router } from '@angular/router';
 import { inject } from '@angular/core';
+import { filter, take } from 'rxjs';
 
 //servizi
 import { AiAssistantService } from '../../services/ai-assistant-service/ai-assistant-service';
@@ -47,14 +48,17 @@ export class Generatore {
     }
 
     this.aiService.requireGeneration(this.prompt, this.selectedTone, this.selectedStyle, this.selectedCompany); // Invia la richiesta di generazione al servizio
-    this.aiService.currentResult$.subscribe(result => {
-      if (result) {
-        this.router.navigate(['/risultato-generazione'], {
-          state: {
-            result: result
-          }
-        });
-      }
+    this.aiService.currentResult$
+      .pipe(
+        filter((result): result is NonNullable<typeof result> => !!result),
+        take(1)
+      )
+      .subscribe(result => {
+      this.router.navigate(['/risultato-generazione'], {
+        state: {
+          result: result
+        }
+      });
     });
   }
   ngOnInit() {

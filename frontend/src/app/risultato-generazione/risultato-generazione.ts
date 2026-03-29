@@ -49,6 +49,7 @@ export class RisultatoGenerazione {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((updated) => {
         this.result.set(updated);
+        window.history.replaceState({ ...(history.state ?? {}), result: updated }, '');//questo serve per mantenere l'oggetto result in memoria anche se l'utente aggiorna la pagina
         console.log('Generazione completata, navigazione al risultato con:', this.result());
 
       });
