@@ -96,4 +96,13 @@ describe('DateRangePicker', () => {
 
     expect(emitSpy).not.toHaveBeenCalled();
   });
+
+  it('should not emit when end date is missing', () => {
+    const emitSpy = vi.spyOn(component.rangeChange, 'emit');
+    component.dates = [new Date('2025-01-01'), undefined as unknown as Date];
+
+    component.onDateSelect();
+
+    expect(emitSpy).not.toHaveBeenCalled();
+  });
 });

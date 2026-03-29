@@ -67,12 +67,17 @@ describe('AnalyticsDashboard', () => {
     expect(copilotServiceMock.getAnalysis).toHaveBeenCalledWith({ periodoKey: 'sempre' });
   });
 
-  it('should use always period when assistant range is missing or incomplete', () => {
+  it('should use always period when assistant range is missing', () => {
     component.onAiAssistantRangeChange(undefined);
     expect(assistantServiceMock.getAnalysis).toHaveBeenLastCalledWith({ periodoKey: 'sempre' });
+  });
 
-    component.onAiAssistantRangeChange([new Date('2026-01-01')]);
-    expect(assistantServiceMock.getAnalysis).toHaveBeenLastCalledWith({ periodoKey: 'sempre' });
+  it('should not request analytics when assistant range is incomplete', () => {
+    assistantServiceMock.getAnalysis.mockClear();
+
+    component.onAiAssistantRangeChange([new Date('2026-01-01'), undefined as unknown as Date]);
+
+    expect(assistantServiceMock.getAnalysis).not.toHaveBeenCalled();
   });
 
   it('should use explicit dates when assistant range has start and end', () => {
@@ -87,12 +92,17 @@ describe('AnalyticsDashboard', () => {
     });
   });
 
-  it('should use always period when copilot range is missing or incomplete', () => {
+  it('should use always period when copilot range is missing', () => {
     component.onAiCoPilotRangeChange(undefined);
     expect(copilotServiceMock.getAnalysis).toHaveBeenLastCalledWith({ periodoKey: 'sempre' });
+  });
 
-    component.onAiCoPilotRangeChange([new Date('2026-01-01')]);
-    expect(copilotServiceMock.getAnalysis).toHaveBeenLastCalledWith({ periodoKey: 'sempre' });
+  it('should not request analytics when copilot range is incomplete', () => {
+    copilotServiceMock.getAnalysis.mockClear();
+
+    component.onAiCoPilotRangeChange([new Date('2026-01-01'), undefined as unknown as Date]);
+
+    expect(copilotServiceMock.getAnalysis).not.toHaveBeenCalled();
   });
 
   it('should use explicit dates when copilot range has start and end', () => {

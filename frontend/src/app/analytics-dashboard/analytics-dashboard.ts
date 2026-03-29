@@ -54,7 +54,7 @@ export class AnalyticsDashboard implements OnInit {
   }
 
   private buildPeriod(dates: Date[] | undefined): AnalyticsPeriod {
-    if (!dates || dates.length < 2) {
+    if (!dates || dates.length < 2 || !dates[0] || !dates[1]) {
       return { periodoKey: 'sempre' };
     }
 
@@ -65,11 +65,19 @@ export class AnalyticsDashboard implements OnInit {
   }
 
   onAiAssistantRangeChange(dates: Date[] | undefined) {
+    if (dates && (!dates[0] || !dates[1])) {
+      return;
+    }
+
     const periodo = this.buildPeriod(dates);
     this.aiAssistantMetrics$ = this.aiAssistantAnalyticsService.getAnalysis(periodo);
   }
 
   onAiCoPilotRangeChange(dates: Date[] | undefined) {
+    if (dates && (!dates[0] || !dates[1])) {
+      return;
+    }
+
     const periodo = this.buildPeriod(dates);
     this.aiCoPilotMetrics$ = this.aiCoPilotAnalyticsService.getAnalysis(periodo);
   }

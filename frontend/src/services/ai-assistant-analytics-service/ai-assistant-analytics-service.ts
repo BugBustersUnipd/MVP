@@ -37,10 +37,10 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
     let params: any = {};
 
     if (periodo.startDate) {
-      params.start_date = periodo.startDate;
+      params.start_date = this.toStartOfDayIso(periodo.startDate);
     }
     if (periodo.endDate) {
-      params.end_date = periodo.endDate;
+      params.end_date = this.toEndOfDayIso(periodo.endDate);
     }
 
     this.httpClient
@@ -87,5 +87,17 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
       labels: entries.map(([key]) => key),
       values: entries.map(([, value]) => value ?? 0),
     };
+  }
+
+  private toStartOfDayIso(date: Date): string {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized.toISOString();
+  }
+
+  private toEndOfDayIso(date: Date): string {
+    const normalized = new Date(date);
+    normalized.setHours(23, 59, 59, 999);
+    return normalized.toISOString();
   }
 }
