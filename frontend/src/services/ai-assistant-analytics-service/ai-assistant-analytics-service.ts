@@ -24,7 +24,7 @@ export interface AiAssistantAnalyticsResponse {
   providedIn: 'root',
 })
 export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
-  private apiUrl = '/ai_generator_data_analyst';
+  private apiUrl = 'http://localhost:3000/ai_generator_data_analyst';
   private readonly metricsSubject = new BehaviorSubject<AnalyticsMetric[]>([]);
   private readonly toneUsageChartSubject = new BehaviorSubject<AnalyticsChartData>({ labels: [], values: [] });
   private readonly styleUsageChartSubject = new BehaviorSubject<AnalyticsChartData>({ labels: [], values: [] });

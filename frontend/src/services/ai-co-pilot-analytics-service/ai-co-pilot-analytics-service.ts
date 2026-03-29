@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -18,12 +18,10 @@ export interface AiCoPilotAnalyticsResponse {
   providedIn: 'root',
 })
 export class AiCoPilotAnalyticsService extends AnalyticsAbstractService {
-  private apiUrl = '/ai_copilot_data_analyst';
+  private apiUrl = 'http://localhost:3000/ai_copilot_data_analyst';
   private readonly metricsSubject = new BehaviorSubject<AnalyticsMetric[]>([]);
 
-  constructor(private httpClient: HttpClient) {
-    super();
-  }
+  private httpClient = inject(HttpClient);
 
   getAnalysis(periodo: AnalyticsPeriod): Observable<AnalyticsMetric[]> {
     let params: any = {};
