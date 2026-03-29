@@ -203,23 +203,7 @@ export class AiAssistantService {
   // todo implementare
   reuse(tone: Tone, style: Style, company: Company, prompt: string) : void {
     console.log('Riutilizzo richiesta con i seguenti parametri:', { tone, style, company, prompt });
-    const pendingResult: ResultAiAssistant = {
-        id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
-        title: '',
-        content: '',
-        imagePath: null,
-        tone: tone,
-        style: style,
-        company: company,
-        data: new Date(),
-        prompt: prompt,
-        evaluation: -1,
-        generatedDatumId: null //per ora non so quale sia sto id del generated datum
-    };
-
-    this.resultSubject.next(pendingResult);
-    //chiamata backend
-    //la view deve portare alla pagina di risultato-generazione dopo aver riceveuto il risultato della generazione con i parametri specificati
+    this.requireGeneration(prompt, tone, style, company);
   }
   // forse è da TOGLIERE COMPLETAMENTE
   duplicate(tone: Tone, style: Style, company: Company, prompt: string) : void {
@@ -441,7 +425,7 @@ export class AiAssistantService {
 
         const updated: ResultAiAssistant = {
           ...current,
-          id: payloadId,
+          generatedDatumId: generationId,
           title: typeof payload.title === 'string' ? payload.title : current.title,
           content: typeof payload.text === 'string' ? payload.text : current.content,
           imagePath: normalizedImagePath

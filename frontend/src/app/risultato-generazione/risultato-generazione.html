@@ -5,7 +5,7 @@
                 <app-button label="Annulla Modifiche" class="btn btn-secondary" [fluid]="true" (action)="cancelEditing()"></app-button>
                 <app-button label="Salva Modifiche" class="btn btn-primary" [fluid]="true" [disabled]="!hasPendingModifications" (action)="saveChanges()"></app-button>
             </div>
-        }@else if(result.generatedDatumId!=null){
+        }@else if(result.generatedDatumId!=null && result.id==null){
             <div class="actions">
                 <app-button label="Rigenera" class="btn btn-secondary" [fluid]="true" (action)="onRigenera(result.generatedDatumId)"></app-button>
                 <app-button label="Salva" class="btn btn-primary" [fluid]="true" (action)="onSalva()"></app-button>
@@ -40,7 +40,7 @@
                 <div class="modifica ms-auto d-flex align-items-end">
                     <app-button label="Modifica" class="btn btn-primary" [fluid]="true" (action)="enableEditing()"></app-button>
                 </div>
-            }@else{
+            }@else if(result.id!==null){
                 <div class="data-container">
                     <label class="label mb-1">Data di generazione:</label>
                     <div class="data-generazione bg-white p-1 rounded">
