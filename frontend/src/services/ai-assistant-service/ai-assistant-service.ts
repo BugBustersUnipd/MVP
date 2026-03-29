@@ -478,7 +478,7 @@ export class AiAssistantService {
     this.http.get<any>(`${API_BASE}/posts`).subscribe({
       next: (response) => {
         const postsArray = Array.isArray(response) ? response : response?.posts || [];
-
+        console.log('[fetchResultsHistory] risposta /posts:', response);
         const history: ResultAiAssistant[] = postsArray.map((item: any) => {
           const toneId = Number(item?.toneId ?? item?.tone_id) || 0;
           const styleId = Number(item?.styleId ?? item?.style_id) || 0;
