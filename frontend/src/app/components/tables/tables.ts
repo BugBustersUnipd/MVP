@@ -17,7 +17,7 @@ import { TagModule } from 'primeng/tag'
 })
 export class Tables {
 
-@Input() RisultatoFiltrato: any[] = [];
+@Input() risultatoFiltrato: any[] = [];
 @Input() columns: any[] = [];
 @Input() items: MenuItem[] = [];
 @Input() class: string = '';

@@ -475,39 +475,50 @@ export class AiAssistantService {
       return;
     }
 
-    // chiamata al backend per ottenere la lista delle generazioni passate
-    // per ora mocko i dati
-    const mockData: ResultAiAssistant[] = [];
-      // {
-    //     id: 1,
-    //     title: 'Generazione 1',
-    //     // provo a vedere se il truncate va, metto un content luuuuuuuuuuuuuuuuuuuuuuungo
-    //     content: 'Contenuto della generazione 1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    //     imagePath: null,
-    //     tone: { id: 1, name: 'Simpatico' },
-    //     style: { id: 3, name: 'Articolato' },
-    //     company: { id: 2, name: 'AlbertoSrl' },
-    //     data: new Date('2024-09-11'),
-    //     prompt: 'Prompt della generazione 1',
-    //     evaluation: 4,
-    //     isPost: true
-    //   },
-    //   {
-    //     id: 2,
-    //     title: 'Generazione 2',
-    //     content: 'Contenuto della generazione 2',
-    //     imagePath: null,
-    //     tone: { id: 2, name: 'Formale' },
-    //     style: { id: 2, name: 'Essenziale' },
-    //     company: { id: 3, name: 'PiruzSrl' },
-    //     data: new Date('2024-09-12'),
-    //     prompt: 'Prompt della generazione 2',
-    //     evaluation: 5,
-    //     isPost: true
-    //   }
-    // ];
-      //mockdata vuoto
-    this.ResultsHistorySubject.next(mockData);
+    this.http.get<any>(`${API_BASE}/posts`).subscribe({
+      next: (response) => {
+        const postsArray = Array.isArray(response) ? response : response?.posts || [];
+
+        const history: ResultAiAssistant[] = postsArray.map((item: any) => {
+          const toneId = Number(item?.toneId ?? item?.tone_id) || 0;
+          const styleId = Number(item?.styleId ?? item?.style_id) || 0;
+
+          const rawDate = item?.dateTime ?? item?.date_time;
+          const parsedDate = rawDate ? new Date(rawDate) : new Date(0);
+          const data = Number.isNaN(parsedDate.getTime()) ? new Date(0) : parsedDate;
+
+          return {
+            id: Number(item?.id) || 0,
+            title: item?.title ?? '',
+            content: item?.PostText ?? item?.postText ?? item?.body_text ?? item?.content ?? '',
+            imagePath: item?.imgPath ?? item?.img_path ?? item?.imagePath ?? null,
+            tone: {
+              id: toneId,
+              name: item?.toneName ?? (toneId > 0 ? `Tono #${toneId}` : '')
+            },
+            style: {
+              id: styleId,
+              name: item?.styleName ?? (styleId > 0 ? `Stile #${styleId}` : '')
+            },
+            company: {
+              id: Number(item?.companyId ?? item?.company_id) || 0,
+              name: item?.companyName ?? ''
+            },
+            data,
+            prompt: item?.prompt ?? '',
+            evaluation: Number(item?.evaluation) || 0,
+            isPost: true
+          };
+        });
+
+        this.ResultsHistorySubject.next(history);
+        console.log('[fetchResultsHistory] Storico recuperato:', history);
+      },
+      error: (err) => {
+        console.error('[fetchResultsHistory] Errore nel recupero dello storico:', err);
+        this.ResultsHistorySubject.next([]);
+      }
+    });
   }
 
 

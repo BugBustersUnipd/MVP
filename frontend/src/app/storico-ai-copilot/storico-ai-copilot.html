@@ -6,7 +6,7 @@
 </div>
 <app-tables
 [columns]="columns"
-[RisultatoFiltrato]="(FilteredDocuments$ | async) ?? []"
+[risultatoFiltrato]="(FilteredDocuments$ | async) ?? []"
 [items]="items"
 (menuAction)="onTableMenuAction($event)"
 ></app-tables>

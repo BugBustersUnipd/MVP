@@ -72,7 +72,8 @@ export class StoricoAiAssistant {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((results) => {
         this.Generazioni = results ?? [];
-        this.GenerazioniFiltrate = [...this.Generazioni];
+        this.applyFilters();
+        // console.log('[StoricoAiAssistant] righe ricevute:', this.Generazioni.length, 'righe mostrate:', this.GenerazioniFiltrate.length);
       });
   }
 
@@ -116,8 +117,15 @@ export class StoricoAiAssistant {
         g.style.name.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
         g.content.toLowerCase().includes(this.searchvalue.toLowerCase());
 
-      const matchTono = !this.selectedTono || this.tonoOptions.find(t => t.id === this.selectedTono)?.name === g.tone.name;
-      const matchStile = !this.selectedStile || this.stileOptions.find(s => s.id === this.selectedStile)?.name === g.style.name;
+      const selectedToneName = typeof this.selectedTono === 'number'
+        ? this.tonoOptions.find((t) => t.id === this.selectedTono)?.name
+        : this.selectedTono;
+      const selectedStyleName = typeof this.selectedStile === 'number'
+        ? this.stileOptions.find((s) => s.id === this.selectedStile)?.name
+        : this.selectedStile;
+
+      const matchTono = !selectedToneName || selectedToneName === g.tone.name;
+      const matchStile = !selectedStyleName || selectedStyleName === g.style.name;
 
       const matchDate = this.isInSelectedDateRange(g.data);
 
