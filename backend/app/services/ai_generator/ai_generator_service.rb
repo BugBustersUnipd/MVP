@@ -42,8 +42,8 @@ class AIGeneratorService
     imageResult = createImage(imageSetter, textResult)
 
     otherImageInfos = imageSetter.getData
-    if generation.created_at
-      response_time = (Time.current - generation.created_at).to_f
+    if generationData.created_at
+      response_time = (Time.current - generationData.created_at).to_f
     else
       response_time = 0
     end 
