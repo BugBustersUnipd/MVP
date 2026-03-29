@@ -5,7 +5,7 @@
                 <app-button label="Annulla Modifiche" class="btn btn-secondary" [fluid]="true" (action)="cancelEditing()"></app-button>
                 <app-button label="Salva Modifiche" class="btn btn-primary" [fluid]="true" [disabled]="!hasPendingModifications" (action)="saveChanges()"></app-button>
             </div>
-        }@else if(result.id==null){
+        }@else if(result.generatedDatumId!=null){
             <div class="actions">
                 <app-button label="Rigenera" class="btn btn-secondary" [fluid]="true" (action)="onRigenera(result.generatedDatumId)"></app-button>
                 <app-button label="Salva" class="btn btn-primary" [fluid]="true" (action)="onSalva()"></app-button>
@@ -36,7 +36,7 @@
                 <app-valutazione [rating]="result.evaluation" (ratingChange)="onRatingChange($event)"></app-valutazione>
             </div>
             
-            @if(!result.generatedDatumId){
+            @if(result.id==null){
                 <div class="modifica ms-auto d-flex align-items-end">
                     <app-button label="Modifica" class="btn btn-primary" [fluid]="true" (action)="enableEditing()"></app-button>
                 </div>
@@ -55,7 +55,7 @@
         <div class="parametri-container">
             <span class="fs-9 text-muted fw-bold">PARAMETRI INSERITI</span>
             <hr class="parametri-divider">
-            @if(result.generatedDatumId){
+            @if(result.id!==null){
                 <div class="actions">
                     <app-button label="Riutilizza" class="btn btn-primary" [fluid]="true" (action)="reuseGeneration()"></app-button>
                     <app-button label="Duplica" class="btn btn-primary" [fluid]="true" (action)="duplicateGeneration()"></app-button>

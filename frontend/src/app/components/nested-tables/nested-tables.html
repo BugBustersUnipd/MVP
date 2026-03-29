@@ -1,7 +1,7 @@
 
 <p-accordion>
   @for (doc of documents; track doc.id) {
-    <p-accordion-panel [value]="doc.id.toString()">
+    <p-accordion-panel [value]="doc.id!.toString()">
       <p-accordion-header>
   <div class="header-row">
     <div class="left-group">
@@ -9,7 +9,7 @@
       <span>Nome del documento: {{ doc.name }}</span>
       <span>Pagine: {{ doc.pages }}</span>
       @if (doc.state === 'Failed') {
-        <app-button [label]="ButtonLabel" (action)="onRetryButtonClick(doc.id)"></app-button>
+        <app-button [label]="ButtonLabel" (action)="onRetryButtonClick(doc.id!)"></app-button>
       }
     </div>
 

@@ -293,7 +293,7 @@ export class AiAssistantService {
     // Costruisce il payload per POST /posts con i dati del result
     // Il backend accetta: title, body_text, img_path, date_time, generated_datum_id
     const payload = {
-      generated_datum_id: result.id,
+      generated_datum_id: result.generatedDatumId,
       title: result.title,
       body_text: result.content,
       img_path: result.imagePath,
