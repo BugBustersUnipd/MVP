@@ -30,6 +30,28 @@ class GeneratedDataController < ApplicationController
     end
   end
 
+  def regenerate
+    parent = GeneratedDatum.find(params[:id])
+
+    new_params = {
+      prompt:     parent.prompt,
+      company_id: parent.company_id,
+      style_id:   parent.style_id,
+      tone_id:    parent.tone_id,
+      version_id: parent.id
+    }
+
+    @generation = AiGenerator::AiJobOrchestrator.orchestrate(new_params)
+
+    if @generation.persisted?
+      render json: { status: "started", id: @generation.id }, status: :ok
+    else
+      render json: { errors: @generation.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Generazione non trovata." }, status: :not_found
+  end
+
   def destroy
     @generation = GeneratedDatum.find(params[:id])
     if @generation.destroy

@@ -54,6 +54,7 @@ Rails.application.routes.draw do
 
   # Generated Data
   post "/generated_data", to: "generated_data#create", as: :create_generated_data
+  post "/generated_data/:id/regenerate", to: "generated_data#regenerate", as: :regenerate_generated_data
   get "/generated_data/:id", to: "generated_data#show", as: :generated_data
   patch "/generated_data/:id/rating", to: "generated_data#rating", as: :rating_generated_data
   delete "/generated_data/:id", to: "generated_data#destroy", as: :destroy_generated_data
