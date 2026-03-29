@@ -52,10 +52,11 @@ private bindMenuItemToRow(item: MenuItem, row: any): MenuItem {
   boundItem.command = (event) => {
     existingCommand?.(event);
     const action = item.label?.toLowerCase();
+    this.menuAction.emit({ row, item });
+
+    // Retrocompatibilita': alcuni container ascoltano ancora rowRemoved.
     if (action === 'elimina') {
       this.rowRemoved.emit(row);
-    } else {
-      this.menuAction.emit({ row, item });
     }
   };
 

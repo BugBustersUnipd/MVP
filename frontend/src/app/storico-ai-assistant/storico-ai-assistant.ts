@@ -91,13 +91,35 @@ export class StoricoAiAssistant {
     });
   }
 
-  onDeletePost(result: ResultAiAssistant): void {
-    const id = Number(result?.id) || 0;
-    if (id <= 0) {
+  onMenuAction(event: { row: ResultAiAssistant; item: MenuItem }): void {
+    const row = event?.row;
+    const action = event?.item?.label?.toLowerCase();
+    if (!row || !action) return;
+
+    if (action === 'elimina') {
+      const id = Number(row.id) || 0;
+      if (id > 0) {
+        this.aiService.deletePost(id);
+      }
       return;
     }
 
-    this.aiService.deletePost(id);
+    if (action === 'riutilizza') {
+      this.aiService.reuse(row.tone, row.style, row.company, row.prompt);
+      this.router.navigate(['/risultato-generazione']);
+      return;
+    }
+
+    if (action === 'duplica') {
+      this.router.navigate(['/generatore'], {
+        state: {
+          tone: row.tone,
+          style: row.style,
+          company: row.company,
+          prompt: row.prompt
+        }
+      });
+    }
   }
 
   onSearchChange(value:string){

@@ -15,6 +15,10 @@
                     (confirmed)="deleteGeneration()">
                 </app-dialog>
             </div>
+        }@else if(result.id!=null) {
+            <div class="actions">
+                <app-button label="Elimina" class="btn btn-danger" [fluid]="true" (action)="deleteGeneration()"></app-button>
+            </div>
         }
     
     </div>
