@@ -43,13 +43,13 @@ export class AnteprimaDocumento {
       this.aiService.otherExtractedDocuments$,
       this.removedOtherDocumentIds$,
     ]).pipe(
-      map(([rows, removedIds]) => rows.filter((row) => !removedIds.includes(row.id) && row.id !== currentExtractedDocumentId)),
+      map(([rows, removedIds]) => rows.filter((row) => !removedIds.includes(row.id!) && row.id !== currentExtractedDocumentId)),
       takeUntilDestroyed(this.destroyRef)
     );
 
     const parentId = this.result?.parentId;
     if (parentId) {
-      this.aiService.getDocumentsByParent(parentId, currentExtractedDocumentId);
+      this.aiService.getDocumentsByParent(parentId, currentExtractedDocumentId!);
     } else {
       this.otherExtractedDocumentRows$ = of([]);
     }

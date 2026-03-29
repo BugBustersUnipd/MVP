@@ -70,7 +70,8 @@ export class RisultatoGenerazione {
   }
 
   private updateImageTitleLoading(result: ResultAiAssistant | null): void {
-    if (!result || result.isPost) {
+    console.log('Aggiornamento loading image/title per result:', result);
+    if (!result || result.id!== null) {
       this.isImageTitleLoading = false;
       return;
     }
@@ -81,7 +82,7 @@ export class RisultatoGenerazione {
   }
 
   private updateContentLoading(result: ResultAiAssistant | null): void {
-    if (!result || result.isPost) {
+    if (!result || result.id!== null) {
       this.isContentLoading = false;
       return;
     }
@@ -90,7 +91,7 @@ export class RisultatoGenerazione {
     this.isContentLoading = !hasContent;
   }
 
-  onRigenera(id: number): void {
+  onRigenera(id: number|null): void {
     // this.aiService.requireGeneration(this.result?.prompt ?? '', this.result?.tone ?? { id: 0, name: '' }, this.result?.style ?? { id: 0, name: '' }, this.result?.company ?? { id: 0, name: '' }, id);
   }
 

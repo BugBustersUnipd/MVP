@@ -1,3 +1,3 @@
 export interface Result {
-  id: number;
+  id: number | null;
 }

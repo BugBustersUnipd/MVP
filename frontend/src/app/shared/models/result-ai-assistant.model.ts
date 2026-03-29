@@ -10,7 +10,6 @@ export interface ResultAiAssistant extends Result {
 	data: Date;
 	prompt: string;
 	evaluation: number;
-	isPost: boolean;
 	generatedDatumId: number | null;
 }
 

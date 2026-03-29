@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 
 export interface OtherExtractDocumentRow {
-	id: number;
+	id: number | null;
 	recipientName: string;
 	confidence: number;
 }

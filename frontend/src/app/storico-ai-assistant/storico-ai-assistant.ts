@@ -11,9 +11,10 @@ import { Router } from '@angular/router';
 import { AiAssistantService } from '../../services/ai-assistant-service/ai-assistant-service';
 import { ResultAiAssistant } from '../shared/models/result-ai-assistant.model';
 import { Tone, Style } from '../shared/models/result-ai-assistant.model';
+import { Menutendina } from "../components/menutendina/menutendina";
 @Component({
   selector: 'app-storico-ai-assistant',
-  imports: [CommonModule, FormsModule, Tables, Filters, Button],
+  imports: [CommonModule, FormsModule, Tables, Filters, Button, Menutendina],
   providers: [MessageService],
   templateUrl: './storico-ai-assistant.html',
   styleUrl: './storico-ai-assistant.css',
@@ -22,6 +23,7 @@ export class StoricoAiAssistant {
   private router = inject(Router);
   private aiService = inject(AiAssistantService);
   private destroyRef = inject(DestroyRef);
+  // selectedCompany: Con
 
   ButtonLabel: string ='Aggiungi';
   Generazioni: ResultAiAssistant[] = [];

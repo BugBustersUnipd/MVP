@@ -9,7 +9,7 @@ import { Filters } from '../components/filters/filters';
 import { MenuItem} from 'primeng/api';
 import { ResultSplit, State } from '../shared/models/result-split.model';
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
-
+import { Menutendina } from '../components/menutendina/menutendina';
 
 
 @Component({
@@ -46,7 +46,7 @@ export class StoricoAiCopilot {
         const matchSearch =
           !searchvalue ||
           g.name.toLowerCase().includes(normalizedSearch) ||
-          g.id.toString().toLowerCase().includes(normalizedSearch) ||
+          g.id!.toString().toLowerCase().includes(normalizedSearch) ||
           g.confidence.toString().toLowerCase().includes(normalizedSearch) ||
           g.recipientName.toLowerCase().includes(normalizedSearch) ||
           g.state.toLowerCase().includes(normalizedSearch);
@@ -188,7 +188,7 @@ export class StoricoAiCopilot {
     if (action === 'modifica') {
       this.navigateToResult(event.row);
     } else if (action === 'riprova' && event.row.state === State.Failed) {
-      this.aiCoPilotService.retryExtractedDocumentProcessing(event.row.id);
+      this.aiCoPilotService.retryExtractedDocumentProcessing(event.row.id!);
     }
   }
 

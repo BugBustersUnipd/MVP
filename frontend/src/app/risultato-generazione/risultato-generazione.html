@@ -1,13 +1,13 @@
 @if (result(); as result) {
     <div class="menu">
-        @if(!result.isPost && isEditable){
+        @if(result.id==null && isEditable){
             <div class="actions">
                 <app-button label="Annulla Modifiche" class="btn btn-secondary" [fluid]="true" (action)="cancelEditing()"></app-button>
                 <app-button label="Salva Modifiche" class="btn btn-primary" [fluid]="true" [disabled]="!hasPendingModifications" (action)="saveChanges()"></app-button>
             </div>
-        }@else if(!result.isPost){
+        }@else if(result.id==null){
             <div class="actions">
-                <app-button label="Rigenera" class="btn btn-secondary" [fluid]="true" (action)="onRigenera(result.id)"></app-button>
+                <app-button label="Rigenera" class="btn btn-secondary" [fluid]="true" (action)="onRigenera(result.generatedDatumId)"></app-button>
                 <app-button label="Salva" class="btn btn-primary" [fluid]="true" (action)="onSalva()"></app-button>
             </div>
             <div class="p-2 mb-3">
@@ -36,7 +36,7 @@
                 <app-valutazione [rating]="result.evaluation" (ratingChange)="onRatingChange($event)"></app-valutazione>
             </div>
             
-            @if(!result.isPost){
+            @if(!result.generatedDatumId){
                 <div class="modifica ms-auto d-flex align-items-end">
                     <app-button label="Modifica" class="btn btn-primary" [fluid]="true" (action)="enableEditing()"></app-button>
                 </div>
@@ -55,7 +55,7 @@
         <div class="parametri-container">
             <span class="fs-9 text-muted fw-bold">PARAMETRI INSERITI</span>
             <hr class="parametri-divider">
-            @if(result.isPost){
+            @if(result.generatedDatumId){
                 <div class="actions">
                     <app-button label="Riutilizza" class="btn btn-primary" [fluid]="true" (action)="reuseGeneration()"></app-button>
                     <app-button label="Duplica" class="btn btn-primary" [fluid]="true" (action)="duplicateGeneration()"></app-button>

@@ -144,17 +144,17 @@ export class RiconoscimentoDocumenti {
     const byParentId = new Map<number, ResultAiCopilot>();
 
     for (const parent of fromHistory) {
-      byParentId.set(parent.id, parent);
+      byParentId.set(parent.id!, parent);
     }
 
     for (const parent of this.sessionParents) {
-      const existing = byParentId.get(parent.id);
+      const existing = byParentId.get(parent.id!);
       if (!existing) {
-        byParentId.set(parent.id, { ...parent });
+        byParentId.set(parent.id!, { ...parent });
         continue;
       }
 
-      byParentId.set(parent.id, {
+      byParentId.set(parent.id!, {
         ...existing,
         name: parent.name || existing.name,
         state: parent.state || existing.state,

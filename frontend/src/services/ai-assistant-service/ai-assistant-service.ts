@@ -25,7 +25,7 @@ export class AiAssistantService {
 
   constructor() {
     this.currentResult$.subscribe((updated) => {
-      if (updated && updated.id > 0) {
+      if (updated && updated.id != null) {
         const history = this.ResultsHistorySubject.value ?? [];
         const existingIndex = history.findIndex(item => item.id === updated.id);
         
@@ -204,7 +204,7 @@ export class AiAssistantService {
   reuse(tone: Tone, style: Style, company: Company, prompt: string) : void {
     console.log('Riutilizzo richiesta con i seguenti parametri:', { tone, style, company, prompt });
     const pendingResult: ResultAiAssistant = {
-        id: -1, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
+        id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
         title: '',
         content: '',
         imagePath: null,
@@ -214,7 +214,6 @@ export class AiAssistantService {
         data: new Date(),
         prompt: prompt,
         evaluation: -1,
-        isPost: false,
         generatedDatumId: null //per ora non so quale sia sto id del generated datum
     };
 
@@ -309,7 +308,6 @@ export class AiAssistantService {
 
         const postResult: ResultAiAssistant = {
           ...result,
-          isPost: true,
           id: response?.id ?? result.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
         };
 
@@ -326,7 +324,7 @@ export class AiAssistantService {
   }
 
   // todo implementare chiamata al backend
-  requireGeneration(prompt: string, tone: Tone, style: Style, company: Company): number {
+  requireGeneration(prompt: string, tone: Tone, style: Style, company: Company): void {
     console.log('Rigenerazione richiesta');
     this.clearGenerationError();
     console.log('[requireGeneration] input:', {
@@ -337,7 +335,7 @@ export class AiAssistantService {
     });
 
     const pendingResult: ResultAiAssistant = {
-        id: -1, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
+        id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
         title: '',
         content: '',
         imagePath: null,
@@ -347,7 +345,6 @@ export class AiAssistantService {
         data: new Date(),
         prompt: prompt,
         evaluation: -1,
-        isPost: false,
         generatedDatumId: null //per ora non so quale sia sto id del generated datum
     };
 
@@ -393,8 +390,6 @@ export class AiAssistantService {
         this.notifyGenerationError(message);
       }
     });
-
-    return pendingResult.id;
   }
 
   private subscribeToGenerationChannel(generationId: number): void {
@@ -523,7 +518,6 @@ export class AiAssistantService {
             data,
             prompt: item?.prompt ?? '',
             evaluation: Number(item?.rating) || 0,
-            isPost: true,
             generatedDatumId: Number(item?.generatedDatumId ?? item?.generated_datum_id) || null
           };
         });
