@@ -11,13 +11,13 @@
                 <app-button label="Modifica" (action)="enableEditing()"></app-button>
             </div>
         }
-            <bb-doc-summary [editable]="isEditable" [result]="result" [pendingModifications]="pendingModifications" [pages]="pages" (openOriginalPdf)="handleOpenOriginalPdf()" (openSplitPdf)="handleOpenSplitPdf()" (fieldModified)="onFieldModified($event)"></bb-doc-summary>
+            <bb-doc-summary [editable]="isEditable" [result]="(result$ | async) ?? null" [pendingModifications]="pendingModifications" [pages]="pages" (openOriginalPdf)="handleOpenOriginalPdf()" (openSplitPdf)="handleOpenSplitPdf()" (fieldModified)="onFieldModified($event)"></bb-doc-summary>
     </div>
 
     <div class="info-container">
         <div class="extracted-info-container">
             <bb-extracted-employee-info
-                [rows]="extractedEmployeeRows"
+                [rows]="(extractedEmployeeRows$ | async) ?? []"
                 (editRequested)="handleEditExtractedEmployeeInfo()"
                 (rowRemoved)="handleRemoveExtractedEmployeeRow($event)"
             ></bb-extracted-employee-info>

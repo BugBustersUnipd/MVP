@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-ai-copilot.serializer';
 import { ResultSplit, State} from '../../app/shared/models/result-split.model';
-import { BehaviorSubject, map, Observable, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, map, Observable, switchMap, tap, forkJoin } from 'rxjs';
 import { Company } from '../../app/shared/models/result-ai-assistant.model';
 import { RisultatoGenerazione } from '../../app/risultato-generazione/risultato-generazione';
 import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-ai-copilot.model';
@@ -481,7 +481,8 @@ export class AiCoPilotService {
     window.open(`${API_BASE}/documents/uploads/${id}/file`, '_blank');
   }
   public getPdfById(id: number): void {
-    window.open(`${API_BASE}/documents/extracted/${id}/pdf`, '_blank');
+    // Add a cache buster to avoid serving a stale PDF after range reassignment.
+    window.open(`${API_BASE}/documents/extracted/${id}/pdf?t=${Date.now()}`, '_blank');
   }
 
   /** PATCH /documents/extracted/:id/reassign_range */
@@ -496,6 +497,13 @@ export class AiCoPilotService {
     return this.http
       .patch<any>(`${API_BASE}/documents/extracted/${id}/reassign_range`, { page_start, page_end })
       .pipe(
+        tap((response) => {
+          const jobId = String(response?.job_id ?? '').trim();
+          if (jobId) {
+            this.subscribeToReassignRangeUpdates(jobId, id);
+          }
+        }),
+        // Initial refresh to align UI with immediate queued/in_progress transition.
         switchMap(() => this.http.get<any>(`${API_BASE}/documents/extracted/${id}`)),
         map(({ extracted_document }) => this.serializer.deserializeExtractedDocument(extracted_document)),
         tap((updated) => {
@@ -503,6 +511,53 @@ export class AiCoPilotService {
           this.upsertInHistory(updated);
         })
       );
+  }
+
+  private subscribeToReassignRangeUpdates(jobId: string, extractedDocumentId: number): void {
+    const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
+    const identifier = JSON.stringify({ channel: 'DocumentProcessingChannel', job_id: jobId });
+
+    socket.onopen = () => {
+      socket.send(JSON.stringify({ command: 'subscribe', identifier }));
+    };
+
+    socket.onmessage = (event) => {
+      const cable = JSON.parse(event.data);
+
+      if (cable.type === 'welcome' || cable.type === 'ping' || cable.type === 'confirm_subscription') {
+        return;
+      }
+
+      if (cable.type === 'reject_subscription') {
+        console.error('Sottoscrizione ActionCable rifiutata per job reassign:', jobId);
+        socket.close();
+        return;
+      }
+
+      const payload = cable.message;
+      if (!payload) {
+        return;
+      }
+
+      const payloadExtractedId = Number(payload.extracted_document_id) || extractedDocumentId;
+      if (payloadExtractedId !== extractedDocumentId) {
+        return;
+      }
+
+      if (payload.event === 'document_processed') {
+        this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+      }
+
+      if (payload.event === 'processing_completed' || payload.event === 'processing_failed') {
+        this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+        socket.close();
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error('Errore WebSocket su reassign range:', error);
+      socket.close();
+    };
   }
 
   /** PATCH /documents/extracted/:id/metadata */
@@ -526,29 +581,33 @@ export class AiCoPilotService {
   }
 
     /** GET /documents/uploads → carica la history iniziale via HTTP */
-  public fetchHistoryResults(): void {
-    if ((this.resultsHistorySubject.value ?? []).length > 0) return;
- 
-    this.http.get<any>(`${API_BASE}/documents/uploads`).subscribe({
-      next: ({ uploaded_documents }) => {
-        for (const ud of uploaded_documents) {
-          if (ud?.id && ud?.original_filename) {
-            this.setParentName(ud.id, ud.original_filename);
-          }
-          this.setParentPageCount(ud?.id, ud?.page_count);
-          this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`).subscribe({
-            next: (response) =>
-              response.extracted_documents
-                .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
-                .forEach((s: ResultSplit) => this.upsertInHistory(s)),
-            error: (err) => console.error(`Errore estratti per ${ud.id}:`, err),
-          });
-        }
-      },
-      error: (err) => console.error('Errore nel recupero della history:', err),
-    });
-  }
+public fetchHistoryResults(): void {
+  
 
+  this.http.get<any>(`${API_BASE}/documents/uploads`).pipe(
+    switchMap(({ uploaded_documents }) => {
+      const requests : Observable<any>[] = uploaded_documents.map((ud: any) => {
+        if (ud?.id && ud?.original_filename) {
+          this.setParentName(ud.id, ud.original_filename);
+          this.setParentPageCount(ud.id, ud.page_count);
+        }
+
+        return this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`);
+      });
+
+      return forkJoin(requests);
+    })
+  ).subscribe({
+    next: (responses) => {
+      responses.forEach(response => {
+        response.extracted_documents
+          .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
+          .forEach((s: ResultSplit) => this.upsertInHistory(s));
+      });
+    },
+    error: (err) => console.error('Errore generale:', err),
+  });
+}
   /** GET /lookups/users?company=<n> */
   public fetchEmployeesByCompany(company: string): void {
     if (!company) {
@@ -576,6 +635,7 @@ export class AiCoPilotService {
 
     public updateResult(result: ResultSplit): void {
     this.resultSubject.next(result);
+    this.upsertInHistory(result);
   }
 
 }

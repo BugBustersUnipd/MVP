@@ -52,8 +52,8 @@
 
         <div class="row mt-3">
             <div class="col-8 mb-3">
-                <label class="label">Nome documento</label>
-                <app-input [editable]="editable" [value]="getFieldValue('name')" (valueChange)="onFieldChange('name', $event)"></app-input>
+                <label class="label">ID documento splittato</label>
+                <app-input [editable]="false" [value]="result ? (result.parentId + '.' + result.id) : ''"></app-input>
             </div>
 
             <div class="col-md-5">

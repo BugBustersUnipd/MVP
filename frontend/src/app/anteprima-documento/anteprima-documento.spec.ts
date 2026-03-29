@@ -15,8 +15,12 @@ import { MessageService } from 'primeng/api';
 describe('AnteprimaDocumento', () => {
   let component: AnteprimaDocumento;
   let fixture: ComponentFixture<AnteprimaDocumento>;
+  let currentResult$: BehaviorSubject<any>;
+  let currentResultsHistory$: BehaviorSubject<any[] | null>;
 
   const aiServiceMock = {
+    currentResult$: null as any,
+    currentResultsHistory$: null as any,
     templates$: of([{ name: 'T', content: 'C' }]),
     otherExtractedDocuments$: new BehaviorSubject<any[]>([]),
     employees$: of([{ id: 1, name: 'Mario' }]),
@@ -43,6 +47,11 @@ describe('AnteprimaDocumento', () => {
   };
 
   beforeEach(async () => {
+    currentResult$ = new BehaviorSubject<any>(null);
+    currentResultsHistory$ = new BehaviorSubject<any[] | null>([]);
+    aiServiceMock.currentResult$ = currentResult$;
+    aiServiceMock.currentResultsHistory$ = currentResultsHistory$;
+
     history.replaceState(
       {
         result: {
@@ -239,5 +248,26 @@ describe('AnteprimaDocumento', () => {
     buttons.at(-1)?.componentInstance.action.emit();
 
     expect(showDialogSpy).toHaveBeenCalledOnce();
+  });
+
+  it('should react to currentResult$ updates for same extracted id', () => {
+    currentResult$.next({
+      id: 1,
+      parentId: 11,
+      recipientName: 'Nuovo Destinatario',
+      recipientEmail: 'nuovo@test.com',
+      recipientCode: 'EMP-99',
+      company: 'ACME',
+      department: 'HR',
+      category: 'Cedolini',
+      confidence: 90,
+      state: 'Pronto',
+      page_start: 1,
+      page_end: 2,
+      name: 'Doc aggiornato',
+    });
+
+    expect(component.result?.recipientName).toBe('Nuovo Destinatario');
+    expect(component.extractedEmployeeRows[0]?.name).toBe('Nuovo Destinatario');
   });
 });
