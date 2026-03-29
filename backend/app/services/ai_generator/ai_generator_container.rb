@@ -1,6 +1,7 @@
 require_relative "ai_generator_service"
 require_relative "ai_generator_data_manager"
 require_relative "setter_factory"
+require_relative "text_response_validator"
 require_relative "text_generator_service"
 require_relative "image_generator_service"
 
@@ -13,7 +14,8 @@ class AiGeneratorContainer
     textGenerator = self.textGenerator
     aiGeneratorDataManager = self.aiGeneratorDataManager
     setterFactory = self.setterFactory
-    @aiGeneratorService ||= AIGeneratorService.new(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory)
+    textResponseValidator = self.textResponseValidator
+    @aiGeneratorService ||= AIGeneratorService.new(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory, textResponseValidator)
   end
 
   private
@@ -24,6 +26,10 @@ class AiGeneratorContainer
 
   def setterFactory
     @setterFactory ||= SetterFactory.new
+  end
+
+  def textResponseValidator
+    @textResponseValidator ||= TextResponseValidator.new
   end
 
   def textGenerator
