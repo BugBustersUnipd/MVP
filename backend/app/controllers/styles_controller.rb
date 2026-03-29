@@ -9,6 +9,8 @@ class StylesController < ApplicationController
     return render json: { error: "Azienda non trovata" }, status: :not_found unless company
 
     styles = company.styles
+    active_only = params[:is_active] == "true"
+    styles = styles.active if active_only
     
     render json: StyleSerializer.serialize_collection(styles), status: :ok
   end
@@ -16,7 +18,7 @@ class StylesController < ApplicationController
   def create
     @style = Style.new(style_params)
     if @style.save
-      render json: { id: @style.id, name: @style.name, description: @style.description }, status: :ok
+      render json: { id: @style.id, name: @style.name, description: @style.description, is_active: @style.is_active }, status: :ok
     else
       render json: { error: @style.errors.full_messages.join(', ') }, status: :bad_request
     end
@@ -25,7 +27,8 @@ class StylesController < ApplicationController
   def destroy
     @style = Style.find_by(id: params[:id])
 
-    if @style && @style.destroy
+    if @style && @style.is_active
+      @style.update(is_active: false)
       render json: { message: "Stile eliminato con successo!" }, status: :ok
     else
       render json: { error: "Errore durante l'eliminazione dello stile." }, status: :bad_request
@@ -35,6 +38,6 @@ class StylesController < ApplicationController
   private
 
   def style_params
-    params.require(:style).permit(:name, :description, :company_id)
+    params.require(:style).permit(:name, :description, :company_id, :is_active)
   end
 end

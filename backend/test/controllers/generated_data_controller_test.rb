@@ -92,4 +92,47 @@ class GeneratedDataControllerTest < ActionDispatch::IntegrationTest
     assert_nil nuovo.title
     assert_nil nuovo.text_result
   end
+
+  test "regenerate restituisce 422 se il tone del parent non e attivo" do
+    @tone.update!(is_active: false)
+
+    assert_no_difference "GeneratedDatum.count" do
+      post regenerate_generated_data_path(@parent.id)
+    end
+
+    assert_response :unprocessable_entity
+    json = JSON.parse(response.body)
+    assert_includes json["error"], "tone"
+  end
+
+  test "regenerate restituisce 422 se lo style del parent non e attivo" do
+    @style.update!(is_active: false)
+
+    assert_no_difference "GeneratedDatum.count" do
+      post regenerate_generated_data_path(@parent.id)
+    end
+
+    assert_response :unprocessable_entity
+    json = JSON.parse(response.body)
+    assert_includes json["error"], "style"
+  end
+
+  test "create restituisce 422 se tone o style non sono attivi" do
+    @tone.update!(is_active: false)
+
+    assert_no_difference "GeneratedDatum.count" do
+      post create_generated_data_path, params: {
+        generation_datum: {
+          prompt: "Nuova generazione",
+          company_id: @company.id,
+          tone_id: @tone.id,
+          style_id: @style.id
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    json = JSON.parse(response.body)
+    assert_includes json["error"], "tone"
+  end
 end

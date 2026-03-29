@@ -12,6 +12,8 @@ class GeneratedDataController < ApplicationController
     else
       render json: { errors: @generation.errors.full_messages }, status: :unprocessable_entity
     end
+  rescue AiGenerator::AiJobOrchestrator::InactiveConfigurationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   def show
@@ -48,6 +50,8 @@ class GeneratedDataController < ApplicationController
     else
       render json: { errors: @generation.errors.full_messages }, status: :unprocessable_entity
     end
+  rescue AiGenerator::AiJobOrchestrator::InactiveConfigurationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Generazione non trovata." }, status: :not_found
   end

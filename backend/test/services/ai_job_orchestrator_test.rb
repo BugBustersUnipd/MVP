@@ -53,6 +53,42 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
     assert_not_nil result.id
   end
 
+  test "orchestrate solleva errore se tone non e attivo" do
+    @tone.update!(is_active: false)
+
+    params = {
+      prompt: "Test prompt",
+      company_id: @company.id,
+      tone_id: @tone.id,
+      style_id: @style.id
+    }
+
+    assert_no_difference "GeneratedDatum.count" do
+      error = assert_raises(AiGenerator::AiJobOrchestrator::InactiveConfigurationError) do
+        AiGenerator::AiJobOrchestrator.orchestrate(params)
+      end
+      assert_includes error.message, "tone"
+    end
+  end
+
+  test "orchestrate solleva errore se style non e attivo" do
+    @style.update!(is_active: false)
+
+    params = {
+      prompt: "Test prompt",
+      company_id: @company.id,
+      tone_id: @tone.id,
+      style_id: @style.id
+    }
+
+    assert_no_difference "GeneratedDatum.count" do
+      error = assert_raises(AiGenerator::AiJobOrchestrator::InactiveConfigurationError) do
+        AiGenerator::AiJobOrchestrator.orchestrate(params)
+      end
+      assert_includes error.message, "style"
+    end
+  end
+
   # === SIGNAL PROCESS START ===
   test "signal_process_start aggiorna status a processing" do
     generation = GeneratedDatum.create!(
