@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, NgZone, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NestedTables } from '../components/nested-tables/nested-tables';
 import { Filters } from '../components/filters/filters';
@@ -20,6 +20,7 @@ import { MenuItem } from 'primeng/api';
 export class RiconoscimentoDocumenti {
   private aiCoPilotService = inject(AiCoPilotService);
   private destroyRef = inject(DestroyRef);
+  private ngZone = inject(NgZone);
   items: MenuItem[] = [];
   sessionParents: ResultAiCopilot[] = [];
   parentNames: Record<number, string> = {};
@@ -183,22 +184,28 @@ export class RiconoscimentoDocumenti {
     this.aiCoPilotService.currentResultsHistory$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((results) => {
-        this.DocumentiSplittati = [...(results ?? [])];
-        this.applyFilters();
+        this.runInZone(() => {
+          this.DocumentiSplittati = [...(results ?? [])];
+          this.applyFilters();
+        });
       });
 
     this.aiCoPilotService.currentSessionParents$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((parents) => {
-        this.sessionParents = [...parents];
-        this.applyFilters();
+        this.runInZone(() => {
+          this.sessionParents = [...parents];
+          this.applyFilters();
+        });
       });
 
     this.aiCoPilotService.currentParentNames$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((names) => {
-        this.parentNames = { ...names };
-        this.applyFilters();
+        this.runInZone(() => {
+          this.parentNames = { ...names };
+          this.applyFilters();
+        });
       });
     
       this.items = [
@@ -217,6 +224,15 @@ export class RiconoscimentoDocumenti {
         ];
 
 
+  }
+
+  private runInZone(action: () => void): void {
+    if (NgZone.isInAngularZone()) {
+      action();
+      return;
+    }
+
+    this.ngZone.run(action);
   }
 
 columns = [

@@ -22,9 +22,33 @@ export class Tables {
 @Input() items: MenuItem[] = [];
 @Input() class: string = '';
 @Output() titleClick = new EventEmitter<any>();
+@Output() menuAction = new EventEmitter<{ row: any; item: MenuItem }>();
+rowMenuItems: MenuItem[] = [];
 
 onTitleClick(row: any): void {
   this.titleClick.emit(row);
+}
+
+openRowMenu(menu: { toggle: (event: Event) => void }, event: Event, row: any): void {
+  this.rowMenuItems = this.items.map((item) => this.bindMenuItemToRow(item, row));
+  menu.toggle(event);
+}
+
+private bindMenuItemToRow(item: MenuItem, row: any): MenuItem {
+  const boundItem: MenuItem = { ...item };
+
+  if (item.items?.length) {
+    boundItem.items = item.items.map((child) => this.bindMenuItemToRow(child, row));
+    return boundItem;
+  }
+
+  const existingCommand = item.command;
+  boundItem.command = (event) => {
+    existingCommand?.(event);
+    this.menuAction.emit({ row, item });
+  };
+
+  return boundItem;
 }
 
 }
