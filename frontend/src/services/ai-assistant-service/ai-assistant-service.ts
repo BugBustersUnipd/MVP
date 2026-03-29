@@ -214,7 +214,8 @@ export class AiAssistantService {
         data: new Date(),
         prompt: prompt,
         evaluation: -1,
-        isPost: false
+        isPost: false,
+        generatedDatumId: null //per ora non so quale sia sto id del generated datum
     };
 
     this.resultSubject.next(pendingResult);
@@ -234,7 +235,7 @@ export class AiAssistantService {
     console.log(`Scarto generazione con id ${id} richiesto`);
   }
 
-  setEvaluation(id: number, evaluation: number) : void { //numero di GeneratedDatum
+  setEvaluation(id: number|null, evaluation: number) : void { //numero di GeneratedDatum
     const current = this.resultSubject.value;
     if (!current) return;
 
@@ -308,7 +309,8 @@ export class AiAssistantService {
 
         const postResult: ResultAiAssistant = {
           ...result,
-          isPost: true
+          isPost: true,
+          id: response?.id ?? result.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
         };
 
         this.resultSubject.next(postResult);
@@ -345,7 +347,8 @@ export class AiAssistantService {
         data: new Date(),
         prompt: prompt,
         evaluation: -1,
-        isPost: false
+        isPost: false,
+        generatedDatumId: null //per ora non so quale sia sto id del generated datum
     };
 
     this.resultSubject.next(pendingResult);
@@ -377,7 +380,7 @@ export class AiAssistantService {
 
         const createdResult: ResultAiAssistant = {
           ...pendingResult,
-          id: generatedId
+          generatedDatumId: generatedId
         };
 
         this.resultSubject.next(createdResult);
@@ -519,8 +522,9 @@ export class AiAssistantService {
             },
             data,
             prompt: item?.prompt ?? '',
-            evaluation: Number(item?.evaluation) || 0,
-            isPost: true
+            evaluation: Number(item?.rating) || 0,
+            isPost: true,
+            generatedDatumId: Number(item?.generatedDatumId ?? item?.generated_datum_id) || null
           };
         });
 

@@ -214,7 +214,7 @@ export class RisultatoGenerazione {
       ...current,
       evaluation: rating,
     });
-    this.aiService.setEvaluation(current.id, rating);
+    this.aiService.setEvaluation(current.generatedDatumId, rating);
   }
 
   reuseGeneration(): void {

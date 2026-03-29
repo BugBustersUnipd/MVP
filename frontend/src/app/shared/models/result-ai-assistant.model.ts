@@ -11,6 +11,7 @@ export interface ResultAiAssistant extends Result {
 	prompt: string;
 	evaluation: number;
 	isPost: boolean;
+	generatedDatumId: number | null;
 }
 
 export interface Style {

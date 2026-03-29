@@ -20,7 +20,8 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
       data: this.asDate(source['data']),
       prompt: this.asString(source['prompt']),
       evaluation: this.asNumber(source['evaluation'], 0),
-      isPost: typeof source['isPost'] === 'boolean' ? source['isPost'] : true // default a true se non specificato, da modificare in base alla logica di business
+      isPost: typeof source['isPost'] === 'boolean' ? source['isPost'] : true, // default a true se non specificato, da modificare in base alla logica di business
+      generatedDatumId: this.asNumber(source['generatedDatumId'], 0) // Se il campo è opzionale, potrebbe essere null o undefined, gestito come null
     };
   }
 
