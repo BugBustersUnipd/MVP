@@ -70,6 +70,29 @@ export class AiAssistantService {
     this.generationErrorSubject.next(message);
   }
 
+  private extractRealtimeFailureMessage(payload: any): string {
+    const generic = 'Generazione fallita per un errore interno.';
+
+    const rawError = payload?.error;
+    const message = typeof rawError === 'string' && rawError.trim().length > 0
+      ? rawError
+      : generic;
+
+    const lowered = message.toLowerCase();
+
+    // Token scaduto (AWS / security token expired): stesso flusso dell'altro errore.
+    if (lowered.includes('token') && lowered.includes('expired')) {
+      return message;
+    }
+
+    // Guardrails: esempio "Contenuto bloccato dai guardrails".
+    if (lowered.includes('guardrail') || lowered.includes('bloccato dai guardrails')) {
+      return message;
+    }
+
+    return message;
+  }
+
   clearGenerationError(): void {
     this.generationErrorSubject.next(null);
   }
@@ -401,9 +424,7 @@ export class AiAssistantService {
         socket.close();
         console.log('[ws] unsubscribe websocket dopo completed');
       } else if (payload.status === 'failed') {
-        const errorMessage = typeof payload.error === 'string' && payload.error.trim().length > 0
-          ? payload.error
-          : 'Generazione fallita per un errore interno.';
+        const errorMessage = this.extractRealtimeFailureMessage(payload);
 
         console.error('[ws] failed ricevuto:', payload);
         this.notifyGenerationError(errorMessage);
