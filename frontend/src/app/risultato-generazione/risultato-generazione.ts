@@ -31,6 +31,8 @@ export class RisultatoGenerazione {
   private destroyRef = inject(DestroyRef);
   isEditable: boolean = false;
   readonly: boolean = true;
+  isImageTitleLoading: boolean = false;
+  isContentLoading: boolean = false;
 
   // Riferimento unico al result: non viene modificato finche' non si salva.
   result = signal<ResultAiAssistant | null>((history.state?.result as ResultAiAssistant | null) ?? null);
@@ -49,10 +51,44 @@ export class RisultatoGenerazione {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((updated) => {
         this.result.set(updated);
+        this.updateImageTitleLoading(updated);
+        this.updateContentLoading(updated);
         window.history.replaceState({ ...(history.state ?? {}), result: updated }, '');//questo serve per mantenere l'oggetto result in memoria anche se l'utente aggiorna la pagina
         console.log('Generazione completata, navigazione al risultato con:', this.result());
 
       });
+
+    this.aiService.currentGenerationError$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((errorMessage) => {
+        if (!errorMessage) return;
+        this.router.navigate(['/generatore']); //ritorna al generatore in caso di errore
+        window.alert(errorMessage);
+      });
+
+    this.updateImageTitleLoading(this.result());
+    this.updateContentLoading(this.result());
+  }
+
+  private updateImageTitleLoading(result: ResultAiAssistant | null): void {
+    if (!result || result.isPost) {
+      this.isImageTitleLoading = false;
+      return;
+    }
+
+    const hasTitle = typeof result.title === 'string' && result.title.trim().length > 0;
+    const hasImage = typeof result.imagePath === 'string' && result.imagePath.trim().length > 0;
+    this.isImageTitleLoading = !hasTitle || !hasImage;
+  }
+
+  private updateContentLoading(result: ResultAiAssistant | null): void {
+    if (!result || result.isPost) {
+      this.isContentLoading = false;
+      return;
+    }
+
+    const hasContent = typeof result.content === 'string' && result.content.trim().length > 0;
+    this.isContentLoading = !hasContent;
   }
 
   onRigenera(id: number): void {

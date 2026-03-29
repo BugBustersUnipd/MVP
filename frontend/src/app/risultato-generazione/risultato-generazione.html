@@ -20,7 +20,7 @@
     </div>
     <div class="body">
         <div class="image-container">
-            <bb-image-title [imageTitle]="getTitleValue()" [imageUrl]="getImagePathValue()" [editable]="isEditable"
+            <bb-image-title [imageTitle]="getTitleValue()" [imageUrl]="getImagePathValue()" [editable]="isEditable" [loading]="isImageTitleLoading"
                 (imageTitleChange)="onFieldModified('title', $event)"
                 (imageChange)="changeImage($event)"
             >
@@ -28,7 +28,7 @@
         </div>
 
         <div class="output-container">
-            <app-editor [text]="getContentValue()" [editable]="isEditable" (textChange)="onFieldModified('content', $event)"></app-editor>
+            <app-editor [text]="getContentValue()" [editable]="isEditable" [loading]="isContentLoading" (textChange)="onFieldModified('content', $event)"></app-editor>
         </div>
 
         <div class="d-flex gap-3">

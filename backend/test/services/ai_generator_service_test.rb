@@ -309,4 +309,29 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     assert @generation_datum.title.present?
     assert @generation_datum.text_result.present?
   end
+
+  test "solleva BlockedResponseError quando il testo contiene messaggio bloccante" do
+    blocked_text = "Siamo spiacenti, la domanda non rispetta le linee guida."
+
+    text_gen = Object.new
+    text_gen.define_singleton_method(:generate_text) { |_system_prompt, _user_prompt| blocked_text }
+
+    img_gen = Object.new
+    img_gen.define_singleton_method(:generate_image) do |_image_prompt|
+      raise "generate_image non dovrebbe essere chiamato per risposta bloccata"
+    end
+
+    service = AiGenerator::AIGeneratorService.new(
+      img_gen,
+      text_gen,
+      AiGenerator::AIGeneratorDataManager.new,
+      AiGenerator::SetterFactory.new
+    )
+
+    error = assert_raises(AiGenerator::AIGeneratorService::BlockedResponseError) do
+      service.create_content(@generation_datum.id)
+    end
+
+    assert_equal blocked_text, error.message
+  end
 end

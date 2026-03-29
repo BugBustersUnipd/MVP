@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NestedTables } from '../components/nested-tables/nested-tables';
 import { Filters } from '../components/filters/filters';
 import { AsyncPipe } from '@angular/common';
-import { map, of } from 'rxjs';
+import { map } from 'rxjs';
 
 //servizi
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
@@ -98,7 +98,7 @@ export class RiconoscimentoDocumenti {
     this.DocumentiSplittatiFiltrati = this.DocumentiSplittati.filter((doc) => {
       const matchesSearch = this.searchvalue ? doc.name.toLowerCase().includes(this.searchvalue.toLowerCase()) : true;
       const matchesDate = this.dates ? (doc.data >= this.dates[0] && doc.data <= this.dates[1]) : true;
-      const matchesConfidence = this.selectedconfidence ? doc.confidence === this.selectedconfidence : true;
+      const matchesConfidence = this.matchesConfidenceRange(doc.confidence, this.selectedconfidence);
       const matchesCategory = this.selectedCategory ? doc.category === this.selectedCategory : true;
       const matchesState = this.selectedState ? doc.state === this.selectedState : true;
       const matchesCompany = this.selectedCompany ? doc.company === this.selectedCompany : true;
@@ -133,6 +133,29 @@ export class RiconoscimentoDocumenti {
       }
       return !hasActiveFilters;
     });
+  }
+
+  private matchesConfidenceRange(confidence: number, selectedRange: string | number | null | undefined): boolean {
+    if (selectedRange === null || selectedRange === undefined || selectedRange === '') {
+      return true;
+    }
+
+    if (typeof selectedRange === 'number') {
+      return confidence === selectedRange;
+    }
+
+    const match = selectedRange.match(/(\d+)\s*-\s*(\d+)/);
+    if (!match) {
+      return true;
+    }
+
+    const min = Number(match[1]);
+    const max = Number(match[2]);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      return true;
+    }
+
+    return confidence >= min && confidence <= max;
   }
 
   private mapSplitStateToDocumentState(state: State): DocumentState {

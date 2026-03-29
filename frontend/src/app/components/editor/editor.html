@@ -1,2 +1,18 @@
 <label class="label">Contenuto</label>
-<p-editor [ngModel]="editorText" [readonly]="!editable" (ngModelChange)="onTextModelChange($event)"></p-editor>
+<div class="editor-wrapper">
+	@if (loading) {
+		<div class="editor-loading-overlay">
+			<div class="editor-skeleton">
+				<p-skeleton height="1rem" width="88%" class="mb-1"></p-skeleton>
+				<p-skeleton height="1rem" width="80%" class="mb-1"></p-skeleton>
+				<p-skeleton height="1rem" width="86%" class="mb-1"></p-skeleton>
+			</div>
+		</div>
+	}
+
+	<p-editor
+		[ngModel]="editorText"
+		[readonly]="!editable || loading"
+		(ngModelChange)="onTextModelChange($event)"
+	></p-editor>
+</div>

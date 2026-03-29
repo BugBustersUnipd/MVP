@@ -3,10 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { ImageModule } from 'primeng/image';
 import { InputTextModule } from 'primeng/inputtext';
 import { FileUploadModule } from 'primeng/fileupload';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
   selector: 'bb-image-title',
-  imports: [ImageModule, FormsModule, InputTextModule, FileUploadModule],
+  imports: [ImageModule, FormsModule, InputTextModule, FileUploadModule, ProgressSpinnerModule],
   templateUrl: './image-title.html',
   styleUrls: [
     './image-title.css'
@@ -19,6 +20,7 @@ export class ImageTitle {
 @Input() altText: string = '';
 @Input() editable: boolean = false;
 @Input() imageTitle: string = '';
+@Input() loading: boolean = false;
 title: string = '';
 @Output() imageTitleChange = new EventEmitter<string>();
 @Output() imageChange = new EventEmitter<File>();

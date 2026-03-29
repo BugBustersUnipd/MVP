@@ -146,3 +146,12 @@ body{
 :root{
   --p-datatable-body-cell-padding: 1rem !important;
 }
+
+/* spinning loader */
+:root{
+  	
+ --p-progressspinner-color-one : #383838 !important;
+  --p-progressspinner-color-two : #4a4a4a !important;
+  --p-progressspinner-color-three : #383838 !important;
+  --p-progressspinner-color-four : #4a4a4a !important;
+}

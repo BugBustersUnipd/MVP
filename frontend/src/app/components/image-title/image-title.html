@@ -1,4 +1,16 @@
 <div class="hero-banner">
+  @if (loading) {
+    <div class="loading-overlay">
+      <p-progressSpinner
+        strokeWidth="4"
+        fill="transparent"
+        aria-label="Caricamento in corso"
+        animationDuration=".8s"
+        [style]="{ width: '3rem', height: '3rem' }"
+      />
+    </div>
+  }
+
   <p-image
     preview="true"
     [src]="imageUrl"
