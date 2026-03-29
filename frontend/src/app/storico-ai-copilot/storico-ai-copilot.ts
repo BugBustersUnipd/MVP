@@ -7,15 +7,14 @@ import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { Tables } from '../components/tables/tables';
 import { Filters } from '../components/filters/filters';
 import { MenuItem} from 'primeng/api';
-import { Button } from '../components/button/button';
-import { ResultSplit } from '../shared/models/result-split.model';
+import { ResultSplit, State } from '../shared/models/result-split.model';
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
 
 
 
 @Component({
   selector: 'app-storico-ai-copilot',
-  imports: [FormsModule, Tables, Filters, Button, AsyncPipe],
+  imports: [FormsModule, Tables, Filters, AsyncPipe],
   templateUrl: './storico-ai-copilot.html',
   styleUrl: './storico-ai-copilot.css',
 })
@@ -89,6 +88,10 @@ export class StoricoAiCopilot {
                     {   
                         label: 'Elimina',
                         icon: 'pi pi-trash'
+                    },
+                    {
+                        label: 'Riprova',
+                        icon: 'pi pi-refresh'
                     }
                 ]
             }
@@ -184,7 +187,14 @@ export class StoricoAiCopilot {
 
     if (action === 'modifica') {
       this.navigateToResult(event.row);
+    } else if (action === 'riprova' && event.row.state === State.Failed) {
+      this.aiCoPilotService.retryExtractedDocumentProcessing(event.row.id);
     }
+  }
+
+  onRowRemoved(row: ResultSplit): void {
+    this.Documents = this.Documents.filter((doc) => doc.id !== row.id);
+    this.documentsSubject.next(this.Documents);
   }
 
   navigateToResult(targetRow?: ResultSplit){

@@ -11,7 +11,8 @@ export interface ResultAiCopilot extends Result {
 export enum DocumentState {
     Completato = 'Completato',
     InElaborazione = 'In elaborazione',
-    InCoda = 'In coda',
+    InCoda = 'In coda',     
+    Failed = 'Failed',
 }
 
 

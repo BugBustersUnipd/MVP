@@ -24,5 +24,6 @@ export enum State {
     Pronto = 'Pronto',
     DaValidare = 'Da validare',
     Inviato = 'Inviato',
-    Programmato = 'Programmato'
+    Programmato = 'Programmato',
+    Failed = 'Failed'
 }

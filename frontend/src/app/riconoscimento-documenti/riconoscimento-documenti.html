@@ -48,8 +48,11 @@
 </div>
 <h2 class="page-title">RICONOSCIMENTO DOCUMENTI</h2>
 <bb-nested-tables
+  [ButtonLabel]="NestedButtonLabel"
   [columns]="columns"
   [documents]="nestedDocuments"
   [items]="items"
   (menuAction)="onTableMenuAction($event)"
+  (retryAction)="onRetryAnalysis($event)"
+  (rowRemoved)="onRowRemoved($event)"
 ></bb-nested-tables>

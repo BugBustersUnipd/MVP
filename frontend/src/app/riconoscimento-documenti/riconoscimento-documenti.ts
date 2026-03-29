@@ -23,6 +23,7 @@ export class RiconoscimentoDocumenti {
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
   private router = inject(Router);
+  NestedButtonLabel = 'Riprova Analisi';
   items: MenuItem[] = [];
   sessionParents: ResultAiCopilot[] = [];
   parentNames: Record<number, string> = {};
@@ -91,6 +92,16 @@ export class RiconoscimentoDocumenti {
     if (action === 'modifica') {
       this.navigateToResult(event.row);
     }
+  }
+
+  onRetryAnalysis(parentId: number): void {
+    this.aiCoPilotService.retryDocumentProcessing(parentId);
+  }
+
+  onRowRemoved(row: ResultSplit): void {
+    // Rimuovi il documento dalla lista locale
+    this.DocumentiSplittati = this.DocumentiSplittati.filter((doc) => doc.id !== row.id);
+    this.applyFilters();
   }
 
   navigateToResult(targetRow: ResultSplit): void {

@@ -226,9 +226,10 @@ export class AiCoPilotService {
             }
             if (evt === 'processing_failed') {
               console.error('Elaborazione fallita per il documento:', cable.message.error);
+              reactiveResult.state = DocumentState.Failed;
               if (uploadedDocumentId > 0) {
                 this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
-                this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
+                this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed);
               }
               socket.close();
             }
@@ -378,6 +379,29 @@ export class AiCoPilotService {
         this.otherExtractedDocumentsSubject.next(splits);
       },
       error: (err) => console.error('Errore nel recupero dei documenti fratelli:', err),
+    });
+  }
+
+  /** POST /documents/uploads/:id/retry */
+  public retryDocumentProcessing(uploadedDocumentId: number): void {
+    this.http.post<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}/retry`, {}).subscribe({
+      next: (response) => {
+        console.log('Riprocessamento avviato:', response);
+        // Opzionalmente, aggiorna lo stato del documento
+        this.fetchHistoryResults();
+      },
+      error: (err) => console.error('Errore nel riavvio del processamento:', err),
+    });
+  }
+
+  /** POST /documents/extracted/:id/retry */
+  public retryExtractedDocumentProcessing(extractedDocumentId: number): void {
+    this.http.post<any>(`${API_BASE}/documents/extracted/${extractedDocumentId}/retry`, {}).subscribe({
+      next: (response) => {
+        console.log('Rianalisi documento come estratto avviata:', response);
+        this.fetchHistoryResults();
+      },
+      error: (err) => console.error('Errore nel riavvio della rianalisi:', err),
     });
   }
 
