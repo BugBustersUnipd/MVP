@@ -17,6 +17,8 @@ export class AiAssistantService {
   private http = inject(HttpClient);
   private resultSubject : BehaviorSubject<ResultAiAssistant | null> = new BehaviorSubject<ResultAiAssistant | null>(null);
   currentResult$ = this.resultSubject.asObservable();
+  private generationErrorSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+  currentGenerationError$ = this.generationErrorSubject.asObservable();
 
   ResultsHistorySubject: BehaviorSubject<ResultAiAssistant[] | null> = new BehaviorSubject<ResultAiAssistant[] | null>(null);
   currentResultsHistory$ = this.ResultsHistorySubject.asObservable();
@@ -34,6 +36,42 @@ export class AiAssistantService {
         }
       }
     });
+  }
+
+  private extractErrorMessage(error: any): string {
+    const generic = 'Errore durante la generazione. Riprova tra poco.';
+
+    if (!error) return generic;
+
+    const backendErrors = error?.error?.errors;
+    if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+      return backendErrors.join(', ');
+    }
+
+    const backendError = error?.error?.error;
+    if (typeof backendError === 'string' && backendError.trim().length > 0) {
+      return backendError;
+    }
+
+    const backendMessage = error?.error?.message;
+    if (typeof backendMessage === 'string' && backendMessage.trim().length > 0) {
+      return backendMessage;
+    }
+
+    const directMessage = error?.message;
+    if (typeof directMessage === 'string' && directMessage.trim().length > 0) {
+      return directMessage;
+    }
+
+    return generic;
+  }
+
+  private notifyGenerationError(message: string): void {
+    this.generationErrorSubject.next(message);
+  }
+
+  clearGenerationError(): void {
+    this.generationErrorSubject.next(null);
   }
 
   setCurrentResult(result: ResultAiAssistant | null): void {
@@ -235,6 +273,7 @@ export class AiAssistantService {
   // todo implementare chiamata al backend
   requireGeneration(prompt: string, tone: Tone, style: Style, company: Company): number {
     console.log('Rigenerazione richiesta');
+    this.clearGenerationError();
     console.log('[requireGeneration] input:', {
       promptLength: prompt?.length ?? 0,
       toneId: tone?.id,
@@ -294,6 +333,8 @@ export class AiAssistantService {
       },
       error: (err) => {
         console.error('Errore nella POST /generated_data:', err);
+        const message = this.extractErrorMessage(err);
+        this.notifyGenerationError(message);
       }
     });
 
@@ -359,6 +400,15 @@ export class AiAssistantService {
         console.log('[ws] resultSubject aggiornato con title/content da completed');
         socket.close();
         console.log('[ws] unsubscribe websocket dopo completed');
+      } else if (payload.status === 'failed') {
+        const errorMessage = typeof payload.error === 'string' && payload.error.trim().length > 0
+          ? payload.error
+          : 'Generazione fallita per un errore interno.';
+
+        console.error('[ws] failed ricevuto:', payload);
+        this.notifyGenerationError(errorMessage);
+        socket.close();
+        console.log('[ws] unsubscribe websocket dopo failed');
       } else {
         console.log('[ws] status ricevuto ma non gestito in update finale:', payload.status);
       }
@@ -374,6 +424,7 @@ export class AiAssistantService {
 
     socket.onerror = (error) => {
       console.error('Errore nella connessione WebSocket:', error);
+      this.notifyGenerationError('Errore di connessione realtime. Controlla la rete e riprova.');
     };
   }
 

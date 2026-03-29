@@ -53,6 +53,14 @@ export class RisultatoGenerazione {
         console.log('Generazione completata, navigazione al risultato con:', this.result());
 
       });
+
+    this.aiService.currentGenerationError$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((errorMessage) => {
+        if (!errorMessage) return;
+        this.router.navigate(['/generatore']); //ritorna al generatore in caso di errore
+        window.alert(errorMessage);
+      });
   }
 
   onRigenera(id: number): void {
