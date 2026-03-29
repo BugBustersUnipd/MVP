@@ -276,21 +276,38 @@ export class AiAssistantService {
     };
     this.resultSubject.next(newResult);
   }
-  //todo passare solo le cose modificate (basta mettere parametri opzionali)
   createPost(result: ResultAiAssistant): void {
-
-    //chiamata al backend per creare un nuovo post con i dati di result
-
-    //se va a buon fine aggiunge il risultato alla lista dei currentResultsHistory (simulando l'aggiunta del nuovo post alla cronologia delle generazioni) e reindirizza alla pagina dello storico
-    const postResult: ResultAiAssistant = {
-      ...result,
-      isPost: true,
-      id: 234
+    // Costruisce il payload per POST /posts con i dati del result
+    // Il backend accetta: title, body_text, img_path, date_time, generated_datum_id
+    const payload = {
+      generated_datum_id: result.id,
+      title: result.title,
+      body_text: result.content,
+      img_path: result.imagePath,
+      date_time: result.data
     };
 
-    this.resultSubject.next(postResult);
-    this.ResultsHistorySubject.next([...(this.ResultsHistorySubject.value || []), postResult]);
-    console.log('Creazione post richiesta con i seguenti dati:', postResult);
+    console.log('[createPost] Invio POST /posts con payload:', payload);
+
+    this.http.post<any>(`${API_BASE}/posts`, payload).subscribe({
+      next: (response) => {
+        console.log('[createPost] Risposta POST /posts:', response);
+
+        const postResult: ResultAiAssistant = {
+          ...result,
+          isPost: true
+        };
+
+        this.resultSubject.next(postResult);
+        this.ResultsHistorySubject.next([...(this.ResultsHistorySubject.value || []), postResult]);
+        console.log('[createPost] Post creato con successo, id:', response?.id);
+      },
+      error: (err) => {
+        console.error('[createPost] Errore nella POST /posts:', err);
+        const errorMessage = this.extractErrorMessage(err);
+        this.notifyGenerationError(errorMessage);
+      }
+    });
   }
 
   // todo implementare chiamata al backend

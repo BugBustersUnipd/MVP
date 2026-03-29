@@ -1,12 +1,12 @@
 module AiGenerator
 class PostCreatorService
     def create_post(safe_params)
-      if safe_params[:id].blank?
+      if safe_params[:generated_datum_id].blank?
         render json: { error: "ID mancante" }, status: :unprocessable_entity
         return
       end
 
-      generation = GeneratedDatum.find_by(id: safe_params[:id])
+      generation = GeneratedDatum.find_by(id: safe_params[:generated_datum_id])
       if generation.nil?
         render json: { error: "Generazione non trovata" }, status: :not_found
         return
