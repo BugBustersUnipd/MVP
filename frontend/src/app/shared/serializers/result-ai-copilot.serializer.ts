@@ -33,10 +33,14 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
     const category = metadata['category'] ?? metadata['type'] ?? '';
     const competence = metadata['month_year'] ?? metadata['competence'] ?? metadata['date'] ?? '';
     const recipientName = raw.matched_employee?.name ?? raw.recipient ?? '';
+    const documentName =
+      [metadata['name'], raw.name, recipientName]
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .find((value) => value.length > 0) ?? `Documento ${raw.id}`;
 
     return {
       id: raw.id,
-      name: `Documento ${raw.id}`,
+      name: documentName,
       state: this.mapStatus(raw.status),
       confidence: this.normalizeConfidence(raw.confidence),
       recipientId: raw.matched_employee?.id ?? 0,

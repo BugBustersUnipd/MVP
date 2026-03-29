@@ -25,6 +25,7 @@ export class StoricoAiCopilot {
 
   private resultSplits: ResultSplit[] = [];
   private parentNames: Record<number, string> = {};
+  private parentPageCounts: Record<number, number> = {};
   private documentsSubject = new BehaviorSubject<ResultSplit[]>([]);
   private searchSubject = new BehaviorSubject<string>('');
   private datesSubject = new BehaviorSubject<Date[] | undefined>(undefined);
@@ -111,6 +112,12 @@ export class StoricoAiCopilot {
       .subscribe((names) => {
         this.parentNames = { ...names };
         this.rebuildDocuments();
+      });
+
+    this.aiCoPilotService.currentParentPageCounts$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((pageCounts) => {
+        this.parentPageCounts = { ...pageCounts };
       });
 
     this.aiCoPilotService.companies$
@@ -201,7 +208,7 @@ export class StoricoAiCopilot {
     const row = targetRow ?? this.filteredDocumentsSnapshot[0];
     const result = this.resultSplits.find((split) => split.id === row?.id);
       if (result) {
-        const pages = Math.max(1, result.page_end - result.page_start + 1);
+        const pages = this.parentPageCounts[result.parentId] ?? Math.max(1, result.page_end - result.page_start + 1);
         this.router.navigate(['/anteprima-documento'], {
           state: {
             result: result,

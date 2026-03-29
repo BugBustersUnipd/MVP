@@ -44,7 +44,7 @@
 
                 <div class="mb-3">
                     <label class="label">Mese/Anno</label>
-                    <app-input [editable]="editable" [value]="getFieldValue('month_year')" (valueChange)="onFieldChange('month_year', $event)"></app-input>
+                    <app-input [editable]="editable" [value]="getMonthYearValue()" (valueChange)="onFieldChange('month_year', $event)"></app-input>
                 </div>
 
             </div>
@@ -59,7 +59,16 @@
             <div class="col-md-5">
                 <label class="label">Pagine estratte</label>
                 <!-- todo aggiungere pagine del documento originale a ResultSplit -->
-                <bb-page-range-input [editable]="editable" class="d-flex gap-2" [page_min]="1" [page_max]="pages" [page_start]="result?.page_start" [page_end]="result?.page_end"></bb-page-range-input>
+                <bb-page-range-input
+                    [editable]="editable"
+                    class="d-flex gap-2"
+                    [page_min]="1"
+                    [page_max]="pages"
+                    [page_start]="getPageStartValue()"
+                    [page_end]="getPageEndValue()"
+                    (pageStartChange)="onFieldChange('page_start', $event)"
+                    (pageEndChange)="onFieldChange('page_end', $event)"
+                ></bb-page-range-input>
             </div>
         </div>
 

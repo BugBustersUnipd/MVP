@@ -41,4 +41,49 @@ export class DocSummary {
     this.fieldModified.emit({ field, value });
   }
 
+  getMonthYearValue(): string {
+    const value = this.getFieldValue('month_year', '');
+    const raw = String(value ?? '').trim();
+    if (!raw) {
+      return '';
+    }
+
+    const monthYearMatch = raw.match(/^(\d{1,2})[\/-](\d{4})$/);
+    if (monthYearMatch) {
+      const month = monthYearMatch[1].padStart(2, '0');
+      return `${month}/${monthYearMatch[2]}`;
+    }
+
+    const yearMonthMatch = raw.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+    if (yearMonthMatch) {
+      return `${yearMonthMatch[2]}/${yearMonthMatch[1]}`;
+    }
+
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      const year = parsed.getFullYear();
+      return `${month}/${year}`;
+    }
+
+    return raw;
+  }
+
+  getPageStartValue(): number | undefined {
+    return this.toNumber(this.pendingModifications.page_start, this.result?.page_start);
+  }
+
+  getPageEndValue(): number | undefined {
+    return this.toNumber(this.pendingModifications.page_end, this.result?.page_end);
+  }
+
+  private toNumber(primary: unknown, fallback: unknown): number | undefined {
+    const candidate = primary ?? fallback;
+    if (candidate === undefined || candidate === null || candidate === '') {
+      return undefined;
+    }
+    const parsed = Number(candidate);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+
 }
