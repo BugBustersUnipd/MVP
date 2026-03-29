@@ -781,6 +781,11 @@
         return;
       }
 
+      if (data.job_id) {
+        state.activeJobId = data.job_id;
+        listenToPipelineEvents(data.job_id);
+      }
+
       appendEvent(`Riassegnazione in coda per estratto ${extractedDocumentId}`, 'info');
       if (state.selectedUploadId) {
         await Promise.all([

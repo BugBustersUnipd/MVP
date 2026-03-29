@@ -61,7 +61,7 @@ class DocumentProcessing::Persistence::DbManagerTest < ActiveSupport::TestCase
                                metadata: metadata, confidence: {})
   end
 
-  test "update_extracted_metadata merges metadata and sets confidence to 100 for updated keys" do
+  test "update_extracted_metadata merges metadata and sets confidence to 1.0 for updated keys" do
     company = Company.first || Company.create!(name: "TestCo")
     u = User.create!(email: "mario#{SecureRandom.hex(3)}@test.it", name: "Mario Rossi", username: "mario_dbm#{SecureRandom.hex(3)}")
     employee = Employee.create!(user: u, company: company)
@@ -73,7 +73,7 @@ class DocumentProcessing::Persistence::DbManagerTest < ActiveSupport::TestCase
     )
 
     assert_equal "New Co", result.metadata["company"]
-    assert_equal 100, result.confidence["company"]
+    assert_equal 1.0, result.confidence["company"]
     assert_equal "Mario Rossi", result.recipient
     assert_equal u.id, result.matched_employee_id
   end

@@ -16,7 +16,7 @@ module DocumentProcessing
 
       # Aggiorna campi selettivi dentro extracted_document.metadata
       # metadata_updates: hash di chiavi => valori (shallow)
-      # Imposta confidence[key] = 100 per ogni chiave aggiornata
+      # Imposta confidence[key] = 1.0 per ogni chiave aggiornata (scala 0-1)
       # Ritorna l'oggetto ExtractedDocument aggiornato
       def update_extracted_metadata(extracted_document_id:, metadata_updates: {})
         raise ArgumentError, "metadata_updates must be a Hash" unless metadata_updates.is_a?(Hash)
@@ -30,7 +30,7 @@ module DocumentProcessing
 
           current_conf = extracted.confidence || {}
           metadata_updates.each_key do |k|
-            current_conf[k.to_s] = 100
+            current_conf[k.to_s] = 1.0
           end
 
           # Re-resolve recipient if the metadata update contains recipient-related fields

@@ -56,6 +56,21 @@ class ReassignExtractedRangeTest < ActiveSupport::TestCase
       confidence: { "recipient" => 0.9 }
     )
 
+    run = ProcessingRun.create!(
+      job_id: "reassign-job-#{SecureRandom.hex(4)}",
+      status: "processing",
+      uploaded_document: uploaded,
+      total_documents: 1,
+      processed_documents: 0
+    )
+    item = ProcessingItem.create!(
+      processing_run: run,
+      extracted_document: extracted,
+      sequence: 1,
+      filename: "source_1.pdf",
+      status: "done"
+    )
+
     command = DocumentProcessing::Commands::ReassignExtractedRange.new(
       page_range_pdf_service_class: FakePageRangePdf,
       data_extraction_job_class: FakeDataExtractionJob,
@@ -66,10 +81,17 @@ class ReassignExtractedRangeTest < ActiveSupport::TestCase
     extracted.reload
 
     assert_equal extracted.id, result[:extracted_document_id]
+    assert_equal run.job_id, result[:job_id]
     assert_equal "queued", extracted.status
+    assert_equal "queued", item.reload.status
     assert_equal({}, extracted.metadata)
     assert_nil extracted.recipient
     assert_equal 1, FakeDataExtractionJob.calls.size
+    args = FakeDataExtractionJob.calls.first
+    assert_equal "/tmp/reassigned_2_3.pdf", args[0]
+    assert_equal run.job_id, args[1][:job_id]
+    assert_equal item.id, args[1][:processing_item_id]
+    assert_equal extracted.id, args[1][:extracted_document_id]
   ensure
     FakeDataExtractionJob.calls = []
   end

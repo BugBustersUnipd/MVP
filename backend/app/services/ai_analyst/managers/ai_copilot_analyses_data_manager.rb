@@ -15,11 +15,10 @@ module AiAnalyst
             # Per sicurezza, se per qualche motivo fosse salvato come stringa, lo parsi.
             data = doc.confidence.is_a?(String) ? JSON.parse(doc.confidence) : doc.confidence
 
-            # Supponendo che il JSON sia tipo { "campo_a": 90.0, "campo_b": 80.0 }
-            # Estraiamo solo i valori (90.0 e 80.0) e li convertiamo in Float
-            numeric_values = data.values.map(&:to_f)
+            # Estraiamo i valori numerici e normalizziamo alla scala 0-1.
+            # I valori > 1 sono legacy (scala 0-100) e vengono divisi per 100.
+            numeric_values = data.values.map(&:to_f).map { |v| v > 1.0 ? v / 100.0 : v }
 
-            # Li "travasiamo" nel nostro array globale
             all_confidence_values.concat(numeric_values)
           rescue
             # Se un JSON è corrotto o vuoto, andiamo avanti al prossimo documento
@@ -29,8 +28,8 @@ module AiAnalyst
 
         return 0.0 if all_confidence_values.empty?
 
-        # Calcoliamo la media su tutti i singoli campi estratti di tutti i documenti
-        (all_confidence_values.sum / all_confidence_values.size).round(2)
+        # Calcoliamo la media (in scala 0-1) e restituiamo come percentuale 0-100
+        ((all_confidence_values.sum / all_confidence_values.size) * 100).round(2)
       end
 
       def retrieve_human_intervention_value_query

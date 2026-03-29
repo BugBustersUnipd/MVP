@@ -129,6 +129,7 @@ class DocumentsController < ActionController::Base
       status: "queued",
       message: result[:message],
       extracted_document_id: result[:extracted_document_id],
+      job_id: result[:job_id],
       page_start: result[:page_start],
       page_end: result[:page_end]
     }

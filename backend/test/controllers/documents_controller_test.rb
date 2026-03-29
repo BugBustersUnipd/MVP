@@ -66,6 +66,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
             reassign_result || {
               ok: true,
               extracted_document_id: extracted_document_id,
+              job_id: "j-reassign",
               page_start: page_start,
               page_end: page_end,
               message: "Riassegnazione completata"
@@ -428,6 +429,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal "queued", body["status"]
+    assert_equal "j-reassign", body["job_id"]
     assert_equal 1, body["page_start"]
     assert_equal 2, body["page_end"]
   end
@@ -443,6 +445,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = JSON.parse(response.body)
+    assert_equal "j-reassign", body["job_id"]
     assert_equal 1, body["page_start"]
     assert_equal 3, body["page_end"]
   end

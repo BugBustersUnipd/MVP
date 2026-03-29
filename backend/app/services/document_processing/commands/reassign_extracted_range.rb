@@ -16,6 +16,9 @@ module DocumentProcessing
       def call(extracted_document_id:, page_start:, page_end:)
         begin
           extracted_document = ExtractedDocument.find(extracted_document_id)
+          processing_item = ProcessingItem.find_by(extracted_document_id: extracted_document.id)
+          run = processing_item&.processing_run
+          job_id = run&.job_id
           validate_range_values!(page_start:, page_end:)
 
           uploaded_document = extracted_document.uploaded_document
@@ -36,6 +39,8 @@ module DocumentProcessing
             processed_at: nil
           )
 
+          processing_item&.update!(status: "queued", error_message: nil)
+
           temp_pdf_path = page_range_pdf_service_class.new(source_pdf_path: source_path).build_temp_pdf(
             page_start: page_start,
             page_end: page_end
@@ -44,6 +49,8 @@ module DocumentProcessing
           data_extraction_job_class.perform_later(
             temp_pdf_path,
             {
+              job_id: job_id,
+              processing_item_id: processing_item&.id,
               extracted_document_id: extracted_document.id
             }
           )
@@ -51,6 +58,7 @@ module DocumentProcessing
           {
             ok: true,
             extracted_document_id: extracted_document.id,
+            job_id: job_id,
             page_start: page_start,
             page_end: page_end,
             message: "Riassegnazione completata, analisi rilanciata"
