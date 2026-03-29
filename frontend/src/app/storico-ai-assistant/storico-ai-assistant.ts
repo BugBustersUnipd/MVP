@@ -10,7 +10,7 @@ import { Button } from '../components/button/button';
 import { Router } from '@angular/router';
 import { AiAssistantService } from '../../services/ai-assistant-service/ai-assistant-service';
 import { ResultAiAssistant } from '../shared/models/result-ai-assistant.model';
-import { Tone, Style } from '../shared/models/result-ai-assistant.model';
+import { Tone, Style, Company } from '../shared/models/result-ai-assistant.model';
 @Component({
   selector: 'app-storico-ai-assistant',
   imports: [CommonModule, FormsModule, Tables, Filters, Button],
@@ -32,8 +32,10 @@ export class StoricoAiAssistant {
   dates: Date[] | undefined;
   tonoOptions: Tone[] = [];
   stileOptions: Style[] = [];
+  companiesOptions: Company[] = [];
   selectedTono: number | string | undefined; 
   selectedStile: number | string | undefined;
+  selectedCompany: number | string | undefined;
   searchvalue: string ='';
   columns = [
     { field: 'title', header: 'Titolo' },
@@ -48,6 +50,7 @@ export class StoricoAiAssistant {
   ngOnInit () {
     this.aiService.fetchTonesByCompany(1);
     this.aiService.fetchStylesByCompany(1);
+    this.aiService.fetchCompanies();
 
     this.aiService.tones$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -59,6 +62,12 @@ export class StoricoAiAssistant {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((styles) => {
         this.stileOptions = (styles ?? []).map(s => ({ id: s.id, name: s.name }));
+      });
+
+    this.aiService.companies$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((companies) => {
+        this.companiesOptions = (companies ?? []).map(c => ({ id: c.id, name: c.name }));
       });
 
     this.items = [
@@ -157,13 +166,17 @@ export class StoricoAiAssistant {
       const selectedStyleName = typeof this.selectedStile === 'number'
         ? this.stileOptions.find((s) => s.id === this.selectedStile)?.name
         : this.selectedStile;
+      const selectedCompanyName = typeof this.selectedCompany === 'number'
+        ? this.companiesOptions.find((c) => c.id === this.selectedCompany)?.name
+        : this.selectedCompany;
 
       const matchTono = !selectedToneName || selectedToneName === g.tone.name;
       const matchStile = !selectedStyleName || selectedStyleName === g.style.name;
+      const matchCompany = !selectedCompanyName || selectedCompanyName === g.company.name;
 
       const matchDate = this.isInSelectedDateRange(g.data);
 
-      return matchTono && matchStile && matchDate && matchSearch;
+      return matchTono && matchStile && matchCompany && matchDate && matchSearch;
     });
 
     this.generazioniFiltrateSubject.next(filtrate);
@@ -195,5 +208,10 @@ export class StoricoAiAssistant {
 
   private endOfDay(d: Date): Date {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  }
+
+  onCompanyChange(company: number | string) {
+    this.selectedCompany = company;
+    this.applyFilters();
   }
 }
