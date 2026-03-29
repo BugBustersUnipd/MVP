@@ -4,7 +4,8 @@ class TextResponseValidator
 
   BLOCKED_RESPONSES = [
     "Siamo spiacenti, la domanda non rispetta le linee guida.",
-    "Siamo spiacenti, il modello non può rispondere a questa domanda."
+    "Siamo spiacenti, il modello non può rispondere a questa domanda.",
+    "Domanda non chiara o non pertinente"
   ].freeze
 
   def parse!(text_result, generation_id)

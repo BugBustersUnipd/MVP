@@ -40,7 +40,7 @@ class ImageParamsSetterService
       taskType: "TEXT_IMAGE",
       textToImageParams: {
         text: cutResponse,
-        negativeText: "low quality, bad anatomy, distorted, watermark, text, signature, blur, grainy"
+        negativeText: "low quality, bad anatomy, distorted, watermark, text, signature, blur, grainy, realistic people, detailed faces, biological looking"
       },
       imageGenerationConfig: {
         numberOfImages: 1,

@@ -38,6 +38,8 @@ class ImageGeneratorService
     raise ArgumentError, "Parametri non validi per il modello (controlla dimensioni/seed)"
     
   rescue Aws::BedrockRuntime::Errors::ServiceError => e
+    raise expired_credentials_error(:bedrock, e) if expired_credentials_error?(e)
+
     Rails.logger.error("Bedrock API Error: #{e.code} - #{e.message}")
     raise
   end
@@ -59,6 +61,15 @@ class ImageGeneratorService
       Rails.logger.error("Nova Canvas: Response non contenente immagine. Payload completo: #{payload.inspect}")
       raise "Errore Nova Canvas: Nessuna immagine ritornata. Payload keys: #{payload.keys.join(', ')}"
     end
+  end
+
+  def expired_credentials_error?(error)
+    message = error.message.to_s.downcase
+    message.include?("security token") && message.include?("expired")
+  end
+
+  def expired_credentials_error(service, error)
+    RuntimeError.new("Credenziali AWS scadute (#{service}): aggiorna AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN nel backend e riavvia il container. Dettaglio: #{error.message}")
   end
 
 end
