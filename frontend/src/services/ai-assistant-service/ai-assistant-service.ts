@@ -326,7 +326,55 @@ export class AiAssistantService {
     });
   }
 
-  // todo implementare chiamata al backend
+  regenerate(id: number|null): void {
+    const generationId = Number(id) || 0;
+    if (generationId <= 0) {
+      this.notifyGenerationError('Id generazione non valido per la rigenerazione.');
+      return;
+    }
+
+    this.clearGenerationError();
+    console.log('[regenerate] POST /generated_data/:id/regenerate per id:', generationId);
+
+    const current = this.resultSubject.value;
+    if (current) {
+      this.resultSubject.next({
+        ...current,
+        id: null,
+        title: '',
+        content: '',
+        imagePath: null,
+        generatedDatumId: null
+      });
+    }
+
+    this.http.post<any>(`${API_BASE}/generated_data/${generationId}/regenerate`, {}).subscribe({
+      next: (response) => {
+        console.log('[regenerate] risposta POST /generated_data/:id/regenerate:', response);
+        const regeneratedId = Number(response?.id ?? response?.generated_datum_id) || 0;
+
+        if (regeneratedId <= 0) {
+          console.error('[regenerate] Risposta senza id valido:', response);
+          return;
+        }
+
+        const latest = this.resultSubject.value;
+        if (latest) {
+          this.resultSubject.next({
+            ...latest,
+            generatedDatumId: regeneratedId
+          });
+        }
+
+        this.subscribeToGenerationChannel(regeneratedId);
+      },
+      error: (err) => {
+        console.error('[regenerate] Errore nella POST /generated_data/:id/regenerate:', err);
+        const message = this.extractErrorMessage(err);
+        this.notifyGenerationError(message);
+      }
+    });
+  }
   requireGeneration(prompt: string, tone: Tone, style: Style, company: Company): void {
     console.log('Rigenerazione richiesta');
     this.clearGenerationError();
@@ -520,7 +568,7 @@ export class AiAssistantService {
             },
             data,
             prompt: item?.prompt ?? '',
-            evaluation: Number(item?.rating) || 0,
+            evaluation: Number(item?.rating) || -1,
             generatedDatumId: Number(item?.generatedDatumId ?? item?.generated_datum_id) || null
           };
         });

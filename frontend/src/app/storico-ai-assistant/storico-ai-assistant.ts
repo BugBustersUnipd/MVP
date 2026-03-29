@@ -152,13 +152,22 @@ export class StoricoAiAssistant {
   }
 
   applyFilters() {
+    const rawSearch = (this.searchvalue ?? '').trim().toLowerCase();
+    const normalizedSearch = this.normalizeForSearch(rawSearch);
+    const hasSearch = rawSearch.length > 0;
+
     const filtrate = this.Generazioni.filter(g => {
-      const matchSearch =
-        !this.searchvalue ||
-        g.prompt.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.tone.name.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.style.name.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.content.toLowerCase().includes(this.searchvalue.toLowerCase());
+      const contentForSearch = this.normalizeForSearch(g.content);
+      const promptForSearch = this.normalizeForSearch(g.prompt);
+
+      const matchSearch = !hasSearch
+        ? true
+        : (normalizedSearch.length > 0 && (
+            promptForSearch.includes(normalizedSearch) ||
+            g.tone.name.toLowerCase().includes(normalizedSearch) ||
+            g.style.name.toLowerCase().includes(normalizedSearch) ||
+            contentForSearch.includes(normalizedSearch)
+          ));
 
       const selectedToneName = typeof this.selectedTono === 'number'
         ? this.tonoOptions.find((t) => t.id === this.selectedTono)?.name
@@ -180,6 +189,16 @@ export class StoricoAiAssistant {
     });
 
     this.generazioniFiltrateSubject.next(filtrate);
+  }
+
+  // Usato solo per ricerca/filtri: non modifica i dati originali mostrati nell'editor.
+  private normalizeForSearch(value: string | null | undefined): string {
+    const input = (value ?? '').toString();
+    return input
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
   }
 
   private isInSelectedDateRange(value: Date | string | undefined): boolean {

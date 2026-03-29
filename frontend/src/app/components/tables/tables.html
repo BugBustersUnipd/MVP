@@ -24,6 +24,8 @@
           <td>
             @if (col.type === 'date') {
               {{ row[col.field] | date: 'dd/MM/yyyy' }}
+            } @else if (col.type === 'rating' || col.field === 'evaluation' || col.field === 'rating') {
+              {{ row[col.field] === -1 ? 'Non valutato' : row[col.field] }}
             } @else if (col.type === 'confidence' || col.field === 'confidence') {
               {{ row[col.field] }}%
             } @else if (col.field === 'State' || col.field === 'state') {
@@ -47,13 +49,13 @@
                   {{ row[col.field]?.name }}
                 </span>
             } @else if (col.field === 'title') {
-                <a href="#" class="truncate-content" [title]="row[col.field]" (click)="$event.preventDefault(); onTitleClick(row)">
-                  {{ row[col.field] }}
+                <a href="#" class="truncate-content" [title]="getPlainCellText(row, col)" (click)="$event.preventDefault(); onTitleClick(row)">
+                  {{ getPlainCellText(row, col) }}
                 </a>
                 <i class="pi pi-link"></i>
             } @else {
-                <span class="truncate-content" [title]="row[col.field]">
-                  {{ row[col.field] }}
+                <span class="truncate-content" [title]="getPlainCellText(row, col)">
+                  {{ getPlainCellText(row, col) }}
                 </span>
             }
           </td>

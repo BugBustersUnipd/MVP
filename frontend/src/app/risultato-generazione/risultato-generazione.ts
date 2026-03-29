@@ -92,6 +92,7 @@ export class RisultatoGenerazione {
   }
 
   onRigenera(id: number|null): void {
+    this.aiService.regenerate(id);
     // this.aiService.requireGeneration(this.result?.prompt ?? '', this.result?.tone ?? { id: 0, name: '' }, this.result?.style ?? { id: 0, name: '' }, this.result?.company ?? { id: 0, name: '' }, id);
   }
 
