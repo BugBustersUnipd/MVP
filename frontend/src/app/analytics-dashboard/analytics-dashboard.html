@@ -36,6 +36,11 @@
           <div class="chart">
             <label class="label"> Toni più usati</label>
             @if (aiAssistantToneChart$ | async; as toneChart) {
+              @if (toneChart.labels.length === 0) {
+                <div class="no-data-message">
+                  Non ci sono dati sufficienti per le analisi
+                </div>
+              }
               <app-analytics-charts
                 [labels]="toneChart.labels"
                 [dataValues]="toneChart.values"
@@ -46,6 +51,11 @@
           <div class="Chart">
             <label class="label"> Stili più usati</label>
             @if (aiAssistantStyleChart$ | async; as styleChart) {
+              @if (styleChart.labels.length === 0) {
+                <div class="no-data-message">
+                  Non ci sono dati sufficienti per le analisi
+                </div>
+              }
               <app-analytics-charts
                 [labels]="styleChart.labels"
                 [dataValues]="styleChart.values"

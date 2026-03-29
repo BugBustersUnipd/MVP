@@ -7,7 +7,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:coverage:80": "ng test --watch=false --coverage --coverage-include='src/**/*.ts' --coverage-exclude='src/**/*.spec.ts' --coverage-exclude='src/main.ts' --coverage-exclude='src/services/ai-co-pilot-service/ai-co-pilot-service.ts' --coverage-exclude='src/services/ai-assistant-service/ai-assistant-service.ts' --coverage-exclude='src/app/risultato-generazione/risultato-generazione.ts' --coverage-exclude='src/app/anteprima-documento/anteprima-documento.ts' --coverage-exclude='src/app/riconoscimento-documenti/riconoscimento-documenti.ts' --coverage-exclude='src/app/shared/serializers/result-ai-copilot.serializer.ts' --coverage-exclude='src/app/shared/serializers/result-ai-assistant.serializer.ts' --coverage-exclude='src/app/storico-ai-assistant/storico-ai-assistant.ts' --coverage-exclude='src/app/components/upload/upload.ts' --coverage-exclude='src/app/components/date-range-picker/date-range-picker.ts' --coverage-exclude='src/app/storico-ai-copilot/storico-ai-copilot.ts' --coverage-exclude='src/app/generatore/generatore.ts' --coverage-exclude='src/app/components/add-dialog/add-dialog.ts'"
+    "test:coverage:80": "ng test --watch=false --coverage --coverage-include='src/**/*.ts' --coverage-exclude='src/**/*.spec.ts' --coverage-exclude='src/main.ts' --coverage-exclude='src/services/ai-co-pilot-service/ai-co-pilot-service.ts' --coverage-exclude='src/services/ai-assistant-service/ai-assistant-service.ts' --coverage-exclude='src/app/risultato-generazione/risultato-generazione.ts' --coverage-exclude='src/app/anteprima-documento/anteprima-documento.ts' --coverage-exclude='src/app/riconoscimento-documenti/riconoscimento-documenti.ts' --coverage-exclude='src/app/shared/serializers/result-ai-copilot.serializer.ts' --coverage-exclude='src/app/shared/serializers/result-ai-assistant.serializer.ts' --coverage-exclude='src/app/storico-ai-assistant/storico-ai-assistant.ts' --coverage-exclude='src/app/components/upload/upload.ts' --coverage-exclude='src/app/components/date-range-picker/date-range-picker.ts' --coverage-exclude='src/app/storico-ai-copilot/storico-ai-copilot.ts' --coverage-exclude='src/app/generatore/generatore.ts' --coverage-exclude='src/app/components/add-dialog/add-dialog.ts'",
+    "e2e": "ng e2e",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
   },
   "prettier": {
     "printWidth": 100,
@@ -43,9 +46,11 @@
     "@angular/build": "^21.0.4",
     "@angular/cli": "^21.0.4",
     "@angular/compiler-cli": "^21.0.0",
+    "@cypress/schematic": "^5.0.0",
     "@vitest/coverage-v8": "^4.1.2",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "cypress": "15.13.0"
   }
 }
