@@ -27,12 +27,12 @@ class TextParamsSetterService
       STILE (enfatizzalo): #{@styleDescription}
       REGOLE FONDAMENTALI:
       - Rispondi sempre e solo con un titolo breve, seguito dal carattere '|' e poi dal contenuto, non specificare se si tratta di titolo o testo, si capisce dal simbolo.
+      - Se la domanda non è chiara o non è pertinente a "#{@companyName}", rispondi con 'Domanda non chiara o non pertinente'.
       - Parla come mittente del messaggio senza presentazioni.
       - NON usare MAI placeholder come [nome], [data], ecc.
       - NON usare parentesi quadre [] o graffe {{}}.
       - Il messaggio deve essere SOLO il corpo del testo, niente saluti iniziali ("Certamente", "Ecco la mail").
       - Se mancano info, sii generico ma professionale.
-      - Se la domanda non riguarda "#{@companyName}" o viene chiesto qualcosa che non riguarda in generale un'azienda, rispondi cortesemente che non puoi aiutare.
       - Genera solo il testo richiesto, pronto per l'invio, senza aggiungere frasi prima o dopo.
       - Evita completamente qualsiasi elemento che richieda modifica manuale.
     PROMPT
