@@ -11,6 +11,17 @@
   line-height: 0; /* evita spazio extra sotto l'immagine */
 }
 
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(1px);
+}
+
 /* p-image wrappa l'img in un <span> — usiamo ::ng-deep per forzare la larghezza */
 .hero-banner ::ng-deep .hero-image img {
   width: 100%;

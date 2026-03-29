@@ -1,0 +1,19 @@
+.editor-wrapper {
+	position: relative;
+}
+
+.editor-loading-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.78);
+	backdrop-filter: blur(1px);
+}
+
+.editor-skeleton {
+	width: 92%;
+	max-width: 920px;
+}
