@@ -343,11 +343,16 @@ export class AiAssistantService {
           return;
         }
 
+        const normalizedImagePath = typeof payload.image_url === 'string'
+          ? (payload.image_url.startsWith('http') ? payload.image_url : `${API_BASE}${payload.image_url}`)
+          : current.imagePath;
+
         const updated: ResultAiAssistant = {
           ...current,
           id: payloadId,
           title: typeof payload.title === 'string' ? payload.title : current.title,
           content: typeof payload.text === 'string' ? payload.text : current.content,
+          imagePath: normalizedImagePath
         };
 
         this.resultSubject.next(updated);
