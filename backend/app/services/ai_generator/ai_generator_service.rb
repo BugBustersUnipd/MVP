@@ -42,8 +42,13 @@ class AIGeneratorService
     imageResult = createImage(imageSetter, textResult)
 
     otherImageInfos = imageSetter.getData
+    if generation.created_at
+      response_time = (Time.current - generation.created_at).to_f
+    else
+      response_time = 0
+    end 
 
-    @aiGeneratorDataManager.saveContent(generationID, {image: imageResult, title: parsed_text[:title], text: parsed_text[:text], width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: nil, dateTime: Time.now})
+    @aiGeneratorDataManager.saveContent(generationID, {image: imageResult, title: parsed_text[:title], text: parsed_text[:text], width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: response_time, dateTime: Time.now})
   end
 
   private
