@@ -68,7 +68,7 @@ export class DateRangePicker {
 
   // Quando si seleziona manualmente un range nel datepicker
   onDateSelect() {
-    if (!this.dates || this.dates.length !== 2) return;
+    if (!this.dates || this.dates.length !== 2 || !this.dates[0] || !this.dates[1]) return;
 
     this.selectedPeriodo = null; // annulla il periodo predefinito
     this.emit();

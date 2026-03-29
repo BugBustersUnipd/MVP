@@ -47,8 +47,9 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     
     data_manager = AiGenerator::AIGeneratorDataManager.new
     factory = AiGenerator::SetterFactory.new
+    text_response_validator = AiGenerator::TextResponseValidator.new
     
-    AiGenerator::AIGeneratorService.new(img_gen, text_gen, data_manager, factory)
+    AiGenerator::AIGeneratorService.new(img_gen, text_gen, data_manager, factory, text_response_validator)
   end
 
   # === CASE NORMALE ===
@@ -228,7 +229,13 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
       setter
     end
     
-    service = AiGenerator::AIGeneratorService.new(img_gen, text_gen, data_manager, factory)
+    service = AiGenerator::AIGeneratorService.new(
+      img_gen,
+      text_gen,
+      data_manager,
+      factory,
+      AiGenerator::TextResponseValidator.new
+    )
     
     service.create_content(@generation_datum.id)
     
@@ -325,7 +332,8 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
       img_gen,
       text_gen,
       AiGenerator::AIGeneratorDataManager.new,
-      AiGenerator::SetterFactory.new
+      AiGenerator::SetterFactory.new,
+      AiGenerator::TextResponseValidator.new
     )
 
     error = assert_raises(AiGenerator::AIGeneratorService::BlockedResponseError) do

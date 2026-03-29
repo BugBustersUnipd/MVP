@@ -97,19 +97,24 @@ describe('AnteprimaDocumento', () => {
 
   it('should fetch templates and sibling docs on init', () => {
     expect(aiServiceMock.fetchTemplates).toHaveBeenCalledTimes(1);
-    expect(aiServiceMock.getDocumentsByParent).toHaveBeenCalledWith(11, 2);
+    expect(aiServiceMock.getDocumentsByParent).toHaveBeenCalledWith(11, 1);
     expect(component.extractedEmployeeRows.length).toBe(1);
   });
 
   it('should remove rows from extracted and other tables', () => {
+    let otherRows: any[] = [];
+    component.otherExtractedDocumentRows$.subscribe((rows) => {
+      otherRows = rows;
+    });
+
     component.extractedEmployeeRows = [{ name: 'A', email: 'a@a', employeeCode: '1' }];
-    component.otherExtractedDocumentRows = [{ id: 1, recipientName: 'Mario', confidence: 80 }];
+    aiServiceMock.otherExtractedDocuments$.next([{ id: 1, recipientName: 'Mario', confidence: 80 }]);
 
     component.handleRemoveExtractedEmployeeRow(0);
-    component.handleRemoveOtherExtractedDocumentRow(0);
+    component.handleRemoveOtherExtractedDocumentRow(1);
 
     expect(component.extractedEmployeeRows).toEqual([]);
-    expect(component.otherExtractedDocumentRows).toEqual([]);
+    expect(otherRows).toEqual([]);
   });
 
   it('should call open pdf handlers', () => {
