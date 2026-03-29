@@ -1,9 +1,6 @@
-// cose che mancano ancora:
-// prefisporre il click sulla valutazione
-// cliccando su Annulla modifiche deve ritornare come prima il resultLocale (qui c'è da modificare un po!)
-// gestione degli errori, aiAssistantService potrebbe rimbalzare un errore del backend, che dobbiamo visualizzare
-
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+// gestione degli errori: aiAssistantService potrebbe rimbalzare un errore del backend, che dobbiamo visualizzare
+// per ora gestito solo errore di token expired
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ImageTitle } from '../components/image-title/image-title';
 import { FormsModule } from '@angular/forms';
@@ -37,6 +34,8 @@ export class RisultatoGenerazione {
   // Riferimento unico al result: non viene modificato finche' non si salva.
   result = signal<ResultAiAssistant | null>((history.state?.result as ResultAiAssistant | null) ?? null);
   pendingModifications: Partial<ResultAiAssistant> = {};
+  pendingImagePath = signal<string | null>(null);
+  imagePathForView = computed(() => this.pendingImagePath() ?? (this.result()?.imagePath || '/PlaceHolder-GufoBagnato.jpg'));
 
   constructor() {
     if (this.result()) {
@@ -148,9 +147,7 @@ export class RisultatoGenerazione {
   }
 
   getImagePathValue(): string {
-    const value = this.pendingModifications.imagePath;
-    if (typeof value === 'string') return value;
-    return this.result()?.imagePath || '/PlaceHolder-GufoBagnato.jpg';
+    return this.imagePathForView();
   }
 
   saveChanges(): void {
@@ -169,11 +166,13 @@ export class RisultatoGenerazione {
     this.result.set(merged);
     this.aiService.setCurrentResult(merged);
     this.pendingModifications = {};
+    this.pendingImagePath.set(null);
     this.isEditable = false;
   }
 
   cancelEditing(): void {
     this.pendingModifications = {};
+    this.pendingImagePath.set(null);
     this.isEditable = false;
   }
 
@@ -187,6 +186,7 @@ export class RisultatoGenerazione {
       if (newPathBase64 === (current.imagePath ?? '')) {
         const { imagePath: _, ...rest } = this.pendingModifications;
         this.pendingModifications = rest;
+        this.pendingImagePath.set(null);
         return;
       }
 
@@ -194,12 +194,14 @@ export class RisultatoGenerazione {
         ...this.pendingModifications,
         imagePath: newPathBase64,
       };
+      this.pendingImagePath.set(newPathBase64);
     };
     reader.readAsDataURL(file);
   }
 
   enableEditing(): void{
     this.pendingModifications = {};
+    this.pendingImagePath.set(null);
     this.isEditable = true;
     this.readonly = false;
   }
