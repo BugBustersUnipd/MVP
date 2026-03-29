@@ -55,11 +55,19 @@ export class AnteprimaDocumento {
     }
   }
   handleOpenOriginalPdf(): void {
-    this.aiService.getOriginalPdfById(1);//todo sostituire con id del documento 
+    if (!this.result?.parentId) {
+      this.messageService.add({severity:'error', summary: 'Documento originale non disponibile'});
+      return;
+    }
+    this.aiService.getOriginalPdfById(this.result.parentId);
   }
 
   handleOpenSplitPdf(): void {
-    this.aiService.getPdfById(1);//todo sostituire con id del documento 
+    if (!this.result?.id) {
+      this.messageService.add({severity:'error', summary: 'Documento estratto non disponibile'});
+      return;
+    }
+    this.aiService.getPdfById(this.result.id);
   }
 // todo: questi due metodi sono da implementare, per ora loggano solo l'azione richiesta, ma in futuro dovranno interagire con i servizi per modificare lo stato dell'applicazione e mostrare le modifiche all'utente
   handleEditExtractedEmployeeInfo(): void {
@@ -208,10 +216,72 @@ export class AnteprimaDocumento {
       return;
     }
 
+    const rangeUpdates = this.buildRangeUpdates(this.pendingModifications, this.result);
+    const metadataUpdates = this.buildMetadataUpdates(this.pendingModifications);
+
+    if (rangeUpdates && !this.isRangeValid(rangeUpdates, this.result)) {
+      this.messageService.add({severity:'error', summary: 'Range pagine non valido'});
+      return;
+    }
+
+    if (rangeUpdates && this.result.id) {
+      this.aiService.modifyDocumentRange(this.result.id, rangeUpdates.page_start, rangeUpdates.page_end);
+    }
+
+    if (Object.keys(metadataUpdates).length > 0 && this.result.id) {
+      this.aiService.updateDocumentMetadata(this.result.id, metadataUpdates);
+    }
+
     Object.assign(this.result, this.pendingModifications);
     this.aiService.updateResult(this.result);
     this.pendingModifications = {};
     this.messageService.add({severity:'success', summary: 'Modifiche salvate'});
     this.isEditable = false;
+  }
+
+  private buildMetadataUpdates(modifications: Partial<ResultSplit>): Record<string, unknown> {
+    const { page_start, page_end, ...metadataUpdates } = modifications;
+    return metadataUpdates as Record<string, unknown>;
+  }
+
+  private buildRangeUpdates(
+    modifications: Partial<ResultSplit>,
+    current: ResultSplit
+  ): { page_start: number; page_end: number } | null {
+    const hasRangeUpdate = modifications.page_start !== undefined || modifications.page_end !== undefined;
+    if (!hasRangeUpdate) {
+      return null;
+    }
+
+    const pageStart = Number(modifications.page_start ?? current.page_start);
+    const pageEnd = Number(modifications.page_end ?? current.page_end);
+
+    if (Number.isNaN(pageStart) || Number.isNaN(pageEnd)) {
+      return null;
+    }
+
+    return {
+      page_start: pageStart,
+      page_end: pageEnd,
+    };
+  }
+
+  private isRangeValid(range: { page_start: number; page_end: number }, current: ResultSplit): boolean {
+    const maxPages = Number(this.pages) > 0
+      ? Number(this.pages)
+      : Number(current.page_end) - Number(current.page_start) + 1;
+
+    if (!Number.isFinite(maxPages) || maxPages < 1) {
+      return false;
+    }
+
+    return (
+      Number.isInteger(range.page_start) &&
+      Number.isInteger(range.page_end) &&
+      range.page_start >= 1 &&
+      range.page_end >= 1 &&
+      range.page_start <= range.page_end &&
+      range.page_end <= maxPages
+    );
   }
 }

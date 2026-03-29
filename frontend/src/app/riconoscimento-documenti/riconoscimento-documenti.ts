@@ -27,6 +27,7 @@ export class RiconoscimentoDocumenti {
   items: MenuItem[] = [];
   sessionParents: ResultAiCopilot[] = [];
   parentNames: Record<number, string> = {};
+  parentPageCounts: Record<number, number> = {};
 
   DocumentiSplittati: ResultSplit[] = [];
   DocumentiSplittatiFiltrati: ResultSplit[] = [];
@@ -109,7 +110,7 @@ export class RiconoscimentoDocumenti {
       return;
     }
 
-    const pages = Math.max(1, targetRow.page_end - targetRow.page_start + 1);
+    const pages = this.parentPageCounts[targetRow.parentId] ?? Math.max(1, targetRow.page_end - targetRow.page_start + 1);
     this.router.navigate(['/anteprima-documento'], {
       state: {
         result: targetRow,
@@ -252,12 +253,13 @@ export class RiconoscimentoDocumenti {
       const minPage = Math.min(...children.map((child) => child.page_start));
       const maxPage = Math.max(...children.map((child) => child.page_end));
       const parentName = this.parentNames[parentId] || first.name;
+      const parentPages = this.parentPageCounts[parentId] ?? (maxPage - minPage + 1);
 
       return {
         id: parentId,
         name: `${parentName}`,
         ResultSplit: children,
-        pages: maxPage - minPage + 1,
+        pages: parentPages,
         state: this.mapSplitStateToDocumentState(first.state),
       };
     });
@@ -293,6 +295,15 @@ export class RiconoscimentoDocumenti {
       .subscribe((names) => {
         this.runInZone(() => {
           this.parentNames = { ...names };
+          this.applyFilters();
+        });
+      });
+
+    this.aiCoPilotService.currentParentPageCounts$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((pageCounts) => {
+        this.runInZone(() => {
+          this.parentPageCounts = { ...pageCounts };
           this.applyFilters();
         });
       });

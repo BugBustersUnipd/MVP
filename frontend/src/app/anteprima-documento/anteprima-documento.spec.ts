@@ -26,6 +26,8 @@ describe('AnteprimaDocumento', () => {
     getPdfById: vi.fn(),
     fetchEmployeesByCompany: vi.fn(),
     updateResult: vi.fn(),
+    updateDocumentMetadata: vi.fn(),
+    modifyDocumentRange: vi.fn(),
   };
 
   const dialogRefMock = {
@@ -71,6 +73,8 @@ describe('AnteprimaDocumento', () => {
     aiServiceMock.getPdfById.mockClear();
     aiServiceMock.fetchEmployeesByCompany.mockClear();
     aiServiceMock.updateResult.mockClear();
+    aiServiceMock.updateDocumentMetadata.mockClear();
+    aiServiceMock.modifyDocumentRange.mockClear();
     dialogServiceMock.open.mockClear();
     messageServiceMock.add.mockClear();
 
@@ -99,6 +103,7 @@ describe('AnteprimaDocumento', () => {
     expect(aiServiceMock.fetchTemplates).toHaveBeenCalledTimes(1);
     expect(aiServiceMock.getDocumentsByParent).toHaveBeenCalledWith(11, 1);
     expect(component.extractedEmployeeRows.length).toBe(1);
+    expect(component.pages).toBe(10);
   });
 
   it('should remove rows from extracted and other tables', () => {
@@ -121,8 +126,19 @@ describe('AnteprimaDocumento', () => {
     component.handleOpenOriginalPdf();
     component.handleOpenSplitPdf();
 
-    expect(aiServiceMock.getOriginalPdfById).toHaveBeenCalledWith(1);
+    expect(aiServiceMock.getOriginalPdfById).toHaveBeenCalledWith(11);
     expect(aiServiceMock.getPdfById).toHaveBeenCalledWith(1);
+  });
+
+  it('should show error when pdf ids are missing', () => {
+    component.result = null;
+
+    component.handleOpenOriginalPdf();
+    component.handleOpenSplitPdf();
+
+    expect(aiServiceMock.getOriginalPdfById).not.toHaveBeenCalled();
+    expect(aiServiceMock.getPdfById).not.toHaveBeenCalled();
+    expect(messageServiceMock.add).toHaveBeenCalledTimes(2);
   });
 
   it('should enter edit mode and cancel editing', () => {
@@ -138,14 +154,42 @@ describe('AnteprimaDocumento', () => {
     expect(messageServiceMock.add).toHaveBeenCalled();
   });
 
-  it('should save changes and call updateResult', () => {
+  it('should save metadata changes and call metadata endpoint', () => {
     component.enableEditing();
     component.onFieldModified({ field: 'recipientName' as any, value: 'Nuovo Nome' });
     component.saveChanges();
 
+    expect(aiServiceMock.updateDocumentMetadata).toHaveBeenCalledWith(1, { recipientName: 'Nuovo Nome' });
+    expect(aiServiceMock.modifyDocumentRange).not.toHaveBeenCalled();
     expect(aiServiceMock.updateResult).toHaveBeenCalledTimes(1);
     expect(component.isEditable).toBe(false);
     expect(component.hasPendingModifications).toBe(false);
+  });
+
+  it('should save page range changes through reassign_range endpoint', () => {
+    component.enableEditing();
+    component.onFieldModified({ field: 'page_start' as any, value: 3 });
+    component.onFieldModified({ field: 'page_end' as any, value: 5 });
+    component.saveChanges();
+
+    expect(aiServiceMock.modifyDocumentRange).toHaveBeenCalledWith(1, 3, 5);
+    expect(aiServiceMock.updateDocumentMetadata).not.toHaveBeenCalled();
+  });
+
+  it('should show error and not save when page range exceeds max pages', () => {
+    component.enableEditing();
+    component.onFieldModified({ field: 'page_start' as any, value: 1 });
+    component.onFieldModified({ field: 'page_end' as any, value: 99 });
+    component.onFieldModified({ field: 'recipientName' as any, value: 'Nuovo Nome' });
+
+    component.saveChanges();
+
+    expect(aiServiceMock.modifyDocumentRange).not.toHaveBeenCalled();
+    expect(aiServiceMock.updateDocumentMetadata).not.toHaveBeenCalled();
+    expect(aiServiceMock.updateResult).not.toHaveBeenCalled();
+    expect(component.isEditable).toBe(true);
+    expect(component.hasPendingModifications).toBe(true);
+    expect(messageServiceMock.add).toHaveBeenCalledWith({ severity: 'error', summary: 'Range pagine non valido' });
   });
 
   it('should open send dialog', () => {

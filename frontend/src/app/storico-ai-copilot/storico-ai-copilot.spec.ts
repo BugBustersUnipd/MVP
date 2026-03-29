@@ -15,11 +15,13 @@ describe('StoricoAiCopilot', () => {
   let fixture: ComponentFixture<StoricoAiCopilot>;
   let history$: BehaviorSubject<any[]>;
   let parentNames$: BehaviorSubject<Record<number, string>>;
+  let parentPageCounts$: BehaviorSubject<Record<number, number>>;
   let companies$: BehaviorSubject<any[]>;
 
   const aiCoPilotServiceMock = {
     currentResultsHistory$: null as any,
     currentParentNames$: null as any,
+    currentParentPageCounts$: null as any,
     companies$: null as any,
     fetchHistoryResults: vi.fn(),
     fetchCompanies: vi.fn(),
@@ -32,9 +34,11 @@ describe('StoricoAiCopilot', () => {
   beforeEach(async () => {
     history$ = new BehaviorSubject<any[]>([]);
     parentNames$ = new BehaviorSubject<Record<number, string>>({});
+    parentPageCounts$ = new BehaviorSubject<Record<number, number>>({});
     companies$ = new BehaviorSubject<any[]>([]);
     aiCoPilotServiceMock.currentResultsHistory$ = history$;
     aiCoPilotServiceMock.currentParentNames$ = parentNames$;
+    aiCoPilotServiceMock.currentParentPageCounts$ = parentPageCounts$;
     aiCoPilotServiceMock.companies$ = companies$;
     aiCoPilotServiceMock.fetchHistoryResults.mockClear();
     aiCoPilotServiceMock.fetchCompanies.mockClear();

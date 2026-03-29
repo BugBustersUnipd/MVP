@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { InputComponent } from '../input/input';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -15,10 +15,13 @@ export class PageRangeInput {
   @Input() page_end: number | undefined;
   @Input() page_min: number = 1;
   @Input() page_max: number = 1;
+  @Output() pageStartChange = new EventEmitter<number | undefined>();
+  @Output() pageEndChange = new EventEmitter<number | undefined>();
 
   onPageStartChange(value: string | number | undefined): void {
     const normalizedValue = this.toNumber(value);
     this.page_start = normalizedValue;
+    this.pageStartChange.emit(this.page_start);
 
     if (
       this.page_start !== undefined &&
@@ -26,6 +29,7 @@ export class PageRangeInput {
       this.page_end < this.page_start
     ) {
       this.page_end = this.page_start;
+      this.pageEndChange.emit(this.page_end);
     }
   }
 
@@ -38,10 +42,12 @@ export class PageRangeInput {
       normalizedValue < this.page_start
     ) {
       this.page_end = this.page_start;
+      this.pageEndChange.emit(this.page_end);
       return;
     }
 
     this.page_end = normalizedValue;
+    this.pageEndChange.emit(this.page_end);
   }
 
   get pageEndMin(): number {

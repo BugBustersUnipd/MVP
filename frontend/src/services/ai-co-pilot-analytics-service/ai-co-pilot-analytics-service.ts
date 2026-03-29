@@ -48,7 +48,7 @@ export class AiCoPilotAnalyticsService extends AnalyticsAbstractService {
     const data = response.data;
 
     return [
-      { label: 'PERCENTUALE CONFIDENZA MEDIA', value: (data.average_confidence ?? 0) * 100 + '%' },
+      { label: 'PERCENTUALE CONFIDENZA MEDIA', value: (data.average_confidence ?? 0) + '%' },
       { label: 'PERCENTUALE HUMAN-IN-THE-LOOP', value: (data.average_human_intervention ?? 0) + '%' },
       { label: 'ACCURATEZZA MAPPING', value: (data.mapping_accuracy ?? 0) + '%' },
       { label: 'TEMPI MEDI ANALISI', value: (data.average_time_analyses ?? 0) + 's' },
