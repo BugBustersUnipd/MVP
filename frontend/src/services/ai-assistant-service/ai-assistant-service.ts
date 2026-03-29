@@ -218,6 +218,25 @@ export class AiAssistantService {
     console.log(`Scarto generazione con id ${id} richiesto`);
   }
 
+  deletePost(id: number): void {
+    this.http.delete<any>(`${API_BASE}/posts/${id}`).subscribe({
+      next: (response) => {
+        console.log('[deletePost] Post rimosso con successo:', response);
+        const nextHistory = (this.ResultsHistorySubject.value ?? []).filter((item) => item.id !== id);
+        this.ResultsHistorySubject.next(nextHistory);
+
+        if (this.resultSubject.value?.id === id) {
+          this.resultSubject.next(null);
+        }
+      },
+      error: (err) => {
+        console.error('[deletePost] Errore nella DELETE /posts/:id:', err);
+        const errorMessage = this.extractErrorMessage(err);
+        this.notifyGenerationError(errorMessage);
+      }
+    });
+  }
+
   setEvaluation(id: number|null, evaluation: number) : void { //numero di GeneratedDatum
     const current = this.resultSubject.value;
     if (!current) return;

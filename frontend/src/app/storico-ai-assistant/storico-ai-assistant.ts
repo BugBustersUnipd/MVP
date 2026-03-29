@@ -11,10 +11,9 @@ import { Router } from '@angular/router';
 import { AiAssistantService } from '../../services/ai-assistant-service/ai-assistant-service';
 import { ResultAiAssistant } from '../shared/models/result-ai-assistant.model';
 import { Tone, Style } from '../shared/models/result-ai-assistant.model';
-import { Menutendina } from "../components/menutendina/menutendina";
 @Component({
   selector: 'app-storico-ai-assistant',
-  imports: [CommonModule, FormsModule, Tables, Filters, Button, Menutendina],
+  imports: [CommonModule, FormsModule, Tables, Filters, Button],
   providers: [MessageService],
   templateUrl: './storico-ai-assistant.html',
   styleUrl: './storico-ai-assistant.css',
@@ -90,6 +89,15 @@ export class StoricoAiAssistant {
     this.router.navigate(['/risultato-generazione'], {
       state: { result }
     });
+  }
+
+  onDeletePost(result: ResultAiAssistant): void {
+    const id = Number(result?.id) || 0;
+    if (id <= 0) {
+      return;
+    }
+
+    this.aiService.deletePost(id);
   }
 
   onSearchChange(value:string){

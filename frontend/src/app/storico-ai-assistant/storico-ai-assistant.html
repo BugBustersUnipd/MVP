@@ -12,6 +12,7 @@
     [risultatoFiltrato]="(GenerazioniFiltrate$ | async) ?? []"
     [items]="items"
     (titleClick)="openGenerationResult($event)"
+    (rowRemoved)="onDeletePost($event)"
 >
 </app-tables>
 
