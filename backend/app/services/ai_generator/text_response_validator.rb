@@ -23,12 +23,14 @@ class TextResponseValidator
     BLOCKED_RESPONSES.find { |msg| text_result.include?(msg) }
   end
 
+  TITLE_PREFIXES = /\A\s*(titolo|oggetto|subject|title)\s*:\s*/i
+
   def split_title_and_content(text_result, generation_id)
     match_data = text_result.match(/^\|\s*(.*?)\s*\|\s*(.*)/m)
 
     if match_data
       return {
-        title: match_data[1].strip,
+        title: sanitize_title(match_data[1]),
         text: match_data[2].strip
       }
     end
@@ -37,16 +39,24 @@ class TextResponseValidator
       parts = text_result.split('|').reject(&:blank?)
       if parts.any?
         return {
-          title: parts[0].strip,
+          title: sanitize_title(parts[0]),
           text: parts[1..-1].join('|').strip
         }
       end
     end
 
     {
-      title: "Generazione ##{generation_id}",
+      title: sanitize_title(text_result.lines.first.to_s),
       text: text_result
     }
+  end
+
+  def sanitize_title(raw)
+    raw.strip
+       .gsub(TITLE_PREFIXES, '')       # rimuove "Titolo:", "Oggetto:", ecc.
+       .gsub(/\*+([^*]+)\*+/, '\1')    # rimuove **grassetto** e *corsivo* markdown
+       .gsub(/#+ /, '')                 # rimuove intestazioni markdown (# ## ###)
+       .strip
   end
 end
 end

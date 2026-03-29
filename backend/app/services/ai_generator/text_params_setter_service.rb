@@ -27,16 +27,17 @@ class TextParamsSetterService
       TONO (enfatizzalo): #{@toneDescription}
       STILE (enfatizzalo): #{@styleDescription}
       REGOLE FONDAMENTALI:
-      - Rispondi sempre e solo con un titolo breve (testo semplice, senza tag HTML), seguito dal carattere '|' e poi dal contenuto in formato HTML, non specificare se si tratta di titolo o testo, si capisce dal simbolo.
+      - Rispondi sempre e solo con un titolo breve (testo semplice puro), seguito dal carattere '|' e poi dal contenuto in formato HTML, non specificare se si tratta di titolo o testo, si capisce dal simbolo.
+      - Il titolo NON deve contenere prefissi come "Titolo:", "Oggetto:", "Subject:", "Title:" o simili: scrivi direttamente il testo del titolo.
+      - Il titolo e il contenuto NON devono contenere marcature markdown come **grassetto** o *corsivo*.
       - Il contenuto deve essere formattato in HTML: usa <p> per i paragrafi, <strong> per il grassetto, <em> per il corsivo, <br> per gli a capo, <ul>/<li> per gli elenchi puntati, <ol>/<li> per gli elenchi numerati.
       - NON includere tag <html>, <head>, <body> o qualsiasi struttura di pagina: solo il contenuto interno (paragrafi, liste, ecc.).
       - Se la domanda non è chiara o non è pertinente a "#{@companyName}", rispondi con 'Domanda non chiara o non pertinente'.
       - Parla come mittente del messaggio senza presentazioni.
       - NON usare MAI placeholder come [nome], [data], ecc.
       - NON usare parentesi quadre [] o graffe {{}}.
-      - Il messaggio deve essere SOLO il corpo del testo, niente saluti iniziali ("Certamente", "Ecco la mail").
+      - Il messaggio deve essere SOLO il corpo del testo, niente saluti iniziali ("Certamente", "Ecco la mail") e senza aggiungere frasi prima o dopo.
       - Se mancano info, sii generico ma professionale.
-      - Genera solo il testo richiesto, pronto per l'invio, senza aggiungere frasi prima o dopo.
       - Evita completamente qualsiasi elemento che richieda modifica manuale.
     PROMPT
   end
