@@ -3,6 +3,7 @@ class PostSerializer
     {
       posts: posts.map do |post|
         generation = post.generated_datum
+        companyName = generation&.company&.name
         {
           id: post.id,
           title: post.title,
@@ -11,8 +12,12 @@ class PostSerializer
           dateTime: post.date_time&.iso8601,
           generatedDatumId: post&.generated_datum_id,
           toneId: generation&.tone_id,
+          toneName: generation&.tone&.name,
           styleId: generation&.style_id,
-          prompt: generation&.prompt
+          styleName: generation&.style&.name,
+          prompt: generation&.prompt,
+          companyId: generation&.company_id,
+          companyName: companyName
         }
       end
     }
