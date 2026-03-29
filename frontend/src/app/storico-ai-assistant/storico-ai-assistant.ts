@@ -1,6 +1,8 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BehaviorSubject } from 'rxjs';
 import { Tables } from '../components/tables/tables';
 import { Filters } from "../components/filters/filters";
 import { MenuItem, MessageService } from 'primeng/api';
@@ -11,7 +13,7 @@ import { ResultAiAssistant } from '../shared/models/result-ai-assistant.model';
 import { Tone, Style } from '../shared/models/result-ai-assistant.model';
 @Component({
   selector: 'app-storico-ai-assistant',
-  imports: [FormsModule, Tables, Filters, Button],
+  imports: [CommonModule, FormsModule, Tables, Filters, Button],
   providers: [MessageService],
   templateUrl: './storico-ai-assistant.html',
   styleUrl: './storico-ai-assistant.css',
@@ -23,7 +25,8 @@ export class StoricoAiAssistant {
 
   ButtonLabel: string ='Aggiungi';
   Generazioni: ResultAiAssistant[] = [];
-  GenerazioniFiltrate: ResultAiAssistant[] = [];
+  private generazioniFiltrateSubject = new BehaviorSubject<ResultAiAssistant[]>([]);
+  GenerazioniFiltrate$ = this.generazioniFiltrateSubject.asObservable();
   items: MenuItem[] = [];
   dates: Date[] | undefined;
   tonoOptions: Tone[] = [];
@@ -73,7 +76,6 @@ export class StoricoAiAssistant {
       .subscribe((results) => {
         this.Generazioni = results ?? [];
         this.applyFilters();
-        // console.log('[StoricoAiAssistant] righe ricevute:', this.Generazioni.length, 'righe mostrate:', this.GenerazioniFiltrate.length);
       });
   }
 
@@ -109,7 +111,7 @@ export class StoricoAiAssistant {
   }
 
   applyFilters() {
-    this.GenerazioniFiltrate = this.Generazioni.filter(g => {
+    const filtrate = this.Generazioni.filter(g => {
       const matchSearch =
         !this.searchvalue ||
         g.prompt.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
@@ -131,6 +133,8 @@ export class StoricoAiAssistant {
 
       return matchTono && matchStile && matchDate && matchSearch;
     });
+
+    this.generazioniFiltrateSubject.next(filtrate);
   }
 
   private isInSelectedDateRange(value: Date | string | undefined): boolean {

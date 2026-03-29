@@ -8,7 +8,7 @@
 
 <app-tables
     [columns]="columns"
-    [risultatoFiltrato]="GenerazioniFiltrate"
+    [risultatoFiltrato]="(GenerazioniFiltrate$ | async) ?? []"
     [items]="items"
     (titleClick)="openGenerationResult($event)"
 >
