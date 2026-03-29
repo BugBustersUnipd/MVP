@@ -11,7 +11,7 @@ class PostSerializer
           dateTime: post.date_time&.iso8601,
           generatedDatumId: post&.generated_datum_id,
           toneId: generation&.tone_id,
-          toneName: eneration&.tone&.name,
+          toneName: generation&.tone&.name,
           styleId: generation&.style_id,
           styleName: generation&.style&.name,
           prompt: generation&.prompt,
