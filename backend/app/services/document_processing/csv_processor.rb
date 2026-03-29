@@ -15,7 +15,7 @@ module DocumentProcessing
 
     # Extract a single payload from the whole CSV content.
     # This enforces one logical document and one recipient for a CSV upload.
-    def extract_document(file_path)
+    def call(file_path)
       rows = parse(file_path)
       non_empty_rows = rows.reject { |row| row.values.all? { |v| v.nil? || v.to_s.strip.empty? } }
       return nil if non_empty_rows.empty?

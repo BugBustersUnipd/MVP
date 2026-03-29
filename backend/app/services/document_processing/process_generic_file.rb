@@ -4,19 +4,17 @@ module DocumentProcessing
       notifier: nil,
       file_storage: nil,
       generic_file_repository: nil,
-      image_processor_factory:,
-      csv_processor_factory:,
+      file_processor:,
       confidence_calculator_factory: nil
     )
       @notifier = notifier
       @file_storage = file_storage
       @generic_file_repository = generic_file_repository
-      @image_processor_factory = image_processor_factory
-      @csv_processor_factory = csv_processor_factory
+      @file_processor = file_processor
       @confidence_calculator_factory = confidence_calculator_factory
     end
 
-    def call(file_path:, job_id:, uploaded_document_id:, file_kind:, category: nil, override_company: nil, override_department: nil, competence_period: nil)
+    def call(file_path:, job_id:, uploaded_document_id:, category: nil, override_company: nil, override_department: nil, competence_period: nil)
       uploaded_document = generic_file_repository.find_uploaded_document(uploaded_document_id)
       run = generic_file_repository.find_run_by_job_id(job_id)
       raise ActiveRecord::RecordNotFound, "ProcessingRun not found for job_id=#{job_id}" unless run
@@ -30,14 +28,7 @@ module DocumentProcessing
         competence_period: competence_period
       }
 
-      events = case file_kind.to_s
-      when "csv"
-        process_csv(file_path, uploaded_document, run, overlays)
-      when "image"
-        process_image(file_path, uploaded_document, run, overlays)
-      else
-        raise ArgumentError, "file_kind non supportato: #{file_kind}"
-      end
+      events = process_file(file_path, uploaded_document, run, overlays)
 
       events.each { |payload| notifier.broadcast(job_id, payload) }
       run.reload
@@ -53,7 +44,7 @@ module DocumentProcessing
     private
 
     attr_reader :notifier, :file_storage, :generic_file_repository,
-      :image_processor_factory, :csv_processor_factory, :confidence_calculator_factory
+      :file_processor, :confidence_calculator_factory
 
     # Apply user-provided overrides to LLM extraction results
     # User overlays take precedence and get confidence = 1.0
@@ -84,51 +75,15 @@ module DocumentProcessing
       [merged_metadata, merged_confidence]
     end
 
-    def process_csv(file_path, uploaded_document, run, overlays)
-      processor = build_csv_processor
-      result = processor.extract_document(file_path)
+    def process_file(file_path, uploaded_document, run, overlays)
+      result = file_processor.call(file_path)
 
-      raise ArgumentError, "CSV vuoto o non processabile" if result.nil?
+      raise ArgumentError, "File vuoto o non processabile" if result.nil?
 
-      generic_file_repository.transaction do
-        generic_file_repository.set_run_total!(run, 1)
-
-        merged_metadata, merged_confidence = apply_user_overlays(result[:metadata], result[:confidence], overlays)
-
-        extracted, _item = generic_file_repository.create_csv_item!(
-          uploaded_document: uploaded_document,
-          run: run,
-          sequence: 1,
-          metadata: merged_metadata,
-          confidence: merged_confidence,
-          recipient: result[:recipient],
-          employee: result[:employee]
-        )
-
-        generic_file_repository.mark_run_completed!(run, processed_documents: 1)
-
-        [build_success_payload(
-          filename: uploaded_document.original_filename,
-          recipient: result[:recipient],
-          extracted_document_data: merged_metadata,
-          extracted_confidence: merged_confidence,
-          matched_recipient: format_employee(result[:employee]),
-          extracted_document_id: extracted.id,
-          document_index: 1,
-          total_documents: 1,
-          ocr_text: result[:ocr_text]
-        )]
-      end
-    end
-
-    def process_image(file_path, uploaded_document, run, overlays)
-      result = build_image_processor.extract(file_path)
-
-      # Compute global confidence merging LLM + Textract OCR lines when available
       llm_confidence = result[:confidence] || {}
       ocr_lines = result[:ocr_lines] || []
 
-      final_global_confidence = if confidence_calculator_factory
+      final_confidence = if confidence_calculator_factory && ocr_lines.any?
         confidence_calculator_factory.call(
           ocr_lines: ocr_lines,
           recipient_names: Array(result[:recipient]),
@@ -140,20 +95,12 @@ module DocumentProcessing
         llm_confidence
       end
 
-      # Apply user overrides (user values + confidence = 1.0)
-      merged_metadata, merged_confidence = apply_user_overlays(result[:metadata], final_global_confidence, overlays)
+      merged_metadata, merged_confidence = apply_user_overlays(result[:metadata], final_confidence, overlays)
 
       extracted = generic_file_repository.transaction do
         generic_file_repository.set_run_total!(run, 1)
 
-        extracted, _item = generic_file_repository.create_image_item!(
-          uploaded_document: uploaded_document,
-          run: run,
-          metadata: merged_metadata,
-          confidence: merged_confidence,
-          recipient: result[:recipient],
-          employee: result[:employee]
-        )
+        extracted, _item = persist_item(uploaded_document, run, merged_metadata, merged_confidence, result, ocr_lines)
 
         generic_file_repository.mark_run_completed!(run, processed_documents: 1)
         extracted
@@ -172,20 +119,27 @@ module DocumentProcessing
       )]
     end
 
-    def build_image_processor
-      unless image_processor_factory&.respond_to?(:call)
-        raise ArgumentError, "image_processor_factory must be provided and respond to :call"
+    def persist_item(uploaded_document, run, metadata, confidence, result, ocr_lines)
+      if ocr_lines.any?
+        generic_file_repository.create_image_item!(
+          uploaded_document: uploaded_document,
+          run: run,
+          metadata: metadata,
+          confidence: confidence,
+          recipient: result[:recipient],
+          employee: result[:employee]
+        )
+      else
+        generic_file_repository.create_csv_item!(
+          uploaded_document: uploaded_document,
+          run: run,
+          sequence: 1,
+          metadata: metadata,
+          confidence: confidence,
+          recipient: result[:recipient],
+          employee: result[:employee]
+        )
       end
-
-      image_processor_factory.call
-    end
-
-    def build_csv_processor
-      unless csv_processor_factory&.respond_to?(:call)
-        raise ArgumentError, "csv_processor_factory must be provided and respond to :call"
-      end
-
-      csv_processor_factory.call
     end
 
     def build_success_payload(filename:, recipient:, extracted_document_data:, extracted_confidence:, matched_recipient:, extracted_document_id:, document_index:, total_documents:, ocr_text: nil)

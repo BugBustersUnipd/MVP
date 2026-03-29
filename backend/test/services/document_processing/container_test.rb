@@ -172,7 +172,7 @@ class ContainerTest < ActiveSupport::TestCase
     assert_instance_of DocumentProcessing::ProcessSplitRun, svc
   end
 
-  test "process_generic_file_service returns ProcessGenericFile instance" do
+  test "process_generic_file_service returns ProcessGenericFile instance for csv" do
     container = DocumentProcessing::Container.new(
       ocr_service_class: FakeOcr,
       data_extractor_class: FakeExtractor,
@@ -182,7 +182,26 @@ class ContainerTest < ActiveSupport::TestCase
       textract_client: Object.new,
       bedrock_client: Object.new
     )
-    svc = container.process_generic_file_service
+    svc = container.process_generic_file_service(file_kind: "csv")
     assert_instance_of DocumentProcessing::ProcessGenericFile, svc
+  end
+
+  test "process_generic_file_service returns ProcessGenericFile instance for image" do
+    container = DocumentProcessing::Container.new(
+      ocr_service_class: FakeOcr,
+      data_extractor_class: FakeExtractor,
+      llm_service_class: FakeLlm,
+      notifier_class: FakeNotifier,
+      file_storage_class: FakeFileStorage,
+      textract_client: Object.new,
+      bedrock_client: Object.new
+    )
+    svc = container.process_generic_file_service(file_kind: "image")
+    assert_instance_of DocumentProcessing::ProcessGenericFile, svc
+  end
+
+  test "file_processor raises for unknown file_kind" do
+    container = DocumentProcessing::Container.new
+    assert_raises(ArgumentError) { container.file_processor("docx") }
   end
 end
