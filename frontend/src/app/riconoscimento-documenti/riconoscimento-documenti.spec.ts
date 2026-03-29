@@ -13,6 +13,7 @@ describe('RiconoscimentoDocumenti', () => {
   const history$ = new BehaviorSubject<any[]>([]);
   const sessionParents$ = new BehaviorSubject<any[]>([]);
   const parentNames$ = new BehaviorSubject<Record<number, string>>({});
+  const parentPageCounts$ = new BehaviorSubject<Record<number, number>>({});
 
   const aiServiceMock = {
     confidence$: of(['0-20%']),
@@ -23,6 +24,7 @@ describe('RiconoscimentoDocumenti', () => {
     currentResultsHistory$: history$,
     currentSessionParents$: sessionParents$,
     currentParentNames$: parentNames$,
+    currentParentPageCounts$: parentPageCounts$,
     fetchHistoryResults: vi.fn(),
     fetchCategories: vi.fn(),
     fetchCompanies: vi.fn(),

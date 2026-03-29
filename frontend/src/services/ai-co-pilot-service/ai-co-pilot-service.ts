@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-ai-copilot.serializer';
 import { ResultSplit, State} from '../../app/shared/models/result-split.model';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map, Observable, switchMap, tap } from 'rxjs';
 import { Company } from '../../app/shared/models/result-ai-assistant.model';
 import { RisultatoGenerazione } from '../../app/risultato-generazione/risultato-generazione';
 import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-ai-copilot.model';
@@ -30,6 +30,9 @@ export class AiCoPilotService {
 
   private parentNamesSubject: BehaviorSubject<Record<number, string>> = new BehaviorSubject<Record<number, string>>({});
   currentParentNames$ = this.parentNamesSubject.asObservable();
+
+  private parentPageCountsSubject: BehaviorSubject<Record<number, number>> = new BehaviorSubject<Record<number, number>>({});
+  currentParentPageCounts$ = this.parentPageCountsSubject.asObservable();
 
 
   private templatesSubject = new BehaviorSubject<{ name: string; content: string }[]>([]);
@@ -304,6 +307,15 @@ export class AiCoPilotService {
     if (current[parentId] === name) return;
     this.parentNamesSubject.next({ ...current, [parentId]: name });
   }
+
+  private setParentPageCount(parentId: number, pageCount: unknown): void {
+    const numeric = Number(pageCount);
+    if (!parentId || !Number.isFinite(numeric) || numeric < 1) return;
+    const normalized = Math.floor(numeric);
+    const current = this.parentPageCountsSubject.value;
+    if (current[parentId] === normalized) return;
+    this.parentPageCountsSubject.next({ ...current, [parentId]: normalized });
+  }
   private upsertInHistory(split: ResultSplit): void {
     const current = this.resultsHistorySubject.value ?? [];
     const idx = current.findIndex((r) => r.id === split.id);
@@ -336,9 +348,11 @@ export class AiCoPilotService {
     this.http.get<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}/extracted`).subscribe({
       next: (response) => {
         const parentName = response?.uploaded_document?.original_filename;
+        const parentPageCount = response?.uploaded_document?.page_count;
         if (parentName) {
           this.setParentName(uploadedDocumentId, parentName);
         }
+        this.setParentPageCount(uploadedDocumentId, parentPageCount);
         (response.extracted_documents ?? [])
           .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
           .forEach((split: ResultSplit) => this.upsertInHistory(split));
@@ -373,6 +387,7 @@ export class AiCoPilotService {
     }
     this.http.get<any>(`${API_BASE}/documents/uploads/${parentId}/extracted`).subscribe({
       next: (response) => {
+        this.setParentPageCount(parentId, response?.uploaded_document?.page_count);
         const splits: ResultSplit[] = response.extracted_documents
           .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
           .filter((s: ResultSplit) => s.id !== currentResultId);
@@ -471,25 +486,43 @@ export class AiCoPilotService {
 
   /** PATCH /documents/extracted/:id/reassign_range */
   public modifyDocumentRange(id: number, page_start: number, page_end: number): void {
-    this.http
-      .patch<any>(`${API_BASE}/documents/extracted/${id}/reassign_range`, { page_start, page_end })
-      .subscribe({
-        next: () => this.fetchExtractedDocument(id),
-        error: (err) => console.error('Errore nella modifica del range:', err),
-      });
+    this.modifyDocumentRange$(id, page_start, page_end).subscribe({
+      error: (err) => console.error('Errore nella modifica del range:', err),
+    });
   }
-    /** PATCH /documents/extracted/:id/metadata */
-  public updateDocumentMetadata(id: number, metadataUpdates: Record<string, unknown>): void {
-    this.http
-      .patch<any>(`${API_BASE}/documents/extracted/${id}/metadata`, { metadata_updates: metadataUpdates })
-      .subscribe({
-        next: ({ extracted_document }) => {
-          const updated = this.serializer.deserializeExtractedDocument(extracted_document);
+
+  /** PATCH /documents/extracted/:id/reassign_range (async) */
+  public modifyDocumentRange$(id: number, page_start: number, page_end: number): Observable<ResultSplit> {
+    return this.http
+      .patch<any>(`${API_BASE}/documents/extracted/${id}/reassign_range`, { page_start, page_end })
+      .pipe(
+        switchMap(() => this.http.get<any>(`${API_BASE}/documents/extracted/${id}`)),
+        map(({ extracted_document }) => this.serializer.deserializeExtractedDocument(extracted_document)),
+        tap((updated) => {
           this.resultSubject.next(updated);
           this.upsertInHistory(updated);
-        },
-        error: (err) => console.error('Errore nell\'aggiornamento dei metadati:', err),
-      });
+        })
+      );
+  }
+
+  /** PATCH /documents/extracted/:id/metadata */
+  public updateDocumentMetadata(id: number, metadataUpdates: Record<string, unknown>): void {
+    this.updateDocumentMetadata$(id, metadataUpdates).subscribe({
+      error: (err) => console.error('Errore nell\'aggiornamento dei metadati:', err),
+    });
+  }
+
+  /** PATCH /documents/extracted/:id/metadata (async) */
+  public updateDocumentMetadata$(id: number, metadataUpdates: Record<string, unknown>): Observable<ResultSplit> {
+    return this.http
+      .patch<any>(`${API_BASE}/documents/extracted/${id}/metadata`, { metadata_updates: metadataUpdates })
+      .pipe(
+        map(({ extracted_document }) => this.serializer.deserializeExtractedDocument(extracted_document)),
+        tap((updated) => {
+          this.resultSubject.next(updated);
+          this.upsertInHistory(updated);
+        })
+      );
   }
 
     /** GET /documents/uploads → carica la history iniziale via HTTP */
@@ -502,6 +535,7 @@ export class AiCoPilotService {
           if (ud?.id && ud?.original_filename) {
             this.setParentName(ud.id, ud.original_filename);
           }
+          this.setParentPageCount(ud?.id, ud?.page_count);
           this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`).subscribe({
             next: (response) =>
               response.extracted_documents

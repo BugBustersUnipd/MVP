@@ -85,25 +85,16 @@ class LookupsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "users filtered by company returns only matching employees" do
-    company = Company.first || Company.create!(name: "TestCo")
+    filter_co = Company.create!(name: "FilterCo#{SecureRandom.hex(3)}")
+    other_co  = Company.create!(name: "OtherCo#{SecureRandom.hex(3)}")
 
     u1 = User.create!(email: "lk6@test.com", name: "LK6", username: "lk6#{SecureRandom.hex(3)}")
-    emp1 = Employee.create!(user: u1, company: company)
+    emp1 = Employee.create!(user: u1, company: filter_co)
 
     u2 = User.create!(email: "lk7@test.com", name: "LK7", username: "lk7#{SecureRandom.hex(3)}")
-    emp2 = Employee.create!(user: u2, company: company)
+    emp2 = Employee.create!(user: u2, company: other_co)
 
-    ud = UploadedDocument.create!(
-      original_filename: "c.pdf", storage_path: "/tmp/c", page_count: 1,
-      checksum: "lk-filter-#{SecureRandom.hex(4)}", file_kind: "pdf",
-      override_company: "FilterCo", employee: emp1
-    )
-    ud.extracted_documents.create!(
-      sequence: 1, page_start: 1, page_end: 1,
-      matched_employee: u1, metadata: {}
-    )
-
-    get lookups_users_path, params: { company: "FilterCo" }
+    get lookups_users_path, params: { company: filter_co.name }
 
     assert_response :success
     body = JSON.parse(response.body)
