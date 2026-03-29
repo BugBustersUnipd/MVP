@@ -1,6 +1,7 @@
 <div class="filters-menu">
     <app-filters TypeOfFilter="searchbar" [(searchvalue)]="searchvalue" (searchvalueChange)="onSearchChange($event)"></app-filters>
     <app-filters TypeOfFilter="dateRange" DatepickerLabel="Data" [(dates)]="dates" (datesChange)="onDateChange($event)"></app-filters>
+    <app-filters TypeOfFilter="text" TextFilterLabel="Azienda" [textOptions]="companiesOptions.map(o => o.name)" [(selectedTextOption)]="selectedCompany" (selectedTextOptionChange)="onCompanyChange($event)"></app-filters>
     <!-- <menutendina [options]="[selectedCompany]" [selected]="selectedCompany" label="Azienda" placeholder="Nessuna azienda selezionata" (selectedChange)="onCompanyChange($event)"></menutendina> -->
     <app-filters TypeOfFilter="text" TextFilterLabel="Tono" [textOptions]="tonoOptions.map(o => o.name)" [(selectedTextOption)]="selectedTono" (selectedTextOptionChange)="onTonoChange($event)"></app-filters>
     <app-filters TypeOfFilter="text" TextFilterLabel="Stile" [textOptions]="stileOptions.map(o => o.name)" [(selectedTextOption)]="selectedStile" (selectedTextOptionChange)="onStileChange($event)"></app-filters>
