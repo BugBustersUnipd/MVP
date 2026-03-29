@@ -24,6 +24,8 @@
           <td>
             @if (col.type === 'date') {
               {{ row[col.field] | date: 'dd/MM/yyyy' }}
+            } @else if (col.type === 'confidence' || col.field === 'confidence') {
+              {{ row[col.field] }}%
             } @else if (col.field === 'State' || col.field === 'state') {
               @if(row[col.field].toLowerCase() === 'pronto'){
                  <p-tag [value]="row[col.field]" class="p-tag-pronto"></p-tag>

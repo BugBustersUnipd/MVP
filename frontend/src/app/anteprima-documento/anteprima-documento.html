@@ -30,7 +30,7 @@
         <div class="other-info-container">
             <div class="other-documents-section">
                 <app-other-extract-documents
-                    [rows]="otherExtractedDocumentRows"
+                    [rows]="(otherExtractedDocumentRows$ | async) ?? []"
                     (rowRemoved)="handleRemoveOtherExtractedDocumentRow($event)"
                 ></app-other-extract-documents>
             </div>

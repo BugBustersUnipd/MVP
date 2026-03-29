@@ -17,18 +17,18 @@
 			</tr>
 		</ng-template>
 
-		<ng-template pTemplate="body" let-row let-rowIndex="rowIndex">
+		<ng-template pTemplate="body" let-row>
 			<tr>
 				<td>{{ row.id }}</td>
-				<td>{{ row.destinatario }}</td>
-				<td>{{ row.confidenza }}%</td>
+				<td>{{ row.recipientName }}</td>
+				<td>{{ row.confidence }}%</td>
 				<td class="actions-cell">
 					<button
 						type="button"
 						pButton
 						icon="pi pi-trash"
 						class="p-button-text p-button-danger p-button-sm"
-						(click)="requestRowRemoval(rowIndex)"
+						(click)="requestRowRemoval(row.id)"
 						aria-label="Rimuovi riga"
 					></button>
 				</td>

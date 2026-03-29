@@ -20,7 +20,7 @@ export class OtherExtractDocuments {
 	@Input() rows: OtherExtractDocumentRow[] = [];
 	@Output() rowRemoved = new EventEmitter<number>();
 
-	requestRowRemoval(rowIndex: number): void {
-		this.rowRemoved.emit(rowIndex);
+	requestRowRemoval(rowId: number): void {
+		this.rowRemoved.emit(rowId);
 	}
 }

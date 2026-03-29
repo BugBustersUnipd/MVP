@@ -1,9 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { AccordionModule } from 'primeng/accordion';
 import { Tables } from '../tables/tables';
 import { MenuItem } from 'primeng/api';
 import { DocumentState, ResultAiCopilot } from '../../shared/models/result-ai-copilot.model';
 import { TagModule } from 'primeng/tag';
+import { ResultSplit } from '../../shared/models/result-split.model';
 
 
 @Component({
@@ -17,6 +18,11 @@ export class NestedTables {
 @Input() items: MenuItem[] = [];
 @Input() class: string = '';
 @Input() documents: ResultAiCopilot[] = [];
+@Output() menuAction = new EventEmitter<{ row: ResultSplit; item: MenuItem }>();
+
+onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void {
+  this.menuAction.emit(event);
+}
 
 getSeverity(state: DocumentState): string {
   switch (state) {

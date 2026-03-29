@@ -47,4 +47,9 @@
   ></app-filters>
 </div>
 <h2 class="page-title">RICONOSCIMENTO DOCUMENTI</h2>
-<bb-nested-tables [columns]="columns" [documents]="nestedDocuments" [items]="items"></bb-nested-tables>
+<bb-nested-tables
+  [columns]="columns"
+  [documents]="nestedDocuments"
+  [items]="items"
+  (menuAction)="onTableMenuAction($event)"
+></bb-nested-tables>

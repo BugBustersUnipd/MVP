@@ -2,6 +2,8 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router  } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AsyncPipe } from '@angular/common';
+import { BehaviorSubject, combineLatest, map } from 'rxjs';
 import { Tables } from '../components/tables/tables';
 import { Filters } from '../components/filters/filters';
 import { MenuItem} from 'primeng/api';
@@ -13,7 +15,7 @@ import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot
 
 @Component({
   selector: 'app-storico-ai-copilot',
-  imports: [FormsModule, Tables, Filters, Button],
+  imports: [FormsModule, Tables, Filters, Button, AsyncPipe],
   templateUrl: './storico-ai-copilot.html',
   styleUrl: './storico-ai-copilot.css',
 })
@@ -24,8 +26,43 @@ export class StoricoAiCopilot {
 
   private resultSplits: ResultSplit[] = [];
   private parentNames: Record<number, string> = {};
+  private documentsSubject = new BehaviorSubject<ResultSplit[]>([]);
+  private searchSubject = new BehaviorSubject<string>('');
+  private datesSubject = new BehaviorSubject<Date[] | undefined>(undefined);
+  private selectedDocumentSubject = new BehaviorSubject<string | undefined>(undefined);
+  private selectedCompanySubject = new BehaviorSubject<string | undefined>(undefined);
+  private filteredDocumentsSnapshot: ResultSplit[] = [];
+
   Documents: ResultSplit[] = [];
-  FilteredDocuments: ResultSplit[] = [];
+  FilteredDocuments$ = combineLatest([
+    this.documentsSubject,
+    this.searchSubject,
+    this.datesSubject,
+    this.selectedDocumentSubject,
+    this.selectedCompanySubject,
+  ]).pipe(
+    map(([documents, searchvalue, dates, selectedDocument, selectedCompany]) =>
+      documents.filter((g) => {
+        const normalizedSearch = searchvalue.toLowerCase();
+        const matchSearch =
+          !searchvalue ||
+          g.name.toLowerCase().includes(normalizedSearch) ||
+          g.id.toString().toLowerCase().includes(normalizedSearch) ||
+          g.confidence.toString().toLowerCase().includes(normalizedSearch) ||
+          g.recipientName.toLowerCase().includes(normalizedSearch) ||
+          g.state.toLowerCase().includes(normalizedSearch);
+        const matchDocument = !selectedDocument || g.category === selectedDocument;
+        const matchCompany = !selectedCompany || g.company === selectedCompany;
+        const matchDate =
+          !dates ||
+          dates.length !== 2 ||
+          (this.normalizeDate(g.data) >= this.normalizeDate(dates[0]) &&
+            this.normalizeDate(g.data) <= this.normalizeDate(dates[1]));
+        return matchCompany && matchDate && matchDocument && matchSearch;
+      })
+    )
+  );
+
   items : MenuItem[] = [];
   dates: Date[] | undefined;
   searchvalue = '';
@@ -63,17 +100,14 @@ export class StoricoAiCopilot {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((results) => {
         this.resultSplits = [...(results ?? [])];
-        this.Documents = this.resultSplits.map((split) => this.toStoricoRow(split));
-        this.DocumentType = [...new Set(this.Documents.map((d) => d.category).filter(Boolean))];
-        this.applyFilters();
+        this.rebuildDocuments();
       });
 
     this.aiCoPilotService.currentParentNames$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((names) => {
         this.parentNames = { ...names };
-        this.Documents = this.resultSplits.map((split) => this.toStoricoRow(split));
-        this.applyFilters();
+        this.rebuildDocuments();
       });
 
     this.aiCoPilotService.companies$
@@ -81,41 +115,38 @@ export class StoricoAiCopilot {
       .subscribe((companies) => {
         this.Companies = companies.map((company) => company.name).filter(Boolean);
       });
+
+    this.FilteredDocuments$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((rows) => {
+        this.filteredDocumentsSnapshot = rows;
+      });
   }
+
   onSearchChange(value: string) {
     this.searchvalue = value;
-    this.applyFilters();
+    this.searchSubject.next(value);
   }
+
   onDateChange(dates: Date[]) {
     this.dates = dates;
-    this.applyFilters();
+    this.datesSubject.next(dates);
   }
+
   onDocumentChange(document: string | number) {
     this.selectedDocument = document !== undefined && document !== null ? String(document) : undefined;
-    this.applyFilters();
+    this.selectedDocumentSubject.next(this.selectedDocument);
   }
+
   onCompanyChange(company: string | number) {
     this.selectedCompany = company !== undefined && company !== null ? String(company) : undefined;
-    this.applyFilters();
+    this.selectedCompanySubject.next(this.selectedCompany);
   }
-  applyFilters() {
-    this.FilteredDocuments = this.Documents.filter((g) => {
-      const matchSearch =
-        !this.searchvalue ||
-        g.name.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.id.toString().toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.confidence.toString().toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.recipientName.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.state.toLowerCase().includes(this.searchvalue.toLowerCase());
-      const matchDocument = !this.selectedDocument || g.category === this.selectedDocument;
-      const matchCompany = !this.selectedCompany || g.company === this.selectedCompany;
-      const matchDate =
-        !this.dates ||
-        this.dates.length !== 2 ||
-        (this.normalizeDate(g.data) >= this.normalizeDate(this.dates[0]) &&
-          this.normalizeDate(g.data) <= this.normalizeDate(this.dates[1]));
-      return matchCompany && matchDate && matchDocument && matchSearch;
-    });
+
+  private rebuildDocuments(): void {
+    this.Documents = this.resultSplits.map((split) => this.toStoricoRow(split));
+    this.DocumentType = [...new Set(this.Documents.map((d) => d.category).filter(Boolean))];
+    this.documentsSubject.next(this.Documents);
   }
 
   private normalizeDate(value: Date): number {
@@ -157,7 +188,7 @@ export class StoricoAiCopilot {
   }
 
   navigateToResult(targetRow?: ResultSplit){
-    const row = targetRow ?? this.FilteredDocuments[0];
+    const row = targetRow ?? this.filteredDocumentsSnapshot[0];
     const result = this.resultSplits.find((split) => split.id === row?.id);
       if (result) {
         const pages = Math.max(1, result.page_end - result.page_start + 1);

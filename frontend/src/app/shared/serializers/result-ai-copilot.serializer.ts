@@ -36,7 +36,7 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
 
     return {
       id: raw.id,
-      name: recipientName || `Documento ${raw.id}`,
+      name: `Documento ${raw.id}`,
       state: this.mapStatus(raw.status),
       confidence: this.normalizeConfidence(raw.confidence),
       recipientId: raw.matched_employee?.id ?? 0,
