@@ -41,8 +41,9 @@ class ToneTest < ActiveSupport::TestCase
     assert_equal "Friendly and approachable", tone.reload.description
   end
 
-  test "name is optional at model level" do
+  test "name is required at model level" do
     tone = build_tone(name: nil)
-    assert tone.valid?
+    assert_not tone.valid?
+    assert tone.errors[:name].any?
   end
 end

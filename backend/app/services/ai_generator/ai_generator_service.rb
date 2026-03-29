@@ -3,6 +3,7 @@ require_relative "text_response_validator"
 module AiGenerator
 class AIGeneratorService
   BlockedResponseError = TextResponseValidator::BlockedResponseError
+  InvalidSetterParamsError = Class.new(StandardError)
 
   def initialize(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory, textResponseValidator)
     @imgGenerator = imgGenerator
@@ -33,8 +34,7 @@ class AIGeneratorService
       seed: nil
     })
 
-    textSetter.valid?
-    imageSetter.valid?
+    validate_setters!(textSetter, imageSetter)
 
     textResult = createText(textSetter, generationData.prompt)
     parsed_text = @textResponseValidator.parse!(textResult, generationID)
@@ -42,11 +42,31 @@ class AIGeneratorService
     imageResult = createImage(imageSetter, textResult)
 
     otherImageInfos = imageSetter.getData
+    if generation.created_at
+      response_time = (Time.current - generation.created_at).to_f
+    else
+      response_time = 0
+    end 
 
-    @aiGeneratorDataManager.saveContent(generationID, {image: imageResult, title: parsed_text[:title], text: parsed_text[:text], width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: nil, dateTime: Time.now})
+    @aiGeneratorDataManager.saveContent(generationID, {image: imageResult, title: parsed_text[:title], text: parsed_text[:text], width: otherImageInfos[:width], height: otherImageInfos[:height], seed: otherImageInfos[:seed], responseTime: response_time, dateTime: Time.now})
   end
 
   private
+
+  def validate_setters!(textSetter, imageSetter)
+    errors = []
+
+    errors.concat(prefixed_errors("text", textSetter.getData[:errors])) unless textSetter.valid?
+    errors.concat(prefixed_errors("image", imageSetter.getData[:errors])) unless imageSetter.valid?
+
+    return if errors.empty?
+
+    raise InvalidSetterParamsError, "Parametri non validi: #{errors.join(', ')}"
+  end
+
+  def prefixed_errors(prefix, error_list)
+    Array(error_list).map { |error| "#{prefix}: #{error}" }
+  end
 
   def createText(textSetter, userPrompt)
     systemPrompt = textSetter.buildSystemPrompt

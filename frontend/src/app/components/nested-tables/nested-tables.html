@@ -8,6 +8,9 @@
       <span>ID: {{ doc.id }}</span>
       <span>Nome del documento: {{ doc.name }}</span>
       <span>Pagine: {{ doc.pages }}</span>
+      @if (doc.state === 'Failed') {
+        <app-button [label]="ButtonLabel" (action)="onRetryButtonClick(doc.id)"></app-button>
+      }
     </div>
 
     <div class="right-group">
@@ -27,6 +30,7 @@
           [items]="items"
           [class]="class"
           (menuAction)="onTableMenuAction($event)"
+          (rowRemoved)="onRowRemoved($event)"
         ></app-tables
       ></p-accordion-content>
     </p-accordion-panel>

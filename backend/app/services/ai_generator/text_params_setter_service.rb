@@ -11,6 +11,7 @@ class TextParamsSetterService
   end
 
   def valid?
+    @errors = []
     @errors << "prompt è obbligatorio" if @prompt.blank?
     @errors << "companyName è obbligatorio" if @companyName.blank?
     @errors << "toneDescription è obbligatorio" if @toneDescription.blank?

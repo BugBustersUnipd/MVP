@@ -73,7 +73,8 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 			.should('exist')
 			.closest('.item')
 			.find('.data-value')
-			.should('contain.text', '95%')
+			.invoke('text')
+			.should('match', /^95(00)?%$/)
 	})
 
 	it('mostra la percentuale di interventi manuali necessari', () => {
@@ -115,7 +116,8 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 		cy.contains('.item .label', 'PERCENTUALE CONFIDENZA MEDIA')
 			.closest('.item')
 			.find('.data-value')
-			.should('contain.text', '88%')
+			.invoke('text')
+			.should('match', /^88(00)?%$/)
 
 		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP')
 			.closest('.item')

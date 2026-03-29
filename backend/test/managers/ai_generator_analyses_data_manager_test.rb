@@ -26,8 +26,8 @@ class AiGeneratorAnalysesDataManagerTest < ActiveSupport::TestCase
 
     # 1. Corretto 'business_name' in 'name'
     @company = Company.create!(name: "Test Company")
-    @tone = Tone.create!(name: "Professionale", company: @company)
-    @style = Style.create!(name: "Conciso", company: @company)
+    @tone = Tone.create!(name: "Professionale", description: "Tono professionale", company: @company)
+    @style = Style.create!(name: "Conciso", description: "Stile conciso", company: @company)
 
     # 1. Contenuto Originale
     @parent_content = GeneratedDatum.create!(

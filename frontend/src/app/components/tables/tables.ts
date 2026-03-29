@@ -23,6 +23,7 @@ export class Tables {
 @Input() class: string = '';
 @Output() titleClick = new EventEmitter<any>();
 @Output() menuAction = new EventEmitter<{ row: any; item: MenuItem }>();
+@Output() rowRemoved = new EventEmitter<any>();
 rowMenuItems: MenuItem[] = [];
 
 onTitleClick(row: any): void {
@@ -37,6 +38,11 @@ openRowMenu(menu: { toggle: (event: Event) => void }, event: Event, row: any): v
 private bindMenuItemToRow(item: MenuItem, row: any): MenuItem {
   const boundItem: MenuItem = { ...item };
 
+  // Nascondi "Riprova" se lo stato non è "Failed"
+  if (item.label?.toLowerCase() === 'riprova' && row.state !== 'Failed' && row.state?.toString() !== 'Failed') {
+    return { ...boundItem, visible: false };
+  }
+
   if (item.items?.length) {
     boundItem.items = item.items.map((child) => this.bindMenuItemToRow(child, row));
     return boundItem;
@@ -45,7 +51,12 @@ private bindMenuItemToRow(item: MenuItem, row: any): MenuItem {
   const existingCommand = item.command;
   boundItem.command = (event) => {
     existingCommand?.(event);
-    this.menuAction.emit({ row, item });
+    const action = item.label?.toLowerCase();
+    if (action === 'elimina') {
+      this.rowRemoved.emit(row);
+    } else {
+      this.menuAction.emit({ row, item });
+    }
   };
 
   return boundItem;
