@@ -7,7 +7,7 @@ module DocumentProcessing
     end
 
     # Pure extraction for images: no DB writes, no broadcast.
-    def extract(file_path)
+    def call(file_path)
       ocr_result = ocr_service.full_ocr(file_path)
       full_text = ocr_result[:text]
       ocr_lines = ocr_result[:lines]

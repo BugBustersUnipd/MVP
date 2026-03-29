@@ -57,7 +57,7 @@ class ImageProcessorTest < ActiveSupport::TestCase
       recipient_resolver: FakeRecipientResolver.new
     )
 
-    result = processor.extract("/tmp/fake.png")
+    result = processor.call("/tmp/fake.png")
 
     assert_equal "Mario Rossi", result[:recipient]
     assert_equal "fattura", result[:metadata]["type"]
@@ -78,7 +78,7 @@ class ImageProcessorTest < ActiveSupport::TestCase
       recipient_resolver: unmatched_resolver
     )
 
-    result = processor.extract("/tmp/fake.png")
+    result = processor.call("/tmp/fake.png")
 
     assert_nil result[:employee]
     assert_equal "Mario Rossi", result[:recipient]

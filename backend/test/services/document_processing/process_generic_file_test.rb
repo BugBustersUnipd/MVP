@@ -27,7 +27,6 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
 
   class FakeRecipientResolver
     def resolve(recipient_names:, raw_text:)
-      # Return a lightweight User object (matched_employee now references users)
       user = User.new(id: 10, name: recipient_names.first, email: "person@example.com", username: "person10")
       FakeResolution.new(user)
     end
@@ -90,21 +89,20 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
     csv.rewind
 
     container = FakeContainer.new
-
-    csv_processor_factory = -> { DocumentProcessing::CsvProcessor.new(data_extractor: container.data_extractor, recipient_resolver: container.recipient_resolver) }
-    image_processor_factory = -> { DocumentProcessing::ImageProcessor.new(container: container) }
+    file_processor = DocumentProcessing::CsvProcessor.new(
+      data_extractor: container.data_extractor,
+      recipient_resolver: container.recipient_resolver
+    )
 
     DocumentProcessing::ProcessGenericFile.new(
       notifier: container.notifier,
       file_storage: container.file_storage,
       generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      image_processor_factory: image_processor_factory,
-      csv_processor_factory: csv_processor_factory
+      file_processor: file_processor
     ).call(
       file_path: csv.path,
       job_id: run.job_id,
-      uploaded_document_id: uploaded_document.id,
-      file_kind: "csv"
+      uploaded_document_id: uploaded_document.id
     )
 
     document_event = container.notifier.events.find { |_job_id, payload| payload[:event] == "document_processed" }
@@ -151,23 +149,20 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
     csv.rewind
 
     container = FakeContainer.new
+    file_processor = DocumentProcessing::CsvProcessor.new(
+      data_extractor: container.data_extractor,
+      recipient_resolver: container.recipient_resolver
+    )
 
-    csv_processor_factory = -> { DocumentProcessing::CsvProcessor.new(data_extractor: container.data_extractor, recipient_resolver: container.recipient_resolver) }
-    image_processor_factory = -> { DocumentProcessing::ImageProcessor.new(container: container) }
-
-    service = DocumentProcessing::ProcessGenericFile.new(
+    DocumentProcessing::ProcessGenericFile.new(
       notifier: container.notifier,
       file_storage: container.file_storage,
       generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      image_processor_factory: image_processor_factory,
-      csv_processor_factory: csv_processor_factory
-    )
-
-    service.call(
+      file_processor: file_processor
+    ).call(
       file_path: csv.path,
       job_id: run.job_id,
-      uploaded_document_id: uploaded_document.id,
-      file_kind: "csv"
+      uploaded_document_id: uploaded_document.id
     )
 
     run.reload
@@ -201,42 +196,32 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
       uploaded_document: uploaded_document
     )
 
-    u_img = User.create!(email: "mario@example.com", name: "Mario Rossi", username: "mario_img")
-    employee = Employee.create!(user: u_img, company: company)
+    mario = User.create!(email: "mario@example.com", name: "Mario Rossi", username: "mario_img")
 
     fake_image_processor = Object.new
-    fake_image_processor.define_singleton_method(:extract) do |_path|
-        {
+    fake_image_processor.define_singleton_method(:call) do |_path|
+      {
         ocr_text: "Mario Rossi fattura",
+        ocr_lines: [],
         metadata: { "type" => "fattura" },
         confidence: { "recipient" => 0.9 },
         recipient: "Mario Rossi",
-        employee: u_img
+        employee: mario
       }
     end
 
     container = FakeContainer.new
 
-    csv_processor_factory = -> { DocumentProcessing::CsvProcessor.new(data_extractor: container.data_extractor, recipient_resolver: container.recipient_resolver) }
-    image_processor_factory = -> { DocumentProcessing::ImageProcessor.new(container: container) }
-
-    original_new = DocumentProcessing::ImageProcessor.method(:new)
-    DocumentProcessing::ImageProcessor.define_singleton_method(:new) { |container:| fake_image_processor }
-
     DocumentProcessing::ProcessGenericFile.new(
       notifier: container.notifier,
       file_storage: container.file_storage,
       generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      image_processor_factory: image_processor_factory,
-      csv_processor_factory: csv_processor_factory
+      file_processor: fake_image_processor
     ).call(
       file_path: "/tmp/scan.png",
       job_id: run.job_id,
-      uploaded_document_id: uploaded_document.id,
-      file_kind: "image"
+      uploaded_document_id: uploaded_document.id
     )
-  ensure
-    DocumentProcessing::ImageProcessor.define_singleton_method(:new, original_new)
 
     document_event = container.notifier.events.find { |_job_id, payload| payload[:event] == "document_processed" }
     completed_event = container.notifier.events.find { |_job_id, payload| payload[:event] == "processing_completed" }

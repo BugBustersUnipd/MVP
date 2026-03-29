@@ -133,13 +133,20 @@ module DocumentProcessing
       )
     end
 
-    def process_generic_file_service
+    def file_processor(file_kind)
+      case file_kind.to_s
+      when "csv"   then csv_processor
+      when "image" then image_processor
+      else raise ArgumentError, "file_kind non supportato: #{file_kind}"
+      end
+    end
+
+    def process_generic_file_service(file_kind:)
       DocumentProcessing::ProcessGenericFile.new(
         notifier: notifier,
         file_storage: file_storage,
         generic_file_repository: data_item_repository,
-        image_processor_factory: method(:image_processor),
-        csv_processor_factory: method(:csv_processor),
+        file_processor: file_processor(file_kind),
         confidence_calculator_factory: method(:confidence_calculator)
       )
     end
