@@ -21,6 +21,8 @@ export class RiconoscimentoDocumenti {
   private aiCoPilotService = inject(AiCoPilotService);
   private destroyRef = inject(DestroyRef);
   items: MenuItem[] = [];
+  sessionParents: ResultAiCopilot[] = [];
+  parentNames: Record<number, string> = {};
 
   DocumentiSplittati: ResultSplit[] = [];
   DocumentiSplittatiFiltrati: ResultSplit[] = [];
@@ -82,6 +84,16 @@ export class RiconoscimentoDocumenti {
   }
 
   applyFilters() {
+    const hasActiveFilters = Boolean(
+      this.searchvalue ||
+      this.selectedconfidence ||
+      this.selectedCategory ||
+      this.selectedState ||
+      this.selectedCompany ||
+      this.selectedDepartment ||
+      (this.dates && this.dates[0] && this.dates[1])
+    );
+
     this.DocumentiSplittatiFiltrati = this.DocumentiSplittati.filter((doc) => {
       const matchesSearch = this.searchvalue ? doc.name.toLowerCase().includes(this.searchvalue.toLowerCase()) : true;
       const matchesDate = this.dates ? (doc.data >= this.dates[0] && doc.data <= this.dates[1]) : true;
@@ -92,7 +104,34 @@ export class RiconoscimentoDocumenti {
       const matchesDepartment = this.selectedDepartment ? doc.department === this.selectedDepartment : true;
       return matchesSearch && matchesDate && matchesConfidence && matchesCategory && matchesState && matchesCompany && matchesDepartment;
     });
-    this.nestedDocuments = this.buildNestedDocuments(this.DocumentiSplittatiFiltrati);
+
+    const fromHistory = this.buildNestedDocuments(this.DocumentiSplittatiFiltrati);
+    const byParentId = new Map<number, ResultAiCopilot>();
+
+    for (const parent of fromHistory) {
+      byParentId.set(parent.id, parent);
+    }
+
+    for (const parent of this.sessionParents) {
+      const existing = byParentId.get(parent.id);
+      if (!existing) {
+        byParentId.set(parent.id, { ...parent });
+        continue;
+      }
+
+      byParentId.set(parent.id, {
+        ...existing,
+        name: parent.name || existing.name,
+        state: parent.state || existing.state,
+      });
+    }
+
+    this.nestedDocuments = Array.from(byParentId.values()).filter((parent) => {
+      if (parent.ResultSplit.length > 0) {
+        return true;
+      }
+      return !hasActiveFilters;
+    });
   }
 
   private mapSplitStateToDocumentState(state: State): DocumentState {
@@ -122,10 +161,11 @@ export class RiconoscimentoDocumenti {
       const first = children[0];
       const minPage = Math.min(...children.map((child) => child.page_start));
       const maxPage = Math.max(...children.map((child) => child.page_end));
+      const parentName = this.parentNames[parentId] || first.name;
 
       return {
         id: parentId,
-        name: `${first.name}`,
+        name: `${parentName}`,
         ResultSplit: children,
         pages: maxPage - minPage + 1,
         state: this.mapSplitStateToDocumentState(first.state),
@@ -144,6 +184,20 @@ export class RiconoscimentoDocumenti {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((results) => {
         this.DocumentiSplittati = [...(results ?? [])];
+        this.applyFilters();
+      });
+
+    this.aiCoPilotService.currentSessionParents$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((parents) => {
+        this.sessionParents = [...parents];
+        this.applyFilters();
+      });
+
+    this.aiCoPilotService.currentParentNames$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((names) => {
+        this.parentNames = { ...names };
         this.applyFilters();
       });
     

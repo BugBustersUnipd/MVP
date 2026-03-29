@@ -1,4 +1,5 @@
-import { Component,inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router  } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Tables } from '../components/tables/tables';
@@ -7,6 +8,19 @@ import { MenuItem} from 'primeng/api';
 import { Button } from '../components/button/button';
 import { ResultSplit } from '../shared/models/result-split.model';
 import {State} from '../shared/models/result-split.model'; 
+import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
+
+type StoricoSplitRow = {
+  Company: string;
+  TypeofDocument: string;
+  DocumentName: string;
+  Id: string;
+  SplitId: number;
+  Confidence: string;
+  Recepient: string;
+  State: State;
+  Data: Date;
+};
 
 @Component({
   selector: 'app-storico-ai-copilot',
@@ -17,16 +31,20 @@ import {State} from '../shared/models/result-split.model';
 export class StoricoAiCopilot {
   pages: number = 22; //todo questa info si prende dal docuumento originale, viene restituita dal backend in quache modo
   router = inject(Router);
-  Documents: any[] = [];
-  FilteredDocuments: any[] = [];
+  private aiCoPilotService = inject(AiCoPilotService);
+  private destroyRef = inject(DestroyRef);
+
+  private resultSplits: ResultSplit[] = [];
+  private parentNames: Record<number, string> = {};
+  Documents: StoricoSplitRow[] = [];
+  FilteredDocuments: StoricoSplitRow[] = [];
   items : MenuItem[] = [];
   dates: Date[] | undefined;
-  IDs: number[] = [1.1, 1.2, 1.3, 1.4];
   searchvalue = '';
-  Companies: string[] = ['AlbertoSrl', 'ProvaSrl'];
-  selectedCompany: number | undefined;
-  DocumentType: string[] = ['Cedolino', 'TFR', 'Boh'];
-  selectedDocument: number | undefined;
+  Companies: string[] = [];
+  selectedCompany: string | undefined;
+  DocumentType: string[] = [];
+  selectedDocument: string | undefined;
   columns = [
     { field: 'DocumentName', header: 'Nome Documento Originale' },
     { field: 'Id', header: 'Id' },
@@ -50,89 +68,31 @@ export class StoricoAiCopilot {
                 ]
             }
         ];
-    this.Documents = [
-      {
-        Company: 'AlbertoSrl',
-        TypeofDocument: 'Cedolino',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[0],
-        Confidence: '15%',
-        Recepient: ' Alberto Autiero',
-        State: State.Pronto,
-        Data: new Date('2024, 9, 11'),
-      },
-      {
-        Company: 'ProvaSrl',
-        TypeofDocument: 'TFR',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[1],
-        Confidence: '25%',
-        Recepient: 'Alberto Pignat',
-        State: State.Pronto,
-        Data: new Date('2024, 8, 11'),
-      },
-      {
-        Company: 'AlbertoSrl',
-        TypeofDocument: 'Boh',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[2],
-        Confidence: '45%',
-        Recepient: 'Leonardo Salviato',
-        State: State.Pronto,
-        Data: new Date('2024, 7, 11'),
-      },
-      {
-        Company: 'ProvaSrl',
-        TypeofDocument: 'TFR',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[3],
-        Confidence: '55%',
-        Recepient: 'Marco Favero',
-        State: State.Pronto,
-        Data: new Date('2026, 4, 11'),
-      },
-      {
-        Company: 'AlbertoSrl',
-        TypeofDocument: 'Cedolino',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[2],
-        Confidence: '75%',
-        Recepient: 'Luca Slongo',
-        State: State.Pronto,
-        Data: new Date('2023, 9, 11'),
-      },
-      {
-        Company: 'ProvaSrl',
-        TypeofDocument: 'TFR',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[3],
-        Confidence: '85%',
-        Recepient: 'Luca Slongo',
-        State: State.Pronto,
-        Data: new Date('2022, 1, 11'),
-      },
-      {
-        Company: 'AlbertoSrl',
-        TypeofDocument: 'Cedolino',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[1],
-        Confidence: '95%',
-        Recepient: 'Luca Slongo',
-        State: State.Pronto,
-        Data: new Date('2021, 7, 11'),
-      },
-      {
-        Company: 'ProvaSrl',
-        TypeofDocument: 'Cedolino',
-        DocumentName: 'Lorem ipsum dolor sit amet',
-        Id: this.IDs[0],
-        Confidence: '99%',
-        Recepient: 'Luca Slongo',
-        State: State.Pronto,
-        Data: new Date('2020, 5, 11'),
-      },
-    ];
-    this.FilteredDocuments = this.Documents;
+    this.aiCoPilotService.fetchHistoryResults();
+    this.aiCoPilotService.fetchCompanies();
+
+    this.aiCoPilotService.currentResultsHistory$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((results) => {
+        this.resultSplits = [...(results ?? [])];
+        this.Documents = this.resultSplits.map((split) => this.toStoricoRow(split));
+        this.DocumentType = [...new Set(this.Documents.map((d) => d.TypeofDocument).filter(Boolean))];
+        this.applyFilters();
+      });
+
+    this.aiCoPilotService.currentParentNames$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((names) => {
+        this.parentNames = { ...names };
+        this.Documents = this.resultSplits.map((split) => this.toStoricoRow(split));
+        this.applyFilters();
+      });
+
+    this.aiCoPilotService.companies$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((companies) => {
+        this.Companies = companies.map((company) => company.name).filter(Boolean);
+      });
   }
   onSearchChange(value: string) {
     this.searchvalue = value;
@@ -142,12 +102,12 @@ export class StoricoAiCopilot {
     this.dates = dates;
     this.applyFilters();
   }
-  onDocumentChange(document: number | undefined) {
-    this.selectedDocument = document;
+  onDocumentChange(document: string | number) {
+    this.selectedDocument = document !== undefined && document !== null ? String(document) : undefined;
     this.applyFilters();
   }
-  onCompanyChange(company: number | undefined) {
-    this.selectedCompany = company;
+  onCompanyChange(company: string | number) {
+    this.selectedCompany = company !== undefined && company !== null ? String(company) : undefined;
     this.applyFilters();
   }
   applyFilters() {
@@ -157,42 +117,46 @@ export class StoricoAiCopilot {
         g.DocumentName.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
         g.Id.toString().toLowerCase().includes(this.searchvalue.toLowerCase()) ||
         g.Confidence.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
-        g.ListaDestinazione.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
+        g.Recepient.toLowerCase().includes(this.searchvalue.toLowerCase()) ||
         g.State.toLowerCase().includes(this.searchvalue.toLowerCase());
       const matchDocument = !this.selectedDocument || g.TypeofDocument === this.selectedDocument;
       const matchCompany = !this.selectedCompany || g.Company === this.selectedCompany;
       const matchDate =
         !this.dates ||
         this.dates.length !== 2 ||
-        (new Date(g.Data) >= this.dates[0] && new Date(g.Data) <= this.dates[1]);
+        (this.normalizeDate(g.Data) >= this.normalizeDate(this.dates[0]) &&
+          this.normalizeDate(g.Data) <= this.normalizeDate(this.dates[1]));
       return matchCompany && matchDate && matchDocument && matchSearch;
     });
   }
 
+  private normalizeDate(value: Date): number {
+    const date = new Date(value);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime();
+  }
+
+  private toStoricoRow(split: ResultSplit): StoricoSplitRow {
+    const originalDocumentName = this.parentNames[split.parentId] || split.name;
+
+    return {
+      Company: split.company,
+      TypeofDocument: split.category,
+      DocumentName: originalDocumentName,
+      Id: `${split.parentId}.${split.id}`,
+      SplitId: split.id,
+      Confidence: `${split.confidence}%`,
+      Recepient: split.recipientName,
+      State: split.state,
+      Data: split.data,
+    };
+  }
+
   // al momento questa funzione mi serve solo per predisporre il passaggio del risultato alla pagina anteprima-documento
   navigateToResult(){
-    // creo un resultAiCopilot che contiene delle info
-    
-    const result : ResultSplit ={
-      id: 1.1,
-      name: 'Nome documento splittato',
-      state: State.Programmato,
-      
-      confidence: 95,
-      recipientId: 122,
-      recipientName: 'Luca Slongo',
-      recipientEmail: 'luca.slongo@gmail.com',
-      recipientCode: 'LS122',
-      time_Analysis: 12,
-      page_end: 10,
-      page_start: 1,
-      company: 'AlbertoSrl',
-      department: 'HR',
-      month_year: 'Settembre 2024',
-      category: 'Cedolino',
-      data: new Date('2024, 9, 11'),
-      parentId: 111
-    }
+    // al momento apriamo il primo result split filtrato disponibile
+    const firstFiltered = this.FilteredDocuments[0];
+    const result = this.resultSplits.find((split) => split.id === firstFiltered?.SplitId);
       if (result) {
         this.router.navigate(['/anteprima-documento'], {
           state: {

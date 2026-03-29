@@ -75,13 +75,11 @@ export class AnalyticsDashboard implements OnInit {
 
   onAiAssistantRangeChange(dates: Date[] | undefined) {
     const periodo = this.buildPeriod(dates);
-    // Trigger refresh: lo stream resta stabile e la view si aggiorna via async pipe.
-    this.aiAssistantAnalyticsService.getAnalysis(periodo);
+    this.aiAssistantMetrics$ = this.aiAssistantAnalyticsService.getAnalysis(periodo);
   }
 
   onAiCoPilotRangeChange(dates: Date[] | undefined) {
     const periodo = this.buildPeriod(dates);
-    // Trigger refresh: lo stream resta stabile e la view si aggiorna via async pipe.
-    this.aiCoPilotAnalyticsService.getAnalysis(periodo);
+    this.aiCoPilotMetrics$ = this.aiCoPilotAnalyticsService.getAnalysis(periodo);
   }
 }

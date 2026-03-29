@@ -19,7 +19,7 @@ export interface AiAssistantAnalyticsResponse {
   providedIn: 'root',
 })
 export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
-  private apiUrl = '/api/analytics/ai-assistant'; // TODO: configurare endpoint vero
+  private apiUrl = '/ai_generator_data_analyst';
   private readonly metricsSubject = new BehaviorSubject<AnalyticsMetric[]>([]);
 
   constructor(private httpClient: HttpClient) {
@@ -27,8 +27,17 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
   }
 
   getAnalysis(periodo: AnalyticsPeriod): Observable<AnalyticsMetric[]> {
+    let params: any = {};
+
+    if (periodo.startDate) {
+      params.start_date = periodo.startDate;
+    }
+    if (periodo.endDate) {
+      params.end_date = periodo.endDate;
+    }
+
     this.httpClient
-      .post<AiAssistantAnalyticsResponse>(`${this.apiUrl}/metrics`, periodo)
+      .get<AiAssistantAnalyticsResponse>(this.apiUrl, { params })
       .pipe(
         map((response) => this.transformToMetrics(response)),
         catchError(() => of([] as AnalyticsMetric[])),

@@ -81,12 +81,14 @@ export class Estrattore implements OnInit {
       return;
     }
     this.aiService.uploadFiles(
-    this.selectedFiles,
-    this.selectedCompany?.name ?? '', // azienda opzionale
-    this.selectedDepartment,
-    this.selectedCategory ?? '',
-    this.selectedCompetenceMonthYear
-  );
-  this.router.navigate(['/riconoscimento-documenti']);
+      this.selectedFiles,
+      this.selectedCompany?.name ?? '', // azienda opzionale
+      this.selectedDepartment,
+      this.selectedCategory ?? '',
+      this.selectedCompetenceMonthYear
+    );
+    this.router.navigate(['/riconoscimento-documenti'], {
+      state: { preserveSession: true }
+    });
   }
 }

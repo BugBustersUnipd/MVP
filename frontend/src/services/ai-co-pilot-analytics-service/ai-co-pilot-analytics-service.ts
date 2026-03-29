@@ -18,7 +18,7 @@ export interface AiCoPilotAnalyticsResponse {
   providedIn: 'root',
 })
 export class AiCoPilotAnalyticsService extends AnalyticsAbstractService {
-  private apiUrl = '/api/analytics/ai-copilot'; // TODO: configurare endpoint vero
+  private apiUrl = '/ai_copilot_data_analyst';
   private readonly metricsSubject = new BehaviorSubject<AnalyticsMetric[]>([]);
 
   constructor(private httpClient: HttpClient) {
@@ -26,8 +26,17 @@ export class AiCoPilotAnalyticsService extends AnalyticsAbstractService {
   }
 
   getAnalysis(periodo: AnalyticsPeriod): Observable<AnalyticsMetric[]> {
+    let params: any = {};
+
+    if (periodo.startDate) {
+      params.start_date = periodo.startDate;
+    }
+    if (periodo.endDate) {
+      params.end_date = periodo.endDate;
+    }
+
     this.httpClient
-      .post<AiCoPilotAnalyticsResponse>(`${this.apiUrl}/metrics`, periodo)
+      .get<AiCoPilotAnalyticsResponse>(this.apiUrl, { params })
       .pipe(
         map((response) => this.transformToMetrics(response)),
         catchError(() => of([] as AnalyticsMetric[])),
