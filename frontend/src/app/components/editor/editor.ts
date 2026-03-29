@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EditorModule } from 'primeng/editor';
 @Component({
@@ -11,4 +11,16 @@ export class Editor {
 @Input() text: string = '';
 @Input() editable: boolean = false;
 @Output() textChange = new EventEmitter<string>();
+editorText: string = '';
+
+ngOnChanges(changes: SimpleChanges): void {
+  if (changes['text']) {
+    this.editorText = this.text ?? '';
+  }
+}
+
+onTextModelChange(value: string): void {
+  this.editorText = value ?? '';
+  this.textChange.emit(this.editorText);
+}
 }

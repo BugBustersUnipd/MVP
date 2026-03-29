@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ImageModule } from 'primeng/image';
 import { InputTextModule } from 'primeng/inputtext';
@@ -18,12 +18,16 @@ export class ImageTitle {
 @Input() caption: string = '';
 @Input() altText: string = '';
 @Input() editable: boolean = false;
-@Input() set imageTitle(value: string) {
-  this._imageTitle = value;
-}
-_imageTitle: string = '';
+@Input() imageTitle: string = '';
+title: string = '';
 @Output() imageTitleChange = new EventEmitter<string>();
 @Output() imageChange = new EventEmitter<File>();
+
+ngOnChanges(changes: SimpleChanges): void {
+  if (changes['imageTitle']) {
+    this.title = this.imageTitle ?? '';
+  }
+}
 
 onImageChange(event: any): void {
   const file: File = event.files[0];
@@ -31,7 +35,7 @@ onImageChange(event: any): void {
 }
 
 onTitleChange(value: string): void {
-  this._imageTitle = value;
-  this.imageTitleChange.emit(value);
+  this.title = value ?? '';
+  this.imageTitleChange.emit(this.title);
 }
 }

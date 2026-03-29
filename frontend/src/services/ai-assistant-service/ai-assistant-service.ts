@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ResultAiAssistant } from '../../app/shared/models/result-ai-assistant.model';
@@ -16,6 +16,7 @@ export class AiAssistantService {
   private serializer = inject(ResultAiAssistantSerializer);
   private router = inject(Router);
   private http = inject(HttpClient);
+  private ngZone = inject(NgZone);
   private resultSubject : BehaviorSubject<ResultAiAssistant | null> = new BehaviorSubject<ResultAiAssistant | null>(null);
   currentResult$ = this.resultSubject.asObservable();
 
@@ -313,51 +314,53 @@ export class AiAssistantService {
     };
 
     socket.onmessage = (event) => {
-      console.log('[ws] raw message:', event.data);
-      const cable = JSON.parse(event.data);
+      this.ngZone.run(() => {
+        console.log('[ws] raw message:', event.data);
+        const cable = JSON.parse(event.data);
 
-      if (cable.type === 'welcome' || cable.type === 'ping' || cable.type === 'confirm_subscription') {
-        console.log('[ws] messaggio di sistema ignorato:', cable.type);
-        return;
-      }
-
-      if (!cable.message) {
-        console.log('[ws] messaggio senza payload applicativo, ignorato:', cable);
-        return;
-      }
-
-      const payload = cable.message;
-      const payloadId = Number(payload.id) || 0;
-      console.log('[ws] payload applicativo:', payload, 'payloadId:', payloadId, 'generationId atteso:', generationId);
-
-      // Il canale e condiviso: aggiorniamo solo la generazione appena creata via POST.
-      if (payloadId !== generationId) {
-        console.log('[ws] payload ignorato per id diverso');
-        return;
-      }
-
-      if (payload.status === 'completed') {
-        console.log('[ws] completed ricevuto per id corretto');
-        const current = this.resultSubject.value;
-        if (!current) {
-          console.log('[ws] nessun current result disponibile, skip update');
+        if (cable.type === 'welcome' || cable.type === 'ping' || cable.type === 'confirm_subscription') {
+          console.log('[ws] messaggio di sistema ignorato:', cable.type);
           return;
         }
 
-        const updated: ResultAiAssistant = {
-          ...current,
-          id: payloadId,
-          title: typeof payload.title === 'string' ? payload.title : current.title,
-          content: typeof payload.text === 'string' ? payload.text : current.content,
-        };
+        if (!cable.message) {
+          console.log('[ws] messaggio senza payload applicativo, ignorato:', cable);
+          return;
+        }
 
-        this.resultSubject.next(updated);
-        console.log('[ws] resultSubject aggiornato con title/content da completed');
-        socket.close();
-        console.log('[ws] unsubscribe websocket dopo completed');
-      } else {
-        console.log('[ws] status ricevuto ma non gestito in update finale:', payload.status);
-      }
+        const payload = cable.message;
+        const payloadId = Number(payload.id) || 0;
+        console.log('[ws] payload applicativo:', payload, 'payloadId:', payloadId, 'generationId atteso:', generationId);
+
+        // Il canale e condiviso: aggiorniamo solo la generazione appena creata via POST.
+        if (payloadId !== generationId) {
+          console.log('[ws] payload ignorato per id diverso');
+          return;
+        }
+
+        if (payload.status === 'completed') {
+          console.log('[ws] completed ricevuto per id corretto');
+          const current = this.resultSubject.value;
+          if (!current) {
+            console.log('[ws] nessun current result disponibile, skip update');
+            return;
+          }
+
+          const updated: ResultAiAssistant = {
+            ...current,
+            id: payloadId,
+            title: typeof payload.title === 'string' ? payload.title : current.title,
+            content: typeof payload.text === 'string' ? payload.text : current.content,
+          };
+
+          this.resultSubject.next(updated);
+          console.log('[ws] resultSubject aggiornato con title/content da completed');
+          socket.close();
+          console.log('[ws] unsubscribe websocket dopo completed');
+        } else {
+          console.log('[ws] status ricevuto ma non gestito in update finale:', payload.status);
+        }
+      });
     };
 
     socket.onclose = (event) => {
