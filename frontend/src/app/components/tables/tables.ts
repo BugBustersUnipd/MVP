@@ -35,6 +35,16 @@ openRowMenu(menu: { toggle: (event: Event) => void }, event: Event, row: any): v
   menu.toggle(event);
 }
 
+getPlainCellText(row: any, col: any): string {
+  const value = row?.[col?.field];
+  return this.stripHtmlTags(value);
+}
+
+private stripHtmlTags(value: unknown): string {
+  const input = typeof value === 'string' ? value : (value ?? '').toString();
+  return input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 private bindMenuItemToRow(item: MenuItem, row: any): MenuItem {
   const boundItem: MenuItem = { ...item };
 
