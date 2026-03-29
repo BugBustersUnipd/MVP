@@ -244,6 +244,19 @@ export class AiAssistantService {
     };
     this.resultSubject.next(updated);
 
+    this.http.patch<any>(`${API_BASE}/generated_data/${id}/rating`, {
+      rating: evaluation
+    }).subscribe({
+      next: (response) => {
+        console.log('[setEvaluation] Risposta PATCH /generated_data/:id/rating:', response);
+      },
+      error: (err) => {
+        console.error('[setEvaluation] Errore nella PATCH /generated_data/:id/rating:', err);
+        const errorMessage = this.extractErrorMessage(err);
+        this.notifyGenerationError(errorMessage);
+      }
+    });
+
     console.log(`Valutazione per generazione ${id} impostata a ${evaluation}`);
   }
   // todo implementare
