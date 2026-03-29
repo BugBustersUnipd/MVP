@@ -32,4 +32,21 @@ describe("InputComponent", () => {
 
 		expect(emittedValue).toBe("nuovo valore");
 	});
+
+	it("should emit valueChange from template input event", () => {
+		let emitted: string | number | undefined;
+		component.valueChange.subscribe((value) => {
+			emitted = value;
+		});
+		fixture.detectChanges();
+
+		const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+		input.value = 'dal template';
+		input.dispatchEvent(new Event('input'));
+		fixture.detectChanges();
+
+		expect(component.value).toBe('dal template');
+		expect(emitted).toBe('dal template');
+	});
+
 });

@@ -20,4 +20,24 @@ describe('AttachFile', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should append selected files', () => {
+    const first = new File(['a'], 'a.pdf', { type: 'application/pdf' });
+    const second = new File(['b'], 'b.pdf', { type: 'application/pdf' });
+    component.files = [first];
+
+    component.onSelect({ files: [second] });
+
+    expect(component.files).toEqual([first, second]);
+  });
+
+  it('should remove file by index', () => {
+    const first = new File(['a'], 'a.pdf', { type: 'application/pdf' });
+    const second = new File(['b'], 'b.pdf', { type: 'application/pdf' });
+    component.files = [first, second];
+
+    component.removeFile(0);
+
+    expect(component.files).toEqual([second]);
+  });
 });
