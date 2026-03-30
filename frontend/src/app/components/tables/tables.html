@@ -61,6 +61,10 @@
                 <span class="truncate-content" title="Non trovato">
                   Non trovato
                 </span>
+            } @else if (col.type === 'splitid') {
+                <span class="truncate-content" [title]="(row.parentId?.Id ?? row.parentId)?.toString() + '.' + row.id.toString()">
+                  {{ (row.parentId?.Id ?? row.parentId)?.toString() + '.' + row.id.toString() }}
+                </span>
             } @else {
                 <span class="truncate-content" [title]="getPlainCellText(row, col)">
                   {{ getPlainCellText(row, col) }}
