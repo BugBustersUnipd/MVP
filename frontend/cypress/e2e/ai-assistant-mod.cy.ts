@@ -229,8 +229,11 @@ describe('AI Assistant - modifiche e azioni contenuto', () => {
 		visitResultPage()
 		cy.contains('button', 'Salva').click({ force: true })
 
-		cy.wait('@savePost')
-		cy.contains('button', 'Elimina').should('exist')
+		cy.wait('@savePost').its('request.body').then((body) => {
+			expect(body).to.have.property('title', unsavedResult.title)
+			expect(body).to.have.property('body_text')
+		})
+		cy.contains('button', 'Elimina').should('be.visible')
 	})
 
 	it('permette all utente l inserimento di un nuovo tono per la generazione di contenuti', () => {
@@ -254,7 +257,7 @@ describe('AI Assistant - modifiche e azioni contenuto', () => {
 		cy.contains('label.label', 'Toni').parent().within(() => {
 			cy.get('.p-select').click({ force: true })
 		})
-		cy.contains('.p-select-option', 'Istituzionale').should('exist')
+		cy.contains('.p-select-option', 'Istituzionale').should('be.visible')
 	})
 
 	it('permette all utente l eliminazione di un tono per la generazione di contenuti', () => {
@@ -296,7 +299,7 @@ describe('AI Assistant - modifiche e azioni contenuto', () => {
 		cy.contains('label.label', 'Stili').parent().within(() => {
 			cy.get('.p-select').click({ force: true })
 		})
-		cy.contains('.p-select-option', 'Ispirazionale').should('exist')
+		cy.contains('.p-select-option', 'Ispirazionale').should('be.visible')
 	})
 
 	it('permette all utente l eliminazione di uno stile per la generazione di contenuti', () => {

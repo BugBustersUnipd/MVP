@@ -118,8 +118,8 @@ describe('Storico AI Co-Pilot', () => {
 	it('mostra lo storico completo dei documenti processati', () => {
 		setupHistoryWithData()
 
-		cy.contains('td', 'cedolino-marzo.pdf').should('exist')
-		cy.contains('td', 'lettera-assunzione.pdf').should('exist')
+		cy.contains('td', 'cedolino-marzo.pdf').should('be.visible')
+		cy.contains('td', 'lettera-assunzione.pdf').should('be.visible')
 		cy.get('p-table tbody tr').should('have.length', 2)
 	})
 
@@ -134,7 +134,7 @@ describe('Storico AI Co-Pilot', () => {
 		cy.visit('/storico-ai-copilot')
 		cy.wait('@getUploadsEmpty')
 
-		cy.contains('Nessun dato disponibile').should('exist')
+		cy.contains('Nessun dato disponibile').should('be.visible')
 	})
 
 	it('mostra i dettagli di un elemento nello storico documenti', () => {
@@ -143,17 +143,17 @@ describe('Storico AI Co-Pilot', () => {
 		openFirstRowDetailFromMenu()
 
 		cy.url().should('include', '/anteprima-documento')
-		cy.contains('label', 'Confidenza media').should('exist')
-		cy.contains('label', 'Categoria').should('exist')
-		cy.contains('label', 'Azienda').should('exist')
-		cy.contains('label', 'Reparto').should('exist')
+		cy.contains('label', 'Confidenza media').should('be.visible')
+		cy.contains('label', 'Categoria').should('be.visible')
+		cy.contains('label', 'Azienda').should('be.visible')
+		cy.contains('label', 'Reparto').should('be.visible')
 	})
 
 	it('mostra la percentuale di confidenza dell analisi nello storico', () => {
 		setupHistoryWithData()
 
-		cy.contains('td', '91%').should('exist')
-		cy.contains('td', '76%').should('exist')
+		cy.contains('td', '91%').should('be.visible')
+		cy.contains('td', '76%').should('be.visible')
 	})
 
 	it('permette il filtraggio della lista dello storico documenti', () => {
@@ -162,7 +162,7 @@ describe('Storico AI Co-Pilot', () => {
 		cy.get('input[placeholder="Cerca per tutto"]').clear().type('Mario Rossi')
 
 		cy.get('p-table tbody tr').should('have.length', 1)
-		cy.contains('td', 'cedolino-marzo.pdf').should('exist')
+		cy.contains('td', 'cedolino-marzo.pdf').should('be.visible')
 	})
 
 	it('mostra la lista dello storico documenti aggiornata in base ai filtri', () => {
@@ -170,11 +170,11 @@ describe('Storico AI Co-Pilot', () => {
 
 		cy.get('input[placeholder="Cerca per tutto"]').clear().type('Mario')
 		cy.get('p-table tbody tr').should('have.length', 1)
-		cy.contains('td', 'cedolino-marzo.pdf').should('exist')
+		cy.contains('td', 'cedolino-marzo.pdf').should('be.visible')
 
 		cy.get('input[placeholder="Cerca per tutto"]').clear().type('Giulia')
 		cy.get('p-table tbody tr').should('have.length', 1)
-		cy.contains('td', 'lettera-assunzione.pdf').should('exist')
+		cy.contains('td', 'lettera-assunzione.pdf').should('be.visible')
 		cy.contains('td', 'cedolino-marzo.pdf').should('not.exist')
 	})
 })

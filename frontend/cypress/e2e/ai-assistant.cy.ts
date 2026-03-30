@@ -97,7 +97,7 @@ describe('AI Assistant Generativo - generatore e risultato', () => {
 	})
 
 	it('permette l inserimento di un prompt testuale per la generazione', () => {
-		cy.get('textarea#Prompt').should('exist').clear().type(longPrompt)
+		cy.get('textarea#Prompt').should('be.visible').clear().type(longPrompt)
 		cy.get('textarea#Prompt').should('have.value', longPrompt)
 	})
 
@@ -142,10 +142,10 @@ describe('AI Assistant Generativo - generatore e risultato', () => {
 		})
 
 		cy.url().should('include', '/risultato-generazione')
-		cy.contains('span', 'PARAMETRI INSERITI').should('exist')
+		cy.contains('span', 'PARAMETRI INSERITI').should('be.visible')
 		cy.contains('label.label', 'Tono').parent().should('contain.text', tone.name)
 		cy.contains('label.label', 'Stile').parent().should('contain.text', style.name)
 		cy.get('textarea#Prompt').should('have.value', longPrompt)
-		cy.contains('Contenuto testuale generato in base a prompt e parametri.').should('exist')
+		cy.contains('Contenuto testuale generato in base a prompt e parametri.').should('be.visible')
 	})
 })
