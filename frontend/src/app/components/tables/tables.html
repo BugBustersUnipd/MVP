@@ -53,6 +53,14 @@
                   {{ getPlainCellText(row, col) }}
                 </a>
                 <i class="pi pi-link"></i>
+            } @else if (
+              (col.field === 'department' || col.field === 'company' || col.field === 'category' || col.field === 'recipientName') &&
+              (row['state']?.toLowerCase?.() === 'pronto') &&
+              (row[col.field] === null || row[col.field] === 'null' || row[col.field] === '' || row[col.field] === undefined)
+            ) {
+                <span class="truncate-content" title="Non trovato">
+                  Non trovato
+                </span>
             } @else {
                 <span class="truncate-content" [title]="getPlainCellText(row, col)">
                   {{ getPlainCellText(row, col) }}
