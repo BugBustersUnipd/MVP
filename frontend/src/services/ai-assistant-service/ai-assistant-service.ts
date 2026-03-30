@@ -357,14 +357,15 @@ export class AiAssistantService {
         title: '',
         content: '',
         imagePath: null,
-        generatedDatumId: null
+        generatedDatumId: null,
+        evaluation: -1
       });
     }
 
     this.http.post<any>(`${API_BASE}/generated_data/${generationId}/regenerate`, {}).subscribe({
       next: (response) => {
         console.log('[regenerate] risposta POST /generated_data/:id/regenerate:', response);
-        const regeneratedId = Number(response?.id ?? response?.generated_datum_id) || 0;
+        const regeneratedId = this.serializer.deserializeGenerationStartResponse(response);
 
         if (regeneratedId <= 0) {
           console.error('[regenerate] Risposta senza id valido:', response);
@@ -415,25 +416,12 @@ export class AiAssistantService {
     this.resultSubject.next(pendingResult);
     console.log('[requireGeneration] pending result pubblicato con id temporaneo:', pendingResult.id);
 
-    console.log('[requireGeneration] POST /generated_data payload:', {
-      generation_datum: {
-        prompt,
-        company_id: company.id,
-        style_id: style.id,
-        tone_id: tone.id
-      }
-    });
-    this.http.post<any>(`${API_BASE}/generated_data`, {
-      generation_datum: {
-        prompt,
-        company_id: company.id,
-        style_id: style.id,
-        tone_id: tone.id
-      }
-    }).subscribe({
+    const payload = this.serializer.serializeRequireGenerationRequest(prompt, tone, style, company);
+    console.log('[requireGeneration] POST /generated_data payload:', payload);
+    this.http.post<any>(`${API_BASE}/generated_data`, payload).subscribe({
       next: (response) => {
         console.log('[requireGeneration] risposta POST /generated_data:', response);
-        const generatedId = Number(response?.id) || 0;
+        const generatedId = this.serializer.deserializeGenerationStartResponse(response);
         if (generatedId <= 0) {
           console.error('Risposta create_generated_data senza id valido:', response);
           return;

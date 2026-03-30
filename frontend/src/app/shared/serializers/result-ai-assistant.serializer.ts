@@ -6,6 +6,29 @@ import { Tone, Style, Company } from '../models/result-ai-assistant.model';
   providedIn: 'root'
 })
 export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssistant> {
+  serializeRequireGenerationRequest(prompt: string, tone: Tone, style: Style, company: Company): {
+    generation_datum: { prompt: string; company_id: number; style_id: number; tone_id: number }
+  } {
+    return {
+      generation_datum: {
+        prompt,
+        company_id: company.id,
+        style_id: style.id,
+        tone_id: tone.id
+      }
+    };
+  }
+
+  deserializeGenerationStartResponse(payload: unknown): number {
+    const source = this.isRecord(payload) ? payload : {};
+    const id = this.asNumber(source['id'], 0);
+    if (id > 0) {
+      return id;
+    }
+
+    return this.asNumber(source['generated_datum_id'], 0);
+  }
+
   serializeNewToneRequest(name: string, code: string, companyId: number): { tone: { name: string; description: string; company_id: number } } {
     return {
       tone: {
