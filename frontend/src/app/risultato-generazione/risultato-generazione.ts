@@ -1,5 +1,3 @@
-// gestione degli errori: aiAssistantService potrebbe rimbalzare un errore del backend, che dobbiamo visualizzare
-// per ora gestito solo errore di token expired
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ImageTitle } from '../components/image-title/image-title';
