@@ -1,4 +1,4 @@
-import {Component, inject, Input, ViewChild} from '@angular/core';
+import {Component, inject, Input} from '@angular/core';
 import {DynamicDialogRef} from 'primeng/dynamicdialog';
 import {DynamicDialogConfig} from 'primeng/dynamicdialog';
 import { TableModule } from 'primeng/table';
@@ -9,7 +9,6 @@ import { Menutendina } from '../menutendina/menutendina';
 import { Prompt } from '../prompt/prompt';
 import { Observable } from 'rxjs';
 import { AddDialog,AddDialogType, AddDialogSaveData } from '../add-dialog/add-dialog';
-import { AttachFile } from "../attach-file/attach-file";
 import { AiCoPilotService, TemplateOption } from '../../../services/ai-co-pilot-service/ai-co-pilot-service';
 
 // Interface per i dati da inviare
@@ -25,14 +24,12 @@ export interface SendDocumentData {
     templateUrl: './send-document-dialog.html',
     styleUrl: './send-document-dialog.css',
     providers: [],
-    imports: [TableModule, Button, Menutendina, Prompt, AsyncPipe, AddDialog, AttachFile]
+    imports: [TableModule, Button, Menutendina, Prompt, AsyncPipe, AddDialog]
 })
 export class SendDocumentDialog {
     public ref: DynamicDialogRef= inject(DynamicDialogRef);
     public config: DynamicDialogConfig= inject(DynamicDialogConfig);
     private aiService = inject(AiCoPilotService);
-
-    @ViewChild('attachFile') attachFileComponent!: AttachFile;
 
     addDialogVisible: boolean = false;
     addDialogType: AddDialogType = 'tone';
@@ -89,7 +86,7 @@ export class SendDocumentDialog {
         const sendData: SendDocumentData = {
             messaggio: this.messaggio,
             orarioInvio: this.selectedTime ? this.selectedTime : this.timeOptions[0],
-            fileAttachments: this.attachFileComponent.files,
+            fileAttachments: [],
             templateId: this.selectedTemplate?.id,
             templateName: this.selectedTemplate?.name,
         };

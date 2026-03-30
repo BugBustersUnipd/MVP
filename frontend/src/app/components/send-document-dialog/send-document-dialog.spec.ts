@@ -76,8 +76,6 @@ describe('SendDocumentDialog', () => {
   });
 
   it('should close dialog with send payload on confirm', () => {
-    const file = new File(['x'], 'allegato.pdf', { type: 'application/pdf' });
-    (component as any).attachFileComponent = { files: [file] };
     component.selectedTemplate = { id: 99, name: 'Template A', content: 'Body A' };
     component.selectedTime = { name: 'Adesso', value: 'now' };
     component.messaggio = 'Invio documento';
@@ -87,7 +85,7 @@ describe('SendDocumentDialog', () => {
     expect(dialogRefMock.close).toHaveBeenCalledWith({
       messaggio: 'Invio documento',
       orarioInvio: { name: 'Adesso', value: 'now' },
-      fileAttachments: [file],
+      fileAttachments: [],
       templateId: 99,
       templateName: 'Template A',
     });
