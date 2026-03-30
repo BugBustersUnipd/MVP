@@ -69,6 +69,34 @@ describe('Upload', () => {
     expect(selectedSpy).toHaveBeenCalledWith([]);
   });
 
+  it('should emit remaining files on remove', () => {
+    const keep = new File(['x'], 'keep.pdf');
+    const selectedSpy = vi.spyOn(component.filesSelected, 'emit');
+
+    component.onPrimeRemove({ currentFiles: [keep] });
+
+    expect(selectedSpy).toHaveBeenCalledWith([keep]);
+  });
+
+  it('should emit remaining files on remove when currentFiles is missing', () => {
+    const first = new File(['x'], 'first.pdf');
+    const second = new File(['x'], 'second.pdf');
+    const selectedSpy = vi.spyOn(component.filesSelected, 'emit');
+
+    component.onPrimeSelect({ currentFiles: [first, second] });
+    component.onPrimeRemove({ file: first });
+
+    expect(selectedSpy).toHaveBeenLastCalledWith([second]);
+  });
+
+  it('should emit empty list on clear', () => {
+    const selectedSpy = vi.spyOn(component.filesSelected, 'emit');
+
+    component.onPrimeClear();
+
+    expect(selectedSpy).toHaveBeenCalledWith([]);
+  });
+
   it('should trigger click on native input when available', () => {
     const click = vi.fn();
     (component as any).nativeFileInput = { nativeElement: { click } };
