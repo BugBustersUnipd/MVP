@@ -5,7 +5,6 @@ import { ResultAiAssistant } from '../../app/shared/models/result-ai-assistant.m
 import { Tone, Style, Company } from '../../app/shared/models/result-ai-assistant.model';
 import { ResultAiAssistantSerializer } from '../../app/shared/serializers/result-ai-assistant.serializer';
 import { BehaviorSubject } from 'rxjs';
-import { AnalyticsAbstractService } from '../analytics-abstract-service';
 const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
 const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 
@@ -15,8 +14,19 @@ const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 export class AiAssistantService {
   private serializer = inject(ResultAiAssistantSerializer);
   private http = inject(HttpClient);
+  
+  private tonesSubject = new BehaviorSubject<Tone[]>([]);
+  tones$ = this.tonesSubject.asObservable();
+
+  private stylesSubject = new BehaviorSubject<Style[]>([]);
+  styles$ = this.stylesSubject.asObservable();
+
+  private companiesSubject = new BehaviorSubject<Company[]>([]);
+  companies$ = this.companiesSubject.asObservable();
+
   private resultSubject : BehaviorSubject<ResultAiAssistant | null> = new BehaviorSubject<ResultAiAssistant | null>(null);
   currentResult$ = this.resultSubject.asObservable();
+
   private generationErrorSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
   currentGenerationError$ = this.generationErrorSubject.asObservable();
 
@@ -102,14 +112,6 @@ export class AiAssistantService {
   }
 
 
-  private tonesSubject = new BehaviorSubject<Tone[]>([]);
-  tones$ = this.tonesSubject.asObservable();
-
-  private stylesSubject = new BehaviorSubject<Style[]>([]);
-  styles$ = this.stylesSubject.asObservable();
-
-  private companiesSubject = new BehaviorSubject<Company[]>([]);
-  companies$ = this.companiesSubject.asObservable();
 
 
   fetchTonesByCompany(company: number, is_active?: boolean) : void {
@@ -119,8 +121,7 @@ export class AiAssistantService {
     }
     this.http.get<any>(`${API_BASE}/tones`, { params }).subscribe({
       next: (response) => {
-        const tonesArray = Array.isArray(response) ? response : response.tones || [];
-        const tones: Tone[] = tonesArray.map((item: any) => ({ id: item.id, name: item.name }));
+        const tones = this.serializer.deserializeTonesResponse(response);
         this.tonesSubject.next(tones);
         console.log('Toni recuperati:', tones);
       },
@@ -135,8 +136,7 @@ export class AiAssistantService {
     }
     this.http.get<any>(`${API_BASE}/styles`, { params }).subscribe({
         next: (response) => {
-        const stylesArray = Array.isArray(response) ? response : response.styles || [];
-        const styles: Style[] = stylesArray.map((item: any) => ({ id: item.id, name: item.name }));
+        const styles = this.serializer.deserializeStylesResponse(response);
         this.stylesSubject.next(styles);
         console.log('Stili recuperati:', styles);
       },

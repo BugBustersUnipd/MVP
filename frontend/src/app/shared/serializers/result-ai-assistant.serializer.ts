@@ -6,6 +6,22 @@ import { Tone, Style, Company } from '../models/result-ai-assistant.model';
   providedIn: 'root'
 })
 export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssistant> {
+  deserializeTonesResponse(payload: unknown): Tone[] {
+    return this.deserializeNamedCollection(payload, 'tones');
+  }
+
+  deserializeStylesResponse(payload: unknown): Style[] {
+    return this.deserializeNamedCollection(payload, 'styles');
+  }
+
+  deserializeToneItem(payload: unknown): Tone {
+    return this.deserializeNamedItem(payload);
+  }
+
+  deserializeStyleItem(payload: unknown): Style {
+    return this.deserializeNamedItem(payload);
+  }
+
   deserializePostsResponse(payload: unknown): ResultAiAssistant[] {
     if (this.isRecord(payload)) {
       const posts = payload['posts'];
@@ -20,19 +36,17 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
   deserializePostItem(payload: unknown): ResultAiAssistant {
     const source = this.isRecord(payload) ? payload : {};
 
-    const toneId = this.asNumber(source['toneId'], 0);
-    const styleId = this.asNumber(source['styleId'], 0);
     const companyId = this.asNumber(source['companyId'], 0);
 
-    const tone: Tone = {
-      id: toneId,
-      name: this.asString(source['toneName'], toneId > 0 ? `Tono #${toneId}` : '')
-    };
+    const tone = this.deserializeToneItem({
+      id: source['toneId'],
+      name: source['toneName']
+    });
 
-    const style: Style = {
-      id: styleId,
-      name: this.asString(source['styleName'], styleId > 0 ? `Stile #${styleId}` : '')
-    };
+    const style = this.deserializeStyleItem({
+      id: source['styleId'],
+      name: source['styleName']
+    });
 
     const company: Company = {
       id: companyId,
@@ -147,6 +161,27 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
 
   private asNullableString(value: unknown): string | null {
     return typeof value === 'string' ? value : null;
+  }
+
+  private deserializeNamedCollection(payload: unknown, key: 'tones' | 'styles'): Array<Tone | Style> {
+    if (!this.isRecord(payload)) {
+      return [];
+    }
+
+    const items = payload[key];
+    if (!Array.isArray(items)) {
+      return [];
+    }
+
+    return items.map((item) => this.deserializeNamedItem(item));
+  }
+
+  private deserializeNamedItem(payload: unknown): Tone | Style {
+    const source = this.isRecord(payload) ? payload : {};
+    return {
+      id: this.asNumber(source['id'], 0),
+      name: this.asString(source['name'])
+    };
   }
 }
 
