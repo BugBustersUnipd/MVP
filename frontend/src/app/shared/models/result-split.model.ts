@@ -24,6 +24,7 @@ export interface ResultSplit extends Result {
 
 export enum State {
     Pronto = 'Pronto',
+    InElaborazione = 'In elaborazione',
     DaValidare = 'Da validare',
     Inviato = 'Inviato',
     Programmato = 'Programmato',

@@ -34,6 +34,9 @@ export class AiCoPilotService {
   private serializer = inject(ResultAiCopilotSerializer);
   private tempParentId = -1;
   private scheduledDocuments = new Map<number, Date>();
+  private currentBatchTempIds = new Set<number>();
+  private currentBatchParentIdsSubject = new BehaviorSubject<Set<number>>(new Set());
+  currentBatchParentIds$ = this.currentBatchParentIdsSubject.asObservable();
   
   private resultSubject : BehaviorSubject<ResultSplit | null> = new BehaviorSubject<ResultSplit | null>(null);
   currentResult$ = this.resultSubject.asObservable();
@@ -77,10 +80,14 @@ export class AiCoPilotService {
 
 
   public uploadFiles(files: File[], company: string, department: string, category: string, competence_period: string): void {
+    this.currentBatchTempIds.clear();
+    this.currentBatchParentIdsSubject.next(new Set());
     for (const file of files) {
       const temporaryParentId = this.addPendingParent(file);
+      this.currentBatchTempIds.add(temporaryParentId);
       this.processDocument(file, company, department, category, competence_period, temporaryParentId);
     }
+    this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds));
   }
 
   // ESEMPIO DI COME DOVRÀ ESSERE IMPLEMENTATO IL METODO PROCESSDOCUMENT
@@ -186,6 +193,18 @@ export class AiCoPilotService {
         next: (response) => {
           const uploadedDocumentId = Number(response?.uploaded_document_id) || 0;
           reactiveResult.id = uploadedDocumentId;
+
+          // Duplicate: backend reuses an existing document, no job will run.
+          if (!response.job_id) {
+            reactiveResult.state = DocumentState.Completato;
+            this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.Completato);
+            if (uploadedDocumentId > 0) {
+              this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+              this.updateSessionParentState(uploadedDocumentId, DocumentState.Completato);
+            }
+            return;
+          }
+
           reactiveResult.state = DocumentState.InElaborazione; // Stato iniziale
           this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione);
           // Use ActionCable subprotocols for better compatibility with Rails cable server.
@@ -230,7 +249,7 @@ export class AiCoPilotService {
               if (uploadedDocumentId > 0) {
                 // Show extracted rows as soon as split artifacts are created.
                 this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
-                this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
+                this.updateParentStateInHistory(uploadedDocumentId, State.InElaborazione);
                 this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
               }
             }
@@ -287,6 +306,14 @@ export class AiCoPilotService {
       parent.id === temporaryParentId ? { ...parent, id: realParentId, state } : parent
     );
     this.sessionParentsSubject.next(updated);
+
+    if (this.currentBatchTempIds.has(temporaryParentId)) {
+      this.currentBatchTempIds.delete(temporaryParentId);
+      const current = this.currentBatchParentIdsSubject.value;
+      current.delete(temporaryParentId);
+      current.add(realParentId);
+      this.currentBatchParentIdsSubject.next(new Set(current));
+    }
 
     const names = this.parentNamesSubject.value;
     const pendingName = names[temporaryParentId];

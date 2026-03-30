@@ -111,13 +111,14 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
  
   private mapStatus(status: string): State {
     switch (status) {
-      case 'done':       return State.Pronto;
-      case 'validated':  return State.Pronto;
-      case 'sent':       return State.Inviato;
-      case 'scheduled':  return State.Programmato;
+      case 'done':        return State.Pronto;
+      case 'validated':   return State.Pronto;
+      case 'sent':        return State.Inviato;
+      case 'scheduled':   return State.Programmato;
+      case 'failed':      return State.Failed;
       case 'queued':
-      case 'in_progress':
-      default:           return State.DaValidare;
+      case 'in_progress': return State.InElaborazione;
+      default:            return State.DaValidare;
     }
   }
 }
