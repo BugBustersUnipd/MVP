@@ -63,6 +63,7 @@ export class RisultatoGenerazione {
         if (!errorMessage) return;
         this.router.navigate(['/generatore']); //ritorna al generatore in caso di errore
         window.alert(errorMessage);
+        this.aiService.clearGenerationError();
       });
 
     this.updateImageTitleLoading(this.result());
