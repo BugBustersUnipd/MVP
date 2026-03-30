@@ -42,7 +42,23 @@ getPlainCellText(row: any, col: any): string {
 
 private stripHtmlTags(value: unknown): string {
   const input = typeof value === 'string' ? value : (value ?? '').toString();
-  return input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return input
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\u00A0/g, ' ')
+    .replace(/&(amp|lt|gt|quot|apos|#39);/gi, (match) => {
+      const normalized = match.toLowerCase();
+      if (normalized === '&amp;') return '&';
+      if (normalized === '&lt;') return '<';
+      if (normalized === '&gt;') return '>';
+      if (normalized === '&quot;') return '"';
+      if (normalized === '&apos;' || normalized === '&#39;') return "'";
+      return match;
+    })
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([\da-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 private bindMenuItemToRow(item: MenuItem, row: any): MenuItem {
