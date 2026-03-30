@@ -1,11 +1,59 @@
 import { Injectable } from '@angular/core';
 import { ResultAiAssistant } from '../models/result-ai-assistant.model';
 import { ResultSerializer } from './result.serializer';
-import { Tone, Style } from '../models/result-ai-assistant.model';
+import { Tone, Style, Company } from '../models/result-ai-assistant.model';
 @Injectable({
   providedIn: 'root'
 })
 export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssistant> {
+  deserializePostsResponse(payload: unknown): ResultAiAssistant[] {
+    if (this.isRecord(payload)) {
+      const posts = payload['posts'];
+      if (Array.isArray(posts)) {
+        return posts.map((item) => this.deserializePostItem(item));
+      }
+    }
+
+    return [];
+  }
+
+  deserializePostItem(payload: unknown): ResultAiAssistant {
+    const source = this.isRecord(payload) ? payload : {};
+
+    const toneId = this.asNumber(source['toneId'], 0);
+    const styleId = this.asNumber(source['styleId'], 0);
+    const companyId = this.asNumber(source['companyId'], 0);
+
+    const tone: Tone = {
+      id: toneId,
+      name: this.asString(source['toneName'], toneId > 0 ? `Tono #${toneId}` : '')
+    };
+
+    const style: Style = {
+      id: styleId,
+      name: this.asString(source['styleName'], styleId > 0 ? `Stile #${styleId}` : '')
+    };
+
+    const company: Company = {
+      id: companyId,
+      name: this.asString(source['companyName'])
+    };
+
+    return {
+      id: this.asNumber(source['id'], 0),
+      title: this.asString(source['title']),
+      content: this.asString(source['PostText']),
+      imagePath: this.asNullableString(source['imgPath']),
+      tone,
+      style,
+      company,
+      data: this.asDate(source['dateTime']),
+      prompt: this.asString(source['prompt']),
+      evaluation: this.asNullableNumber(source['rating']) ?? -1,
+      generatedDatumId: this.asNumber(source['generatedDatumId'], 0)
+    };
+  }
+
   serialize(payload: unknown[]): ResultAiAssistant {
     const source = this.normalizePayload(payload); // Normalizza il payload per supportare sia array posizionali che oggetti chiave-valore
 
@@ -82,6 +130,23 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
     }
 
     return new Date(0);
+  }
+
+  private asNullableNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
+  }
+
+  private asNullableString(value: unknown): string | null {
+    return typeof value === 'string' ? value : null;
   }
 }
 

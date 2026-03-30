@@ -546,39 +546,8 @@ export class AiAssistantService {
 
     this.http.get<any>(`${API_BASE}/posts`).subscribe({
       next: (response) => {
-        const postsArray = Array.isArray(response) ? response : response?.posts || [];
         console.log('[fetchResultsHistory] risposta /posts:', response);
-        const history: ResultAiAssistant[] = postsArray.map((item: any) => {
-          const toneId = Number(item?.toneId ?? item?.tone_id) || 0;
-          const styleId = Number(item?.styleId ?? item?.style_id) || 0;
-
-          const rawDate = item?.dateTime ?? item?.date_time;
-          const parsedDate = rawDate ? new Date(rawDate) : new Date(0);
-          const data = Number.isNaN(parsedDate.getTime()) ? new Date(0) : parsedDate;
-
-          return {
-            id: Number(item?.id) || 0,
-            title: item?.title ?? '',
-            content: item?.PostText ?? item?.postText ?? item?.body_text ?? item?.content ?? '',
-            imagePath: item?.imgPath ?? item?.img_path ?? item?.imagePath ?? null,
-            tone: {
-              id: toneId,
-              name: item?.toneName ?? (toneId > 0 ? `Tono #${toneId}` : '')
-            },
-            style: {
-              id: styleId,
-              name: item?.styleName ?? (styleId > 0 ? `Stile #${styleId}` : '')
-            },
-            company: {
-              id: Number(item?.companyId ?? item?.company_id) || 0,
-              name: item?.companyName ?? ''
-            },
-            data,
-            prompt: item?.prompt ?? '',
-            evaluation: Number(item?.rating) || -1,
-            generatedDatumId: Number(item?.generatedDatumId ?? item?.generated_datum_id) || null
-          };
-        });
+        const history = this.serializer.deserializePostsResponse(response);
 
         this.ResultsHistorySubject.next(history);
         console.log('[fetchResultsHistory] Storico recuperato:', history);
