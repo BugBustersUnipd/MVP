@@ -144,12 +144,17 @@ export class AiAssistantService {
     });
 
   }
-
+    /**
+     * NOTA qui il serializer è stato usato per mantenere coerenza architetturale, tuttavia prima bastava una riga:
+     * this.companiesSubject.next(response.companies);
+     * tuttavia questo è migliore anche per una questione di robustezza e coerenza futura: unico punto centralizzato dove cambiare la deserializzazione degli elementi se il backend cambia->ai-assistant-serializer
+     */
   fetchCompanies(): void {
     this.http.get<any>(`${API_BASE}/lookups/companies`).subscribe({
       next: (response) => {
-        this.companiesSubject.next(response.companies);
-        console.log('Aziende recuperate:', response.companies);
+        const companies = this.serializer.deserializeCompaniesResponse(response);
+        this.companiesSubject.next(companies);
+        console.log('Aziende recuperate:', companies);
         },
       error: (err) => console.error('Errore nel recupero delle aziende:', err),
     });

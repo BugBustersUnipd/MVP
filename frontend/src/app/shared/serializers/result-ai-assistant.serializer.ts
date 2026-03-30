@@ -22,6 +22,27 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
     return this.deserializeNamedItem(payload);
   }
 
+  deserializeCompaniesResponse(payload: unknown): Company[] {
+    if (!this.isRecord(payload)) {
+      return [];
+    }
+
+    const companies = payload['companies'];
+    if (!Array.isArray(companies)) {
+      return [];
+    }
+
+    return companies.map((item) => this.deserializeCompanyItem(item));
+  }
+
+  deserializeCompanyItem(payload: unknown): Company {
+    const source = this.isRecord(payload) ? payload : {};
+    return {
+      id: this.asNumber(source['id'], 0),
+      name: this.asString(source['name'])
+    };
+  }
+
   deserializePostsResponse(payload: unknown): ResultAiAssistant[] {
     if (this.isRecord(payload)) {
       const posts = payload['posts'];
@@ -36,8 +57,6 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
   deserializePostItem(payload: unknown): ResultAiAssistant {
     const source = this.isRecord(payload) ? payload : {};
 
-    const companyId = this.asNumber(source['companyId'], 0);
-
     const tone = this.deserializeToneItem({
       id: source['toneId'],
       name: source['toneName']
@@ -48,10 +67,10 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
       name: source['styleName']
     });
 
-    const company: Company = {
-      id: companyId,
-      name: this.asString(source['companyName'])
-    };
+    const company = this.deserializeCompanyItem({
+      id: source['companyId'],
+      name: source['companyName']
+    });
 
     return {
       id: this.asNumber(source['id'], 0),
@@ -184,9 +203,3 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
     };
   }
 }
-
-
-
-//Quando definisci il backend reale, devi cambiare solo:
-// la logica in normalizePayload
-// la forma di output in deserialize
