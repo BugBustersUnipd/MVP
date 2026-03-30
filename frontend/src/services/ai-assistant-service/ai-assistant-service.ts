@@ -306,30 +306,23 @@ export class AiAssistantService {
     this.resultSubject.next(newResult);
   }
   createPost(result: ResultAiAssistant): void {
-    // Costruisce il payload per POST /posts con i dati del result
-    // Il backend accetta: title, body_text, img_path, date_time, generated_datum_id
-    const payload = {
-      generated_datum_id: result.generatedDatumId,
-      title: result.title,
-      body_text: result.content,
-      img_path: result.imagePath,
-      date_time: result.data
-    };
+    const payload = this.serializer.serializeCreatePostRequest(result);
 
     console.log('[createPost] Invio POST /posts con payload:', payload);
 
     this.http.post<any>(`${API_BASE}/posts`, payload).subscribe({
       next: (response) => {
         console.log('[createPost] Risposta POST /posts:', response);
+        const createdPostId = this.serializer.deserializeCreatePostResponseId(response);
 
         const postResult: ResultAiAssistant = {
           ...result,
-          id: response?.id ?? result.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
+          id: createdPostId > 0 ? createdPostId : result.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
         };
 
         this.resultSubject.next(postResult);
         this.ResultsHistorySubject.next([...(this.ResultsHistorySubject.value || []), postResult]);
-        console.log('[createPost] Post creato con successo, id:', response?.id);
+        console.log('[createPost] Post creato con successo, id:', createdPostId);
       },
       error: (err) => {
         console.error('[createPost] Errore nella POST /posts:', err);
