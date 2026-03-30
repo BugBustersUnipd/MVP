@@ -423,11 +423,28 @@ export class AiCoPilotService {
 
     /** GET /documents/extracted/:id */
   public fetchExtractedDocument(id: number): void {
-    this.http.get<any>(`${API_BASE}/documents/extracted/${id}`).subscribe({
-      next: ({ extracted_document }) =>
-        this.resultSubject.next(this.serializer.deserializeExtractedDocument(extracted_document)),
-      error: (err) => console.error('Errore nel recupero del documento estratto:', err),
+    this.refreshScheduledDocuments$().subscribe(() => {
+      this.http.get<any>(`${API_BASE}/documents/extracted/${id}`).subscribe({
+        next: ({ extracted_document }) => {
+          const split = this.resolveScheduledState(this.serializer.deserializeExtractedDocument(extracted_document));
+          this.resultSubject.next(split);
+        },
+        error: (err) => console.error('Errore nel recupero del documento estratto:', err),
+      });
     });
+  }
+
+  private refreshScheduledDocuments$(): Observable<void> {
+    return this.http.get<any>(`${API_BASE}/sendings`).pipe(
+      map((res) => {
+        const now = new Date();
+        this.scheduledDocuments = new Map(
+          (res.sendings as any[])
+            .filter((s) => new Date(s.sent_at) > now)
+            .map((s) => [s.extracted_document_id as number, new Date(s.sent_at)])
+        );
+      })
+    );
   }
    /** GET /documents/uploads/:parentId/extracted */
   public getDocumentsByParent(parentId: number, currentResultId?: number): void {
@@ -675,34 +692,32 @@ export class AiCoPilotService {
       );
   }
 
-    /** GET /documents/uploads → carica la history iniziale via HTTP */
-public fetchHistoryResults(): void {
-  
+  /** GET /documents/uploads → carica la history iniziale via HTTP */
+  public fetchHistoryResults(): void {
+    this.refreshScheduledDocuments$().pipe(
+      switchMap(() => this.http.get<any>(`${API_BASE}/documents/uploads`)),
+      switchMap((uploadsResponse) => {
+        const requests: Observable<any>[] = uploadsResponse.uploaded_documents.map((ud: any) => {
+          if (ud?.id && ud?.original_filename) {
+            this.setParentName(ud.id, ud.original_filename);
+            this.setParentPageCount(ud.id, ud.page_count);
+          }
+          return this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`);
+        });
 
-  this.http.get<any>(`${API_BASE}/documents/uploads`).pipe(
-    switchMap(({ uploaded_documents }) => {
-      const requests : Observable<any>[] = uploaded_documents.map((ud: any) => {
-        if (ud?.id && ud?.original_filename) {
-          this.setParentName(ud.id, ud.original_filename);
-          this.setParentPageCount(ud.id, ud.page_count);
-        }
-
-        return this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`);
-      });
-
-      return forkJoin(requests);
-    })
-  ).subscribe({
-    next: (responses) => {
-      responses.forEach(response => {
-        response.extracted_documents
-          .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
-          .forEach((s: ResultSplit) => this.upsertInHistory(s));
-      });
-    },
-    error: (err) => console.error('Errore generale:', err),
-  });
-}
+        return forkJoin(requests);
+      })
+    ).subscribe({
+      next: (responses) => {
+        responses.forEach(response => {
+          response.extracted_documents
+            .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
+            .forEach((s: ResultSplit) => this.upsertInHistory(s));
+        });
+      },
+      error: (err) => console.error('Errore generale:', err),
+    });
+  }
   /** GET /lookups/users?company=<n> */
   public fetchEmployeesByCompany(company: string): void {
     if (!company) {
