@@ -8,20 +8,24 @@ import { Button } from '../button/button';
 import { Menutendina } from '../menutendina/menutendina';
 import { Prompt } from '../prompt/prompt';
 import { SendDocumentDialog } from './send-document-dialog';
+import { AiCoPilotService } from '../../../services/ai-co-pilot-service/ai-co-pilot-service';
 
 describe('SendDocumentDialog', () => {
   let component: SendDocumentDialog;
   let fixture: ComponentFixture<SendDocumentDialog>;
   let dialogRefMock: { close: ReturnType<typeof vi.fn> };
+  let aiServiceMock: { newTemplate: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     dialogRefMock = { close: vi.fn() };
+    aiServiceMock = { newTemplate: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [SendDocumentDialog],
       providers: [
         { provide: DynamicDialogRef, useValue: dialogRefMock },
-        { provide: DynamicDialogConfig, useValue: { data: { templates$: of([{ name: 'T1', content: 'Body' }]) } } },
+        { provide: DynamicDialogConfig, useValue: { data: { templates$: of([{ id: 1, name: 'T1', content: 'Body' }]) } } },
+        { provide: AiCoPilotService, useValue: aiServiceMock },
       ],
     })
     .compileComponents();
@@ -42,12 +46,20 @@ describe('SendDocumentDialog', () => {
   });
 
   it('should expose selected template content through messaggio getter', () => {
-    component.selectedTemplate = { name: 'T1', content: 'Contenuto template' };
+    component.selectedTemplate = { id: 1, name: 'T1', content: 'Contenuto template' };
 
     expect(component.messaggio).toBe('Contenuto template');
 
     component.messaggio = 'Messaggio custom';
     expect(component.messaggio).toBe('Messaggio custom');
+  });
+
+  it('should populate message with template content when a template is selected', () => {
+    component.messaggio = 'Testo libero precedente';
+
+    component.onTemplateSelected({ id: 2, name: 'Template B', content: 'Body template B' });
+
+    expect(component.messaggio).toBe('Body template B');
   });
 
   it('should open add dialog with provided type', () => {
@@ -66,7 +78,7 @@ describe('SendDocumentDialog', () => {
   it('should close dialog with send payload on confirm', () => {
     const file = new File(['x'], 'allegato.pdf', { type: 'application/pdf' });
     (component as any).attachFileComponent = { files: [file] };
-    component.selectedTemplate = { name: 'Template A', content: 'Body A' };
+    component.selectedTemplate = { id: 99, name: 'Template A', content: 'Body A' };
     component.selectedTime = { name: 'Adesso', value: 'now' };
     component.messaggio = 'Invio documento';
 
@@ -76,8 +88,15 @@ describe('SendDocumentDialog', () => {
       messaggio: 'Invio documento',
       orarioInvio: { name: 'Adesso', value: 'now' },
       fileAttachments: [file],
-      template: 'Template A',
+      templateId: 99,
+      templateName: 'Template A',
     });
+  });
+
+  it('should create a new template when add dialog emits save', () => {
+    component.handleAddSave({ type: 'template', name: 'Nuovo', description: 'Contenuto' });
+
+    expect(aiServiceMock.newTemplate).toHaveBeenCalledWith('Nuovo', 'Contenuto');
   });
 
   it('should handle promptChange emitted from prompt component in template', () => {

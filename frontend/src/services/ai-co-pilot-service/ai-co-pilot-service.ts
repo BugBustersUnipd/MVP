@@ -10,6 +10,21 @@ import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-a
 const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
 const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 
+export interface TemplateOption {
+  id: number;
+  name: string;
+  content: string;
+}
+
+export interface CreateSendingPayload {
+  extracted_document_id: number;
+  recipient_id: number;
+  sent_at: string;
+  subject?: string;
+  body?: string;
+  template_id?: number;
+}
+
 
 @Injectable({
   providedIn: 'root',
@@ -35,7 +50,7 @@ export class AiCoPilotService {
   currentParentPageCounts$ = this.parentPageCountsSubject.asObservable();
 
 
-  private templatesSubject = new BehaviorSubject<{ name: string; content: string }[]>([]);
+  private templatesSubject = new BehaviorSubject<TemplateOption[]>([]);
   templates$ = this.templatesSubject.asObservable();
 
   private categorySubject = new BehaviorSubject<string[]>([]);
@@ -459,11 +474,11 @@ export class AiCoPilotService {
 
   /** POST /templates */
   public newTemplate(name: string, content: string): void {
-    this.http.post<any>(`${API_BASE}/templates`, { name, content }).subscribe({
+    this.http.post<any>(`${API_BASE}/templates`, { subject: name, body: content }).subscribe({
       next: ({ template }) =>
         this.templatesSubject.next([
           ...this.templatesSubject.value,
-          { name: template.name, content: template.content },
+          { id: template.id, name: template.subject, content: template.body },
         ]),
       error: (err) => console.error('Errore nella creazione del template:', err),
     });
@@ -471,10 +486,36 @@ export class AiCoPilotService {
   /** GET /templates */
   public fetchTemplates(): void {
     this.http.get<any>(`${API_BASE}/templates`).subscribe({
-      next: ({ templates }) =>
-        this.templatesSubject.next(templates.map((t: any) => ({ name: t.name, content: t.content }))),
+      next: ({ templates }) => {
+        const baseTemplates = (templates ?? []) as { id: number; subject: string }[];
+
+        if (baseTemplates.length === 0) {
+          this.templatesSubject.next([]);
+          return;
+        }
+
+        forkJoin(
+          baseTemplates.map((template) =>
+            this.http.get<any>(`${API_BASE}/templates/${template.id}`).pipe(
+              map(({ template: fullTemplate }) => ({
+                id: fullTemplate.id,
+                name: fullTemplate.subject,
+                content: fullTemplate.body,
+              }))
+            )
+          )
+        ).subscribe({
+          next: (fullTemplates) => this.templatesSubject.next(fullTemplates),
+          error: (err) => console.error('Errore nel recupero dei dettagli template:', err),
+        });
+      },
       error: (err) => console.error('Errore nel recupero dei template:', err),
     });
+  }
+
+  /** POST /sendings */
+  public createSending$(payload: CreateSendingPayload): Observable<any> {
+    return this.http.post<any>(`${API_BASE}/sendings`, payload);
   }
  
   /*public addCategory() : void {
