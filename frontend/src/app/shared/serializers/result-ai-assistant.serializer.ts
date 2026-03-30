@@ -26,14 +26,6 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
     };
   }
 
-  deserializeCreatedToneResponse(payload: unknown): Tone {
-    return this.deserializeToneItem(payload);
-  }
-
-  deserializeCreatedStyleResponse(payload: unknown): Style {
-    return this.deserializeStyleItem(payload);
-  }
-
   deserializeTonesResponse(payload: unknown): Tone[] {
     return this.deserializeNamedCollection(payload, 'tones');
   }

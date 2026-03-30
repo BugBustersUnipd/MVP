@@ -163,7 +163,7 @@ export class AiAssistantService {
     const payload = this.serializer.serializeNewToneRequest(name, code, companyId);
     this.http.post<any>(`${API_BASE}/tones`, payload).subscribe({
       next: (response) => {
-        const createdTone = this.serializer.deserializeCreatedToneResponse(response);
+        const createdTone = this.serializer.deserializeToneItem(response);
         this.tonesSubject.next(this.upsertById(this.tonesSubject.value, createdTone));
         console.log('Tono creato:', createdTone);
       },
@@ -176,7 +176,7 @@ export class AiAssistantService {
     this.http.post<any>(`${API_BASE}/styles`, payload).subscribe({
       next: (response) => {
         console.log('Risposta alla creazione dello stile:', response);
-        const createdStyle = this.serializer.deserializeCreatedStyleResponse(response);
+        const createdStyle = this.serializer.deserializeStyleItem(response);
         this.stylesSubject.next(this.upsertById(this.stylesSubject.value, createdStyle));
         console.log('Stile creato:', createdStyle);
       },
