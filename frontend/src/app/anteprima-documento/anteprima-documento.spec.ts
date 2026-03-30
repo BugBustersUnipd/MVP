@@ -25,6 +25,7 @@ describe('AnteprimaDocumento', () => {
     otherExtractedDocuments$: new BehaviorSubject<any[]>([]),
     employees$: of([{ id: 1, name: 'Mario' }]),
     fetchTemplates: vi.fn(),
+    fetchExtractedDocument: vi.fn(),
     getDocumentsByParent: vi.fn(),
     getOriginalPdfById: vi.fn(),
     getPdfById: vi.fn(),
@@ -78,6 +79,7 @@ describe('AnteprimaDocumento', () => {
     );
 
     aiServiceMock.fetchTemplates.mockClear();
+    aiServiceMock.fetchExtractedDocument.mockClear();
     aiServiceMock.getDocumentsByParent.mockClear();
     aiServiceMock.getOriginalPdfById.mockClear();
     aiServiceMock.getPdfById.mockClear();
@@ -112,6 +114,7 @@ describe('AnteprimaDocumento', () => {
 
   it('should fetch templates and sibling docs on init', () => {
     expect(aiServiceMock.fetchTemplates).toHaveBeenCalledTimes(1);
+    expect(aiServiceMock.fetchExtractedDocument).toHaveBeenCalledWith(1);
     expect(aiServiceMock.getDocumentsByParent).toHaveBeenCalledWith(11, 1);
     expect(component.extractedEmployeeRows.length).toBe(1);
     expect(component.pages).toBe(10);

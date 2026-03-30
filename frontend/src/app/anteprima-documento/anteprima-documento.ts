@@ -55,6 +55,11 @@ export class AnteprimaDocumento {
     this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
     const currentExtractedDocumentId = this.result?.id;
 
+    if (currentExtractedDocumentId) {
+      // Always refresh from backend on page init to avoid stale history.state after Ctrl+R.
+      this.aiService.fetchExtractedDocument(currentExtractedDocumentId);
+    }
+
     this.aiService.currentResult$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((updated) => {
@@ -192,6 +197,7 @@ export class AnteprimaDocumento {
   private applyIncomingResult(updated: ResultSplit): void {
     this.result = { ...updated };
     this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
+    window.history.replaceState({ ...(history.state ?? {}), result: this.result }, '');
   }
 
   showDialog() {
