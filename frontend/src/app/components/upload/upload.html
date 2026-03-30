@@ -5,6 +5,8 @@
     [accept]="accept"
     [maxFileSize]="maxFileSize"
     (onSelect)="onPrimeSelect($event)"
+    (onRemove)="onPrimeRemove($event)"
+    (onClear)="onPrimeClear()"
     styleClass="custom-p-fileupload">
 
     <ng-template pTemplate="empty">
