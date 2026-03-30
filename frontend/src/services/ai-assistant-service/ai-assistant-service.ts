@@ -399,19 +399,7 @@ export class AiAssistantService {
       companyId: company?.id,
     });
 
-    const pendingResult: ResultAiAssistant = {
-        id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
-        title: '',
-        content: '',
-        imagePath: null,
-        tone: tone,
-        style: style,
-        company: company,
-        data: new Date(),
-        prompt: prompt,
-        evaluation: -1,
-        generatedDatumId: null //per ora non so quale sia sto id del generated datum
-    };
+    const pendingResult = this.buildPendingResult(prompt, tone, style, company);
 
     this.resultSubject.next(pendingResult);
     console.log('[requireGeneration] pending result pubblicato con id temporaneo:', pendingResult.id);
@@ -442,6 +430,22 @@ export class AiAssistantService {
         this.notifyGenerationError(message);
       }
     });
+  }
+
+  private buildPendingResult(prompt: string, tone: Tone, style: Style, company: Company): ResultAiAssistant {
+    return {
+      id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
+      title: '',
+      content: '',
+      imagePath: null,
+      tone,
+      style,
+      company,
+      data: new Date(),
+      prompt,
+      evaluation: -1,
+      generatedDatumId: null //per ora non so quale sia sto id del generated datum
+    };
   }
 
   private subscribeToGenerationChannel(generationId: number): void {
