@@ -112,9 +112,12 @@ export class AiAssistantService {
   companies$ = this.companiesSubject.asObservable();
 
 
-  fetchTonesByCompany(company: number) : void {
-
-    this.http.get<any>(`${API_BASE}/tones`, { params: { company_id: company} }).subscribe({
+  fetchTonesByCompany(company: number, is_active?: boolean) : void {
+    const params: any = { company_id: company };
+    if (is_active !== undefined) {
+      params.is_active = is_active;
+    }
+    this.http.get<any>(`${API_BASE}/tones`, { params }).subscribe({
       next: (response) => {
         const tonesArray = Array.isArray(response) ? response : response.tones || [];
         const tones: Tone[] = tonesArray.map((item: any) => ({ id: item.id, name: item.name }));
@@ -125,8 +128,12 @@ export class AiAssistantService {
     });
   }
   
-  fetchStylesByCompany(company: number) : void {
-    this.http.get<any>(`${API_BASE}/styles`, { params: { company_id: company} }).subscribe({
+  fetchStylesByCompany(company: number, is_active?: boolean) : void {
+    const params: any = { company_id: company };
+    if (is_active !== undefined) {
+      params.is_active = is_active;
+    }
+    this.http.get<any>(`${API_BASE}/styles`, { params }).subscribe({
         next: (response) => {
         const stylesArray = Array.isArray(response) ? response : response.styles || [];
         const styles: Style[] = stylesArray.map((item: any) => ({ id: item.id, name: item.name }));

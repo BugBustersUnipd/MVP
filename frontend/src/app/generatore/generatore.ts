@@ -63,6 +63,13 @@ export class Generatore {
   }
   ngOnInit() {
     this.aiService.fetchCompanies(); //todo
+
+    //questo serve esclusivamente per quando l'azienda e' gia' caricata (per esempio quando si arriva alla pagina da 'Duplica')
+    const companyId = this.selectedCompany?.id || 0;
+    if (companyId > 0) {
+      this.aiService.fetchTonesByCompany(companyId, true);
+      this.aiService.fetchStylesByCompany(companyId, true);
+    }
   }
 
   openAddDialog(type: AddDialogType): void {
@@ -97,8 +104,8 @@ export class Generatore {
 
   onCompanyChange($event: { id: number; name: string } | null): void {
     this.selectedCompany = $event;
-    this.aiService.fetchTonesByCompany(this.selectedCompany?.id);
-    this.aiService.fetchStylesByCompany(this.selectedCompany?.id);
+    this.aiService.fetchTonesByCompany(this.selectedCompany?.id,true);
+    this.aiService.fetchStylesByCompany(this.selectedCompany?.id,true);
 
     this.selectedTone = null;
     this.selectedStyle = null;
