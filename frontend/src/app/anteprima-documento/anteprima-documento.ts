@@ -208,20 +208,64 @@ export class AnteprimaDocumento {
         });
 
     if (this.ref) {
-      this.ref.onClose.subscribe((result: SendDocumentData) =>{
-          if (result) {
-         
-              console.log(result.messaggio);
-              console.log(result.orarioInvio.name);
-              console.log(result.fileAttachments); // Array di File
-              if (result.orarioInvio.value === 'now') {
-                this.messageService.add({severity:'info', summary: 'Invio in corso'});
-              } else 
-                this.messageService.add({severity:'info', summary: 'Invio programmato', detail: result.orarioInvio.name });
-          }
+      this.ref.onClose.subscribe((result: SendDocumentData) => {
+        if (!result || !this.result?.id || !this.result?.recipientId) {
+          return;
+        }
 
+        this.aiService
+          .createSending$({
+            extracted_document_id: this.result.id,
+            recipient_id: this.result.recipientId,
+            sent_at: this.resolveSentAt(result.orarioInvio.value).toISOString(),
+            subject: result.templateName || `Invio documento ${this.result.name ?? ''}`.trim(),
+            body: result.messaggio,
+            template_id: result.templateId,
+          })
+          .subscribe({
+            next: () => {
+              if (result.orarioInvio.value === 'now') {
+                this.messageService.add({ severity: 'success', summary: 'Invio in corso' });
+              } else {
+                this.messageService.add({ severity: 'success', summary: 'Invio programmato', detail: result.orarioInvio.name });
+              }
+            },
+            error: (error) => {
+              console.error('Errore durante creazione invio:', error);
+              this.messageService.add({ severity: 'error', summary: 'Errore durante invio documento' });
+            },
+          });
       });
     }
+  }
+
+  private resolveSentAt(optionValue: string): Date {
+    const now = new Date();
+    if (optionValue === 'now') {
+      return now;
+    }
+
+    const scheduled = new Date(now);
+    scheduled.setHours(9, 0, 0, 0);
+
+    if (optionValue === 'tomorrow_9am') {
+      scheduled.setDate(scheduled.getDate() + 1);
+      return scheduled;
+    }
+
+    if (optionValue === 'day_after_9am') {
+      scheduled.setDate(scheduled.getDate() + 2);
+      return scheduled;
+    }
+
+    if (optionValue === 'monday_9am') {
+      const day = scheduled.getDay();
+      const daysUntilMonday = (8 - day) % 7 || 7;
+      scheduled.setDate(scheduled.getDate() + daysUntilMonday);
+      return scheduled;
+    }
+
+    return now;
   }
 
   enableEditing(): void{

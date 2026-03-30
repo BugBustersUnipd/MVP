@@ -32,6 +32,7 @@ describe('AnteprimaDocumento', () => {
     updateResult: vi.fn(),
     updateDocumentMetadata: vi.fn(),
     modifyDocumentRange: vi.fn(),
+    createSending$: vi.fn(() => of({ status: 'ok' })),
   };
 
   const dialogRefMock = {
@@ -84,6 +85,7 @@ describe('AnteprimaDocumento', () => {
     aiServiceMock.updateResult.mockClear();
     aiServiceMock.updateDocumentMetadata.mockClear();
     aiServiceMock.modifyDocumentRange.mockClear();
+    aiServiceMock.createSending$.mockClear();
     dialogServiceMock.open.mockClear();
     messageServiceMock.add.mockClear();
 
@@ -204,6 +206,31 @@ describe('AnteprimaDocumento', () => {
   it('should open send dialog', () => {
     component.showDialog();
     expect(dialogServiceMock.open).toHaveBeenCalled();
+  });
+
+  it('should call createSending$ when send dialog returns data', () => {
+    dialogServiceMock.open.mockReturnValueOnce({
+      onClose: of({
+        messaggio: 'Test invio',
+        orarioInvio: { name: 'Adesso', value: 'now' },
+        fileAttachments: [],
+        templateId: 1,
+        templateName: 'Template Test',
+      }),
+    } as any);
+
+    component.showDialog();
+
+    expect(aiServiceMock.createSending$).toHaveBeenCalledTimes(1);
+    expect(aiServiceMock.createSending$).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extracted_document_id: 1,
+        recipient_id: 2,
+        subject: 'Template Test',
+        body: 'Test invio',
+        template_id: 1,
+      })
+    );
   });
 
   it('should react to doc-summary output bindings in template', () => {
