@@ -160,38 +160,39 @@ export class AiAssistantService {
     });
   }
   newTone(name: string, code: string, companyId: number) : void {
-    this.http.post<any>(`${API_BASE}/tones`, {
-      tone: {
-        name: name,
-        description: code,
-        company_id: companyId
-      }
-    }).subscribe({
+    const payload = this.serializer.serializeNewToneRequest(name, code, companyId);
+    this.http.post<any>(`${API_BASE}/tones`, payload).subscribe({
       next: (response) => {
-        const mockTone = { id: response.id, name };
-        this.tonesSubject.next([...this.tonesSubject.value, mockTone]);
-        console.log('Tono creato:', mockTone);
+        const createdTone = this.serializer.deserializeCreatedToneResponse(response);
+        this.tonesSubject.next(this.upsertById(this.tonesSubject.value, createdTone));
+        console.log('Tono creato:', createdTone);
       },
       error: (err) => console.error('Errore nella creazione del tono:', err),
     });
   }
 
   newStyle(name: string, code: string, companyId: number) : void {
-    this.http.post<any>(`${API_BASE}/styles`, {
-      style: {
-        name: name,
-        description: code,
-        company_id: companyId
-      }
-    }).subscribe({
+    const payload = this.serializer.serializeNewStyleRequest(name, code, companyId);
+    this.http.post<any>(`${API_BASE}/styles`, payload).subscribe({
       next: (response) => {
         console.log('Risposta alla creazione dello stile:', response);
-        const mockStyle = { id: response.id, name };
-        this.stylesSubject.next([...this.stylesSubject.value, mockStyle]);
-        console.log('Stile creato:', mockStyle);
+        const createdStyle = this.serializer.deserializeCreatedStyleResponse(response);
+        this.stylesSubject.next(this.upsertById(this.stylesSubject.value, createdStyle));
+        console.log('Stile creato:', createdStyle);
       },
       error: (err) => console.error('Errore nella creazione dello stile:', err),
     });
+  }
+
+  private upsertById<T extends { id: number }>(list: T[], item: T): T[] {
+    const existingIndex = list.findIndex((entry) => entry.id === item.id);
+    if (existingIndex < 0) {
+      return [...list, item];
+    }
+
+    const next = [...list];
+    next[existingIndex] = item;
+    return next;
   }
 
   removeTone(id: number) : void {

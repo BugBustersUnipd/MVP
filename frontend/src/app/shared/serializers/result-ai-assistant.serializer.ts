@@ -6,6 +6,34 @@ import { Tone, Style, Company } from '../models/result-ai-assistant.model';
   providedIn: 'root'
 })
 export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssistant> {
+  serializeNewToneRequest(name: string, code: string, companyId: number): { tone: { name: string; description: string; company_id: number } } {
+    return {
+      tone: {
+        name,
+        description: code,
+        company_id: companyId
+      }
+    };
+  }
+
+  serializeNewStyleRequest(name: string, code: string, companyId: number): { style: { name: string; description: string; company_id: number } } {
+    return {
+      style: {
+        name,
+        description: code,
+        company_id: companyId
+      }
+    };
+  }
+
+  deserializeCreatedToneResponse(payload: unknown): Tone {
+    return this.deserializeToneItem(payload);
+  }
+
+  deserializeCreatedStyleResponse(payload: unknown): Style {
+    return this.deserializeStyleItem(payload);
+  }
+
   deserializeTonesResponse(payload: unknown): Tone[] {
     return this.deserializeNamedCollection(payload, 'tones');
   }
