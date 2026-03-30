@@ -157,12 +157,14 @@ export class StoricoAiAssistant {
     const hasSearch = rawSearch.length > 0;
 
     const filtrate = this.Generazioni.filter(g => {
+      const titleForSearch = this.normalizeForSearch(g.title);
       const contentForSearch = this.normalizeForSearch(g.content);
       const promptForSearch = this.normalizeForSearch(g.prompt);
 
       const matchSearch = !hasSearch
         ? true
         : (normalizedSearch.length > 0 && (
+            titleForSearch.includes(normalizedSearch) ||
             promptForSearch.includes(normalizedSearch) ||
             g.tone.name.toLowerCase().includes(normalizedSearch) ||
             g.style.name.toLowerCase().includes(normalizedSearch) ||
