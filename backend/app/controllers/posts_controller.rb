@@ -29,9 +29,9 @@ class PostsController < ApplicationController
 
   def post_params
     if params[:post].present?
-      params.require(:post).permit(:title, :body_text, :img_path, :date_time, :generated_datum_id)
+      params.require(:post).permit(:title, :body_text, :date_time, :generated_datum_id)
     else
-      params.permit(:title, :body_text, :img_path, :date_time, :generated_datum_id)
+      params.permit(:title, :body_text, :date_time, :generated_datum_id)
     end
   end
 end

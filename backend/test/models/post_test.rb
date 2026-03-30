@@ -42,14 +42,22 @@ class PostTest < ActiveSupport::TestCase
     assert_equal "Long post content goes here", post.reload.body_text
   end
 
-  test "img_path is optional" do
-    post = build_post(img_path: nil)
-    assert post.valid?
+  test "has_one_attached post_image" do
+    post = build_post
+    assert_respond_to post, :post_image
   end
 
-  test "img_path can be set" do
-    post = build_post(img_path: "/images/post_img.jpg")
+  test "post_image can be attached" do
+    post = build_post
     post.save!
-    assert_equal "/images/post_img.jpg", post.reload.img_path
+
+    base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PaAAAADElEQVQIHWP4z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+    post.post_image.attach(
+      io: StringIO.new(Base64.decode64(base64)),
+      filename: "post_image.png",
+      content_type: "image/png"
+    )
+
+    assert post.reload.post_image.attached?
   end
 end

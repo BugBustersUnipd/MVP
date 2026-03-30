@@ -7,7 +7,7 @@ class PostSerializer
           id: post.id,
           title: post.title,
           PostText: post.body_text,
-          imgPath: post.img_path,
+          imgPath: image_path(post),
           dateTime: post.date_time&.iso8601,
           generatedDatumId: post&.generated_datum_id,
           toneId: generation&.tone_id,
@@ -21,5 +21,11 @@ class PostSerializer
         }
       end
     }
+  end
+
+  def self.image_path(post)
+    return nil unless post.post_image.attached?
+
+    Rails.application.routes.url_helpers.rails_blob_path(post.post_image, only_path: true)
   end
 end
