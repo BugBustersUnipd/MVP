@@ -1,5 +1,5 @@
 
-<p-accordion>
+<p-accordion [(value)]="activeValues" [multiple]="true">
   @for (doc of documents; track doc.id) {
     <p-accordion-panel [value]="doc.id!.toString()">
       <p-accordion-header>
