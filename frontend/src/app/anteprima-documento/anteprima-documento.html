@@ -24,7 +24,7 @@
 
             <div class="d-flex justify-content-end">
 
-                <app-button label="Invia il documento" class="genera btn btn-primary" (action)="showDialog()"></app-button>
+                <app-button label="Invia il documento" class="genera btn btn-primary" [disabled]="!hasRecipientMatch" (action)="showDialog()"></app-button>
             </div>
         </div>
         <div class="other-info-container">

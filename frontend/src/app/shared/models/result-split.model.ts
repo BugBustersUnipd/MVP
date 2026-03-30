@@ -5,8 +5,10 @@ export interface ResultSplit extends Result {
     name: string;
     state: State;
     confidence: number;
+    fieldConfidences: Record<string, number>;
     recipientId: number;
     recipientName: string;
+    rawRecipientName: string;
     recipientEmail: string;
     recipientCode: string;
     time_Analysis: number;

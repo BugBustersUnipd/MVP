@@ -8,38 +8,60 @@
 		></app-button>
 	</div>
 
-	<p-table [value]="rows" [tableStyle]="{ 'min-width': '40rem' }">
-		<ng-template pTemplate="header">
-			<tr>
-				<th>Nominativo</th>
-				<th>Username</th>
-				<th>Email</th>
-				<th class="action-column">Azioni</th>
-			</tr>
-		</ng-template>
+	@if (rows.length === 0) {
+		<p class="empty-message">Nessun destinatario estratto</p>
+	}
 
-		<ng-template pTemplate="body" let-row let-rowIndex="rowIndex">
-			<tr>
-				<td>{{ row.name }}</td>
-				<td>{{ row.employeeCode }}</td>
-				<td>{{ row.email }}</td>
-				<td class="action-column">
-					<p-button
-						icon="pi pi-trash"
-						severity="secondary"
-						[text]="true"
-						[rounded]="true"
-						(onClick)="requestRowRemoval(rowIndex)"
-						[attr.aria-label]="'Elimina destinatario'"
-					></p-button>
-				</td>
-			</tr>
-		</ng-template>
+	@for (row of rows; track $index) {
+		<div class="recipient-card">
 
-		<ng-template pTemplate="emptymessage">
-			<tr>
-				<td colspan="4" class="empty-message">Nessun destinatario estratto</td>
-			</tr>
-		</ng-template>
-	</p-table>
+			<!-- Nome grezzo estratto dal LLM -->
+			<div class="extracted-name-section mb-3">
+				<span class="field-label">Nome estratto (LLM)</span>
+				<div class="extracted-name-row">
+					<span class="extracted-name-value">{{ row.rawName || 'Non disponibile' }}</span>
+					@if (row.recipientConfidence !== null) {
+						<span class="recipient-confidence-pill">{{ row.recipientConfidence }}%</span>
+					}
+				</div>
+			</div>
+
+			<hr class="divider" />
+
+			<!-- Destinatario matchato dal DB -->
+			<div class="matched-section">
+				<span class="field-label mb-2 d-block">Destinatario matchato</span>
+				@if (row.hasMatch) {
+					<div class="matched-grid">
+						<div class="matched-field">
+							<span class="matched-field-label">Nominativo</span>
+							<span class="matched-field-value">{{ row.name || '-' }}</span>
+						</div>
+						<div class="matched-field">
+							<span class="matched-field-label">Username</span>
+							<span class="matched-field-value">{{ row.employeeCode || '-' }}</span>
+						</div>
+						<div class="matched-field">
+							<span class="matched-field-label">Email</span>
+							<span class="matched-field-value">{{ row.email || '-' }}</span>
+						</div>
+					</div>
+				} @else {
+					<p class="no-match-message">Nessun dipendente trovato nel database</p>
+				}
+			</div>
+
+			<div class="d-flex justify-content-end mt-3">
+				<p-button
+					icon="pi pi-trash"
+					severity="secondary"
+					[text]="true"
+					[rounded]="true"
+					(onClick)="requestRowRemoval($index)"
+					[attr.aria-label]="'Elimina destinatario'"
+				></p-button>
+			</div>
+
+		</div>
+	}
 </div>

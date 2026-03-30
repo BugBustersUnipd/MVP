@@ -43,8 +43,10 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
       name: documentName,
       state: this.mapStatus(raw.status),
       confidence: this.normalizeConfidence(raw.confidence),
+      fieldConfidences: this.normalizeFieldConfidences(raw.confidence),
       recipientId: raw.matched_employee?.id ?? 0,
       recipientName: recipientName,
+      rawRecipientName: raw.recipient ?? '',
       recipientEmail: raw.matched_employee?.email ?? '',
       recipientCode: raw.matched_employee?.employee_code ?? '',
       time_Analysis: raw.process_time_seconds ?? 0,
@@ -75,7 +77,7 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
     if (confidence && typeof confidence === 'object') {
       const values = Object.values(confidence as Record<string, unknown>)
         .map((v) => (typeof v === 'number' ? v : Number(v)))
-        .filter((v) => Number.isFinite(v));
+        .filter((v) => Number.isFinite(v) && v > 0);
 
       if (values.length === 0) return 0;
 
@@ -84,6 +86,17 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
     }
 
     return 0;
+  }
+
+  private normalizeFieldConfidences(confidence: unknown): Record<string, number> {
+    if (!confidence || typeof confidence !== 'object') return {};
+    return Object.fromEntries(
+      Object.entries(confidence as Record<string, unknown>).map(([k, v]) => {
+        const num = typeof v === 'number' ? v : Number(v);
+        const pct = Number.isFinite(num) ? (num <= 1 ? Math.round(num * 100) : Math.round(num)) : 0;
+        return [k, pct];
+      })
+    );
   }
 
 // ─── helpers ──────────────────────────────────────────────────────────────

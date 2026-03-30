@@ -4,11 +4,10 @@ import { Button } from '../button/button';
 import { StatusPill } from '../status-pill/status-pill';
 import { ResultSplit } from '../../shared/models/result-split.model';
 import { PageRangeInput } from '../page-range-input/page-range-input';
-import { PdfPreview } from '../pdf-preview/pdf-preview';
 import { CommonModule } from '@angular/common';
 @Component({
   selector: 'bb-doc-summary',
-  imports: [InputComponent, Button, StatusPill, PageRangeInput, PdfPreview, CommonModule],
+  imports: [InputComponent, Button, StatusPill, PageRangeInput, CommonModule],
   templateUrl: './doc-summary.html',
   styleUrl: './doc-summary.css',
 })
@@ -21,7 +20,14 @@ export class DocSummary {
   @Output() openSplitPdf = new EventEmitter<void>();
   @Output() fieldModified = new EventEmitter<{ field: keyof ResultSplit; value: string | number | undefined }>();
 
-  pdfUrl: string = 'prova.pdf';
+  getFieldConfidence(...keys: string[]): number | null {
+    const conf = this.result?.fieldConfidences;
+    if (!conf) return null;
+    for (const key of keys) {
+      if (key in conf && conf[key] > 0) return conf[key];
+    }
+    return null;
+  }
 
   getFieldValue(field: keyof ResultSplit, fallback: string = 'Non trovato'): string | number {
     const modified = this.pendingModifications[field];

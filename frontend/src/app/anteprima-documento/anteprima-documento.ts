@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { DocSummary } from '../components/doc-summary/doc-summary';
 import { ExtractedEmployeeInfo, ExtractedEmployeeInfoRow } from '../components/extracted-employee-info/extracted-employee-info';
-import { ResultSplit } from '../shared/models/result-split.model';
+import { ResultSplit, State } from '../shared/models/result-split.model';
 import { Button } from '../components/button/button';
 // da togliere
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -179,13 +179,17 @@ export class AnteprimaDocumento {
       return [];
     }
 
+    const recipientConf = result.fieldConfidences?.['recipient'] ?? 0;
     const row: ExtractedEmployeeInfoRow = {
       name: result.recipientName ?? '',
+      rawName: result.rawRecipientName ?? '',
+      hasMatch: (result.recipientId ?? 0) > 0,
+      recipientConfidence: recipientConf > 0 ? recipientConf : null,
       employeeCode: result.recipientCode ?? '',
       email: result.recipientEmail ?? '',
     };
 
-    const isEmptyRow = Object.values(row).every((value) => !value?.trim());
+    const isEmptyRow = !row.name && !row.rawName && !row.employeeCode && !row.email;
     return isEmptyRow ? [] : [row];
   }
 
@@ -224,6 +228,12 @@ export class AnteprimaDocumento {
           })
           .subscribe({
             next: () => {
+              const sentAt = this.resolveSentAt(result.orarioInvio.value);
+              const newState = sentAt > new Date() ? State.Programmato : State.Inviato;
+              if (this.result) {
+                this.result = { ...this.result, state: newState };
+                this.aiService.updateResult(this.result);
+              }
               if (result.orarioInvio.value === 'now') {
                 this.messageService.add({ severity: 'success', summary: 'Invio in corso' });
               } else {
@@ -281,6 +291,10 @@ export class AnteprimaDocumento {
 
   get hasPendingModifications(): boolean {
     return Object.keys(this.pendingModifications).length > 0;
+  }
+
+  get hasRecipientMatch(): boolean {
+    return (this.result?.recipientId ?? 0) > 0;
   }
 
   private normalizeValue(value: string | number | undefined | null): string {

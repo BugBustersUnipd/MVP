@@ -17,34 +17,46 @@
 
         <div class="row">
 
-            <div class="col-md-5 mb-4">
-                <div class="pdf-preview d-flex align-items-center justify-content-center">
-                    <!-- qui probabilmente si fa un componente specifico, per ora lascio ocsì -->
-                    <bb-pdf-preview [pdfUrl]="pdfUrl"></bb-pdf-preview>
-                    <!-- <span class="text-muted">PDF Preview</span> -->
-                </div>
-            </div>
-
-            <div class="col-md-7">
+            <div class="col-md-12">
 
                 <div class="mb-3">
                     <label class="label">Categoria</label>
-                    <app-input [editable]="editable" [value]="getFieldValue('category')" (valueChange)="onFieldChange('category', $event)"></app-input>
+                    <div class="field-with-confidence">
+                        <app-input [editable]="editable" [value]="getFieldValue('category')" (valueChange)="onFieldChange('category', $event)"></app-input>
+                        @if (getFieldConfidence('type'); as conf) {
+                            <span class="field-confidence-pill">{{ conf }}%</span>
+                        }
+                    </div>
                 </div>
 
                 <div class="mb-3">
                     <label class="label">Azienda</label>
-                    <app-input [editable]="editable" [value]="getFieldValue('company')" (valueChange)="onFieldChange('company', $event)"></app-input>
+                    <div class="field-with-confidence">
+                        <app-input [editable]="editable" [value]="getFieldValue('company')" (valueChange)="onFieldChange('company', $event)"></app-input>
+                        @if (getFieldConfidence('company'); as conf) {
+                            <span class="field-confidence-pill">{{ conf }}%</span>
+                        }
+                    </div>
                 </div>
 
                 <div class="mb-3">
                     <label class="label">Reparto</label>
-                    <app-input [editable]="editable" [value]="getFieldValue('department')" (valueChange)="onFieldChange('department', $event)"></app-input>
+                    <div class="field-with-confidence">
+                        <app-input [editable]="editable" [value]="getFieldValue('department')" (valueChange)="onFieldChange('department', $event)"></app-input>
+                        @if (getFieldConfidence('department'); as conf) {
+                            <span class="field-confidence-pill">{{ conf }}%</span>
+                        }
+                    </div>
                 </div>
 
                 <div class="mb-3">
                     <label class="label">Mese/Anno</label>
-                    <app-input [editable]="editable" [value]="getMonthYearValue()" (valueChange)="onFieldChange('month_year', $event)"></app-input>
+                    <div class="field-with-confidence">
+                        <app-input [editable]="editable" [value]="getMonthYearValue()" (valueChange)="onFieldChange('month_year', $event)"></app-input>
+                        @if (getFieldConfidence('competence', 'date'); as conf) {
+                            <span class="field-confidence-pill">{{ conf }}%</span>
+                        }
+                    </div>
                 </div>
 
             </div>

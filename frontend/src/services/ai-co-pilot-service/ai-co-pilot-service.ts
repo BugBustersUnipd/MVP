@@ -33,6 +33,7 @@ export class AiCoPilotService {
   private http = inject(HttpClient);
   private serializer = inject(ResultAiCopilotSerializer);
   private tempParentId = -1;
+  private scheduledDocuments = new Map<number, Date>();
   
   private resultSubject : BehaviorSubject<ResultSplit | null> = new BehaviorSubject<ResultSplit | null>(null);
   currentResult$ = this.resultSubject.asObservable();
@@ -331,14 +332,24 @@ export class AiCoPilotService {
     if (current[parentId] === normalized) return;
     this.parentPageCountsSubject.next({ ...current, [parentId]: normalized });
   }
+  private resolveScheduledState(split: ResultSplit): ResultSplit {
+    if (split.state !== State.Inviato || !split.id) return split;
+    const scheduledAt = this.scheduledDocuments.get(split.id);
+    if (!scheduledAt) return split;
+    if (scheduledAt > new Date()) return { ...split, state: State.Programmato };
+    this.scheduledDocuments.delete(split.id);
+    return split;
+  }
+
   private upsertInHistory(split: ResultSplit): void {
+    const resolved = this.resolveScheduledState(split);
     const current = this.resultsHistorySubject.value ?? [];
-    const idx = current.findIndex((r) => r.id === split.id);
+    const idx = current.findIndex((r) => r.id === resolved.id);
     if (idx === -1) {
-      this.resultsHistorySubject.next([...current, split]);
+      this.resultsHistorySubject.next([...current, resolved]);
     } else {
       const copy = [...current];
-      copy[idx] = split;
+      copy[idx] = resolved;
       this.resultsHistorySubject.next(copy);
     }
     this.refreshDynamicFilterOptions();
@@ -515,7 +526,14 @@ export class AiCoPilotService {
 
   /** POST /sendings */
   public createSending$(payload: CreateSendingPayload): Observable<any> {
-    return this.http.post<any>(`${API_BASE}/sendings`, payload);
+    return this.http.post<any>(`${API_BASE}/sendings`, payload).pipe(
+      tap(() => {
+        const sentAt = new Date(payload.sent_at);
+        if (sentAt > new Date()) {
+          this.scheduledDocuments.set(payload.extracted_document_id, sentAt);
+        }
+      })
+    );
   }
  
   /*public addCategory() : void {
