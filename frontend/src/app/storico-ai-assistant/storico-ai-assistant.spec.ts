@@ -21,11 +21,15 @@ describe('StoricoAiAssistant', () => {
   const aiAssistantServiceMock = {
     tones$: null as any,
     styles$: null as any,
+    companies$: null as any,
     currentResultsHistory$: null as any,
     fetchTonesByCompany: vi.fn(),
     fetchStylesByCompany: vi.fn(),
+    fetchCompanies: vi.fn(),
     fetchResultsHistory: vi.fn(),
     setCurrentResult: vi.fn(),
+    deletePost: vi.fn(),
+    reuse: vi.fn(),
   };
 
   const routerMock = {
@@ -38,11 +42,15 @@ describe('StoricoAiAssistant', () => {
     history$ = new BehaviorSubject<any[]>([]);
     aiAssistantServiceMock.tones$ = tones$;
     aiAssistantServiceMock.styles$ = styles$;
+    aiAssistantServiceMock.companies$ = new BehaviorSubject<any[]>([]);
     aiAssistantServiceMock.currentResultsHistory$ = history$;
     aiAssistantServiceMock.fetchTonesByCompany.mockClear();
     aiAssistantServiceMock.fetchStylesByCompany.mockClear();
+    aiAssistantServiceMock.fetchCompanies.mockClear();
     aiAssistantServiceMock.fetchResultsHistory.mockClear();
     aiAssistantServiceMock.setCurrentResult.mockClear();
+    aiAssistantServiceMock.deletePost.mockClear();
+    aiAssistantServiceMock.reuse.mockClear();
     routerMock.navigate.mockClear();
 
     await TestBed.configureTestingModule({
@@ -58,6 +66,10 @@ describe('StoricoAiAssistant', () => {
     fixture = TestBed.createComponent(StoricoAiAssistant);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
   });
 
   it('should create', () => {
@@ -85,7 +97,9 @@ describe('StoricoAiAssistant', () => {
     expect(aiAssistantServiceMock.fetchResultsHistory).toHaveBeenCalled();
     expect(component.tonoOptions.length).toBe(1);
     expect(component.stileOptions.length).toBe(1);
-    expect(component.GenerazioniFiltrate.length).toBe(1);
+    let filtrate: any[] = [];
+    component.GenerazioniFiltrate$.subscribe(f => filtrate = f);
+    expect(filtrate.length).toBe(1);
   });
 
   it('should apply search and dropdown filters', () => {
@@ -108,7 +122,9 @@ describe('StoricoAiAssistant', () => {
     component.onTonoChange(1);
     component.onStileChange(2);
 
-    expect(component.GenerazioniFiltrate.length).toBe(1);
+    let filtrate: any[] = [];
+    component.GenerazioniFiltrate$.subscribe(f => filtrate = f);
+    expect(filtrate.length).toBe(1);
   });
 
   it('should filter by date range', () => {
@@ -119,8 +135,10 @@ describe('StoricoAiAssistant', () => {
 
     component.onDateChange([new Date('2025-01-01'), new Date('2025-01-31')]);
 
-    expect(component.GenerazioniFiltrate.length).toBe(1);
-    expect(component.GenerazioniFiltrate[0].id).toBe(1);
+    let filtrate: any[] = [];
+    component.GenerazioniFiltrate$.subscribe(f => filtrate = f);
+    expect(filtrate.length).toBe(1);
+    expect(filtrate[0].id).toBe(1);
   });
 
   it('should navigate to generatore and result detail', () => {
@@ -149,13 +167,13 @@ describe('StoricoAiAssistant', () => {
 
     filters[0].componentInstance.searchvalueChange.emit('query');
     filters[1].componentInstance.datesChange.emit([new Date('2025-01-01'), new Date('2025-01-31')]);
-    filters[2].componentInstance.selectedTextOptionChange.emit(1);
-    filters[3].componentInstance.selectedTextOptionChange.emit(2);
+    filters[3].componentInstance.selectedTextOptionChange.emit('Formale');
+    filters[4].componentInstance.selectedTextOptionChange.emit('Sintetico');
 
     expect(component.searchvalue).toBe('query');
     expect(component.dates?.length).toBe(2);
-    expect(component.selectedTono).toBe(1);
-    expect(component.selectedStile).toBe(2);
+    expect(component.selectedTono).toBe('Formale');
+    expect(component.selectedStile).toBe('Sintetico');
   });
 
   it('should handle template events from tables and button', () => {

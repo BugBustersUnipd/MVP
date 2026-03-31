@@ -10,6 +10,7 @@ describe('AiCoPilotAnalyticsService', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -32,7 +33,7 @@ describe('AiCoPilotAnalyticsService', () => {
       collected.push(metrics);
     });
 
-    const request = httpMock.expectOne('/ai_copilot_data_analyst');
+    const request = httpMock.expectOne('http://localhost:3000/ai_copilot_data_analyst');
     expect(request.request.method).toBe('GET');
 
     request.flush({
@@ -60,7 +61,7 @@ describe('AiCoPilotAnalyticsService', () => {
       collected.push(metrics);
     });
 
-    const request = httpMock.expectOne('/ai_copilot_data_analyst');
+    const request = httpMock.expectOne('http://localhost:3000/ai_copilot_data_analyst');
     request.flush('failure', { status: 500, statusText: 'Server Error' });
 
     expect(collected.at(-1)).toEqual([]);
@@ -70,7 +71,7 @@ describe('AiCoPilotAnalyticsService', () => {
     service.getAnalysis({ periodoKey: 'custom', startDate: new Date('2026-01-01'), endDate: new Date('2026-01-31') }).subscribe();
 
     const request = httpMock.expectOne((r) =>
-      r.url === '/ai_copilot_data_analyst' &&
+      r.url === 'http://localhost:3000/ai_copilot_data_analyst' &&
       r.params.has('start_date') &&
       r.params.has('end_date')
     );
@@ -93,7 +94,7 @@ describe('AiCoPilotAnalyticsService', () => {
       collected.push(metrics);
     });
 
-    const request = httpMock.expectOne('/ai_copilot_data_analyst');
+    const request = httpMock.expectOne('http://localhost:3000/ai_copilot_data_analyst');
     request.flush({
       status: 'success',
       data: {

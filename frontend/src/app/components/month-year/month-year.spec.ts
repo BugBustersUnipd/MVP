@@ -16,6 +16,10 @@ describe('MonthYearComponent', () => {
 		await fixture.whenStable();
 	});
 
+	afterEach(() => {
+		fixture?.destroy();
+	});
+
 	it('should create', () => {
 		expect(component).toBeTruthy();
 	});

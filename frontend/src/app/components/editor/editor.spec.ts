@@ -9,6 +9,7 @@ describe('Editor', () => {
   let fixture: ComponentFixture<Editor>;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [Editor]
     })

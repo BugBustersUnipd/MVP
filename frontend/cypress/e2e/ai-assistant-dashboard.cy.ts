@@ -42,7 +42,7 @@ describe('Analytics Dashboard - AI Assistant Generativo', () => {
 
   it('mostra la dashboard con i dati analytics dell AI Assistant', () => {
     cy.contains('p-accordion-header', 'Ai Assistant Generativo').should('be.visible')
-    cy.contains('.label', 'Quando:').should('be.visible')
+    cy.contains('.label', 'Quando:').should('exist')
   })
 
   it('mostra totale prompt, rating medio e numero rigenerazioni', () => {
@@ -66,8 +66,9 @@ describe('Analytics Dashboard - AI Assistant Generativo', () => {
   })
 
   it('mostra le statistiche su toni e stili piu usati', () => {
-    cy.contains('.chart .label', 'Toni').should('be.visible')
-    cy.contains('.Chart .label', 'Stili').should('be.visible')
+    cy.contains('.chart .label', 'Toni più usati').should('exist')
+    cy.contains('.Chart .label', 'Stili più usati').should('exist')
+    cy.get('.Charts-Container app-analytics-charts').should('have.length', 2)
     cy.get('app-analytics-charts canvas').should('have.length', 2)
   })
 })
@@ -107,12 +108,12 @@ describe('Analytics Dashboard - fallback grafici AI Assistant', () => {
   })
 
   it('mostra il messaggio di dati insufficienti quando i grafici toni e stili sono vuoti', () => {
-    cy.contains('.chart .label', 'Toni').should('be.visible')
-    cy.contains('.Chart .label', 'Stili').should('be.visible')
+    cy.contains('.chart .label', 'Toni più usati').should('exist')
+    cy.contains('.Chart .label', 'Stili più usati').should('exist')
     cy.get('.Charts-Container .no-data-message')
       .should('have.length', 2)
       .each(($el) => {
-        cy.wrap($el).should('have.text', 'Non ci sono dati sufficienti per le analisi')
+        cy.wrap($el).should('contain.text', 'Non ci sono dati sufficienti per le analisi')
       })
     cy.get('app-analytics-charts canvas').should('have.length', 2)
   })

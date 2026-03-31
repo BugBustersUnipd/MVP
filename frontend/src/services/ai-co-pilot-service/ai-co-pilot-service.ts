@@ -4,7 +4,6 @@ import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-a
 import { ResultSplit, State} from '../../app/shared/models/result-split.model';
 import { BehaviorSubject, map, Observable, switchMap, tap, forkJoin } from 'rxjs';
 import { Company } from '../../app/shared/models/result-ai-assistant.model';
-import { RisultatoGenerazione } from '../../app/risultato-generazione/risultato-generazione';
 import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-ai-copilot.model';
 
 const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
@@ -34,7 +33,12 @@ export class AiCoPilotService {
   private serializer = inject(ResultAiCopilotSerializer);
   private tempParentId = -1;
   private scheduledDocuments = new Map<number, Date>();
-  private currentBatchTempIds = new Set<number>();
+
+  /*Servono per fare in modo che quando carico un documento, questo appaia subito in lista con uno stato "In coda" anche prima che il backend mi risponda con l'id reale del documento caricato. 
+  Uso id negativi temporanei per identificare questi documenti "pending" in attesa della risposta del backend, e poi li sostituisco con gli id reali appena arrivano. 
+  In questo modo la UI può mostrare immediatamente i documenti caricati senza dover aspettare la risposta del backend, 
+  migliorando l'esperienza utente soprattutto con file di grandi dimensioni che richiedono più tempo per essere processati.*/
+  private currentBatchTempIds = new Set<number>();  
   private currentBatchParentIdsSubject = new BehaviorSubject<Set<number>>(new Set());
   currentBatchParentIds$ = this.currentBatchParentIdsSubject.asObservable();
   
@@ -80,121 +84,36 @@ export class AiCoPilotService {
 
 
   public uploadFiles(files: File[], company: string, department: string, category: string, competence_period: string): void {
-    this.currentBatchTempIds.clear();
-    this.currentBatchParentIdsSubject.next(new Set());
-    for (const file of files) {
-      const temporaryParentId = this.addPendingParent(file);
-      this.currentBatchTempIds.add(temporaryParentId);
-      this.processDocument(file, company, department, category, competence_period, temporaryParentId);
+    this.currentBatchTempIds.clear(); //cleara gli id assegnati temporaneamente.
+    this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds)); //notifica tutti i subscriber che la batch è cambiata (ora vuota)
+    for (const file of files) { 
+      const temporaryParentId = this.addPendingParent(file); // crea un parent temporaneo con id negativo
+      this.currentBatchTempIds.add(temporaryParentId); // tiene traccia degli id temporanei assegnati in questa batch
+      this.processDocument(file, company, department, category, competence_period, temporaryParentId); // chiamata a procesDocument
     }
-    this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds));
+    this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds)); // notifica tutti i subscriber con gli id temporanei appena creati, la UI fa vedere i documenti IN CODA intanto.
   }
 
-  // ESEMPIO DI COME DOVRÀ ESSERE IMPLEMENTATO IL METODO PROCESSDOCUMENT
-  /* processDocument(file: File, company: string, department: string, category: string, competence_period: string): ResultAiSplit {
-    // 1. CREAZIONE ISTANTANEA: Uso il Serializer per creare l'oggetto iniziale.
-    // Immagino tu abbia un metodo nel Serializer per lo stato iniziale (es. uploading)
-    const risultatoReattivo = this.serializer.creaStatoIniziale(file);
-
-    const formData = new FormData();
-    formData.append('pdf', file);
-
-    // 2. Faccio l'upload
-    this.http.post<any>('URL_API/documents/split', formData).subscribe({
-      next: (rispostaPost) => {
-        // Aggiorno l'oggetto in memoria
-        risultatoReattivo.jobId = rispostaPost.job_id;
-        risultatoReattivo.status = 'processing'; 
-
-        // 3. Apro il WebSocket
-        this.webSocketService.connetti(rispostaPost.job_id).subscribe({
-          next: (messaggioWs) => {
-            
-            if (messaggioWs.event === 'document_processed') {
-              // IL CUORE DELLA LOGICA:
-              // 1. Passo i dati grezzi del mini-PDF al Serializer
-              const nuovoMiniPdf = this.serializer.deserializeMiniPdf(messaggioWs.extracted_document_data);
-              
-              // 2. Lo aggiungo all'array dentro il mio risultato principale
-              risultatoReattivo.miniPdfsEstratti.push(nuovoMiniPdf);
-            }
-            
-            if (messaggioWs.event === 'processing_completed') {
-              risultatoReattivo.status = 'completed';
-            }
-          }
-        });
-      },
-      error: (errore) => {
-        risultatoReattivo.status = 'error';
-      }
-    });
-
-    // 4. RESTITUISCO L'OGGETTO SUBITO (mentre le chiamate HTTP stanno ancora viaggiando!)
-    return risultatoReattivo;
-  } */
-
-  // questo è il webSocket service che NON faremo
-  /*     import { Injectable } from '@angular/core';
-  import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
-  import { Observable, filter, map } from 'rxjs';
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class WebSocketService {
-    
-    // Sostituisci con l'URL del tuo backend (ws:// per locale, wss:// per produzione)
-    private wsUrl = 'ws://TUO_BACKEND_URL/cable'; 
-    private socket$: WebSocketSubject<any> | null = null;
-
-    connetti(jobId: string): Observable<any> {
-      // 1. Apro la connessione WebSocket vera e propria
-      if (!this.socket$ || this.socket$.closed) {
-        this.socket$ = webSocket(this.wsUrl);
-      }
-
-      // 2. Costruisco il "biglietto da visita" esatto che vuole ActionCable
-      const identifier = JSON.stringify({
-        channel: 'DocumentProcessingChannel',
-        job_id: jobId
-      });
-
-      // 3. Mando il comando di iscrizione al backend
-      this.socket$.next({
-        command: 'subscribe',
-        identifier: identifier
-      });
-
-      // 4. Restituisco i messaggi al componente, filtrando solo quelli che ci interessano
-      return this.socket$.asObservable().pipe(
-        // ActionCable manda anche messaggi di "ping" per tenere viva la linea, li ignoriamo
-        filter(msg => msg.type !== 'ping' && msg.type !== 'welcome' && msg.type !== 'confirm_subscription'),
-        // Estraiamo il vero e proprio payload del messaggio
-        map(msg => msg.message) 
-      );
-    }
-  } */
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
-      const reactiveResult  = this.serializer.creaStatoIniziale(file, company, department, category, competence_period);
-      reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire il nuovo documento in lista
+      const reactiveResult  = this.serializer.creaStatoIniziale(file, company, department, category, competence_period); // Crea un ResultAiCopilot iniziale
+      reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      const endpoint = isPdf ? `${API_BASE}/documents/split` : `${API_BASE}/documents/process_file`;
+      const endpoint = isPdf ? `${API_BASE}/documents/split` : `${API_BASE}/documents/process_file`; // Se è PDF uso endpoint split, altrimenti direttamente process_file che accetta anche altri tipi di file e faccio il processing senza passare dallo split. In questo modo supporto anche file di testo, excel, ecc. senza doverli splittare in pagine.
       const fileParam = isPdf ? 'pdf' : 'file';
 
       const formData = new FormData(); 
-      formData.append(fileParam, file);
+      formData.append(fileParam, file); // Il backend si aspetta il file con chiave 'pdf' se è un PDF, altrimenti 'file' per altri tipi di documento.
       formData.append('category', category);
       formData.append('company', company);
       formData.append('department', department);
-      formData.append('competence_period', competence_period);
+      formData.append('competence_period', competence_period); // e passo tutti gli altri metadati
       
       this.http.post<any>(endpoint, formData).subscribe({
         next: (response) => {
-          const uploadedDocumentId = Number(response?.uploaded_document_id) || 0;
+          const uploadedDocumentId = Number(response?.uploaded_document_id) || 0; // uploadedDocumentId è Id del doc padre
           reactiveResult.id = uploadedDocumentId;
 
-          // Duplicate: backend reuses an existing document, no job will run.
+          // Se si passa un file duplicato ovvero già analizzato, il backend ritorna job_id vuoto, verrà dunque restituito lo stesso documento già analizzato. Senza far ripartire analisi.
           if (!response.job_id) {
             reactiveResult.state = DocumentState.Completato;
             this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.Completato);
@@ -205,77 +124,61 @@ export class AiCoPilotService {
             return;
           }
 
-          reactiveResult.state = DocumentState.InElaborazione; // Stato iniziale
-          this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione);
-          // Use ActionCable subprotocols for better compatibility with Rails cable server.
-          const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
-          const identifier = JSON.stringify({ channel: 'DocumentProcessingChannel', job_id: response.job_id });
-          socket.onopen = () => {
-            socket.send(JSON.stringify({ command: 'subscribe', identifier }));
-          };
-          socket.onmessage = (event) => {
-            const cable = JSON.parse(event.data);
+          reactiveResult.state = DocumentState.InElaborazione; // Stato In Elaborazione del padre poichè il job_id è presente poichè il doc non è duplicato.
+          this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione); // Sostituisco l'id temporaneo del parent con quello reale arrivato dal backend in risposta, e imposto stato in elaborazione
+          // Faccio la subscribe al cancale websocket passandogli il job_id.
+          this.subscribeToJobUpdates(
+            response.job_id,
+            (payload, socket) => {
+              const evt = payload.event;
 
-            if (cable.type === 'welcome' || cable.type === 'ping') {
-              return;
-            }
-
-            if (cable.type === 'confirm_subscription') {
+              if (evt === 'document_processed') {  //se viene tornato document processed, recupero l'id del documento estratto e recupero il documento ed aggiorno la history.
+                const extractedDocumentId = Number(payload.extracted_document_id) || 0;
+                if (extractedDocumentId > 0) {
+                  this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+                }
+              }
+              if (evt === 'split_completed') { // se lo split è completato, aggiorno lo stato del documento padre
+                if (payload.status === 'error') { // se lo split da errore
+                  reactiveResult.state = DocumentState.Failed;
+                  if (uploadedDocumentId > 0) {
+                    this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+                    this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed);
+                  }
+                  socket.close();
+                  return;
+                }
+                if (uploadedDocumentId > 0) {
+                  this.refreshExtractedDocumentsForUpload(uploadedDocumentId); // faccio la get per recuparare i documenti estratti, li deserializzo e li inserisco nella history, gli split dunque vengono mostrati subito anche se il processing non è finito
+                  this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione); // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione
+                }
+              }
+              if (evt === 'processing_completed') { // processing_completed arriva una volta a fine job; status decide se successo o errore.
+                const completedWithError = payload.status === 'error';
+                reactiveResult.state = completedWithError ? DocumentState.Failed : DocumentState.Completato;
+                if (uploadedDocumentId > 0) {
+                  this.refreshExtractedDocumentsForUpload(uploadedDocumentId);// faccio la get per recuparare i documenti estratti, li deserializzo e li inserisco nella history.
+                  this.updateSessionParentState(uploadedDocumentId, completedWithError ? DocumentState.Failed : DocumentState.Completato); // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione
+                }
+                socket.close();
+              }
+              if (evt === 'processing_failed') { // fallback legacy: backend attuale usa processing_completed con status=error
+                console.error('Elaborazione fallita per il documento:', payload.error);
+                reactiveResult.state = DocumentState.Failed;
+                if (uploadedDocumentId > 0) {
+                  this.refreshExtractedDocumentsForUpload(uploadedDocumentId);// faccio la get per recuparare i documenti estratti, li deserializzo e li inserisco nella history.
+                  this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed); // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione
+                }
+                socket.close();
+              }
+            },
+            () => {
               // Immediate sync avoids UI lag if split artifacts are already persisted.
               if (uploadedDocumentId > 0) {
                 this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
               }
-              return;
             }
-
-            if (cable.type === 'reject_subscription') {
-              console.error('Sottoscrizione ActionCable rifiutata per job:', response.job_id);
-              socket.close();
-              return;
-            }
-
-            if(!cable.message) return; // Ignora messaggi di sistema
-
-            const payload = cable.message;
-            const evt = payload.event;
-
-            if (evt === 'document_processed') {
-              const extractedDocumentId = Number(payload.extracted_document_id) || 0;
-              if (extractedDocumentId > 0) {
-                this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
-              }
-            }
-            if (evt === 'split_completed') {
-              if (uploadedDocumentId > 0) {
-                // Show extracted rows as soon as split artifacts are created.
-                this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
-                this.updateParentStateInHistory(uploadedDocumentId, State.InElaborazione);
-                this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
-              }
-            }
-            if (evt === 'processing_completed') {
-              reactiveResult.state = DocumentState.Completato;
-              if (uploadedDocumentId > 0) {
-                this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
-                this.updateParentStateInHistory(uploadedDocumentId, State.Pronto);
-                this.updateSessionParentState(uploadedDocumentId, DocumentState.Completato);
-              }
-              socket.close();
-            }
-            if (evt === 'processing_failed') {
-              console.error('Elaborazione fallita per il documento:', cable.message.error);
-              reactiveResult.state = DocumentState.Failed;
-              if (uploadedDocumentId > 0) {
-                this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
-                this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed);
-              }
-              socket.close();
-            }
-          };
-          socket.onerror = (error) => {
-            console.error('Errore nella connessione WebSocket:', error);
-            socket.close();
-          };
+          );
         },
         error: (error) => {
           this.removeSessionParent(temporaryParentId);
@@ -283,11 +186,9 @@ export class AiCoPilotService {
         }
       });
       return reactiveResult;
-      //qui dentro chiama addCategory
-      //poi faccio anche addDepartment 
   }
 
-  private addPendingParent(file: File): number {
+  private addPendingParent(file: File): number { // crea parent temporaneo con id negativo e stato "In coda", lo aggiunge alla lista dei parent della sessione e ritorna l'id temporaneo assegnato.
     const id = this.tempParentId--;
     const parent: ResultAiCopilot = {
       id,
@@ -301,7 +202,7 @@ export class AiCoPilotService {
     return id;
   }
 
-  private replacePendingParentId(temporaryParentId: number, realParentId: number, state: DocumentState): void {
+  private replacePendingParentId(temporaryParentId: number, realParentId: number, state: DocumentState): void { // Sostituisco l'id temporaneo del parent con quello reale arrivato dal backend in risposta, e imposto uno stato al documentoi padre.
     const updated = this.sessionParentsSubject.value.map((parent) =>
       parent.id === temporaryParentId ? { ...parent, id: realParentId, state } : parent
     );
@@ -325,14 +226,14 @@ export class AiCoPilotService {
     }
   }
 
-  private updateSessionParentState(parentId: number, state: DocumentState): void {
+  private updateSessionParentState(parentId: number, state: DocumentState): void { // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione. (Poichè a backend lo stato del padre non è presente)
     const updated = this.sessionParentsSubject.value.map((parent) =>
       parent.id === parentId ? { ...parent, state } : parent
     );
     this.sessionParentsSubject.next(updated);
   }
 
-  private removeSessionParent(parentId: number): void {
+  private removeSessionParent(parentId: number): void {  // viene chiamato quando c'è un errore nell'upload del documento, il documento padre qua ha ancora un id temporaneo negativo, dunque rimuove il parent con id temporaneo dalla lista dei parent della sessione e pulisce eventuali dati associati a quell'id temporaneo (nome, id)
     const updated = this.sessionParentsSubject.value.filter((parent) => parent.id !== parentId);
     this.sessionParentsSubject.next(updated);
 
@@ -344,22 +245,22 @@ export class AiCoPilotService {
     }
   }
 
-  private setParentName(parentId: number, name: string): void {
+  private setParentName(parentId: number, name: string): void { // setta il nome al documento padre
     if (!parentId || !name) return;
     const current = this.parentNamesSubject.value;
     if (current[parentId] === name) return;
     this.parentNamesSubject.next({ ...current, [parentId]: name });
   }
 
-  private setParentPageCount(parentId: number, pageCount: unknown): void {
-    const numeric = Number(pageCount);
+  private setParentPageCount(parentId: number, pageCount: unknown): void { // setta il numero di pagine del documento padre quando riceve il dato dal backend, prima di riceverlo il numero di pagine è 0
+    const numeric = Number(pageCount); 
     if (!parentId || !Number.isFinite(numeric) || numeric < 1) return;
     const normalized = Math.floor(numeric);
     const current = this.parentPageCountsSubject.value;
     if (current[parentId] === normalized) return;
     this.parentPageCountsSubject.next({ ...current, [parentId]: normalized });
   }
-  private resolveScheduledState(split: ResultSplit): ResultSplit {
+  private resolveScheduledState(split: ResultSplit): ResultSplit { //Se lo stato di un documento è "Inviato" e ha un id, allora controlla se tale documento è presente nella mappa dei documenti programmati. Se la data programmata è nel futuro, imposta lo stato su "Programmato". Se la data programmata è nel passato, rimuove il documento dalla mappa e lascia lo stato su "Inviato".
     if (split.state !== State.Inviato || !split.id) return split;
     const scheduledAt = this.scheduledDocuments.get(split.id);
     if (!scheduledAt) return split;
@@ -370,16 +271,16 @@ export class AiCoPilotService {
 
   private upsertInHistory(split: ResultSplit): void {
     const resolved = this.resolveScheduledState(split);
-    const current = this.resultsHistorySubject.value ?? [];
+    const current = this.resultsHistorySubject.value ?? []; // Prendo lo stato attuale della history, se è null uso un array vuoto
     const idx = current.findIndex((r) => r.id === resolved.id);
-    if (idx === -1) {
-      this.resultsHistorySubject.next([...current, resolved]);
-    } else {
+    if (idx === -1) { // Se non esiste un documento con lo stesso id, lo aggiungo in coda alla history
+      this.resultsHistorySubject.next([...current, resolved]); // Creo un nuovo array con tutti gli elementi attuali più il nuovo documento, e lo emetto come nuovo stato della history
+    } else { // Se esiste già un documento con lo stesso id, lo sostituisco con il nuovo documento aggiornato
       const copy = [...current];
       copy[idx] = resolved;
-      this.resultsHistorySubject.next(copy);
+      this.resultsHistorySubject.next(copy); // Emitto il nuovo array aggiornato come nuovo stato della history
     }
-    this.refreshDynamicFilterOptions();
+    this.refreshDynamicFilterOptions(); // Refresho i filtri dinamici, nel nostro caso Categorie e Reparti che si basano su valori presenti nei documenti della history.
   }
 
   private refreshDynamicFilterOptions(): void {
@@ -411,7 +312,7 @@ export class AiCoPilotService {
     this.refreshDynamicFilterOptions();
   }
 
-  private fetchExtractedDocumentAndUpsert(extractedDocumentId: number): void {
+  private fetchExtractedDocumentAndUpsert(extractedDocumentId: number): void { // Il metodo usa l'id passato del documento estratto, recupera il documento dal backend e lo deserializza, poi lo upserta nella history dei risultati.
     this.http.get<any>(`${API_BASE}/documents/extracted/${extractedDocumentId}`).subscribe({
       next: ({ extracted_document }) => {
         const split = this.serializer.deserializeExtractedDocument(extracted_document);
@@ -421,7 +322,7 @@ export class AiCoPilotService {
     });
   }
 
-  private refreshExtractedDocumentsForUpload(uploadedDocumentId: number): void {
+  private refreshExtractedDocumentsForUpload(uploadedDocumentId: number): void { // il metodo usa l'id passato, sempre del documento padre, e recupera la risposta al backend che contiene i dati che gli servono per aggiornare i valori mostrati del padre, che prima erano derivanti dal file caricato e ora vengono presi dal backend. Infine refresha la history.
     this.http.get<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}/extracted`).subscribe({
       next: (response) => {
         const parentName = response?.uploaded_document?.original_filename;
@@ -432,20 +333,10 @@ export class AiCoPilotService {
         this.setParentPageCount(uploadedDocumentId, parentPageCount);
         (response.extracted_documents ?? [])
           .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
-          .forEach((split: ResultSplit) => this.upsertInHistory(split));
+          .forEach((split: ResultSplit) => this.upsertInHistory(split)); 
       },
       error: (err) => console.error(`Errore nel refresh realtime degli estratti per upload ${uploadedDocumentId}:`, err),
     });
-  }
-
-  private updateParentStateInHistory(parentId: number, state: State): void {
-    const current = this.resultsHistorySubject.value ?? [];
-    if (current.length === 0) return;
-
-    const updated = current.map((row) =>
-      row.parentId === parentId ? { ...row, state } : row
-    );
-    this.resultsHistorySubject.next(updated);
   }
 
     /** GET /documents/extracted/:id */
@@ -579,17 +470,7 @@ export class AiCoPilotService {
       })
     );
   }
- 
-  /*public addCategory() : void {
-    //todo implementare con chiamata al backend
 
-    //qui voglio un fucking push su categorySubject, in modo che la view riceva la notifica e si aggiorni!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  }
-  public addDepartment(idCompany: string) : void {
-    //todo implementare con chiamata al backend
-  }*/
-
-  
   public fetchCategories(): void {
     const unique = [...new Set((this.resultsHistorySubject.value ?? []).map((r) => r.category).filter(Boolean))];
     this.categorySubject.next(unique);
@@ -652,7 +533,12 @@ export class AiCoPilotService {
       );
   }
 
-  private subscribeToReassignRangeUpdates(jobId: string, extractedDocumentId: number): void {
+  private subscribeToJobUpdates(
+    jobId: string,
+    onMessage: (payload: any, socket: WebSocket) => void,
+    onConfirmSubscription?: () => void,
+    onError?: (error: Event) => void
+  ): void {
     const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
     const identifier = JSON.stringify({ channel: 'DocumentProcessingChannel', job_id: jobId });
 
@@ -663,12 +549,17 @@ export class AiCoPilotService {
     socket.onmessage = (event) => {
       const cable = JSON.parse(event.data);
 
-      if (cable.type === 'welcome' || cable.type === 'ping' || cable.type === 'confirm_subscription') {
+      if (cable.type === 'welcome' || cable.type === 'ping') {
+        return;
+      }
+
+      if (cable.type === 'confirm_subscription') {
+        onConfirmSubscription?.();
         return;
       }
 
       if (cable.type === 'reject_subscription') {
-        console.error('Sottoscrizione ActionCable rifiutata per job reassign:', jobId);
+        console.error('Sottoscrizione ActionCable rifiutata per job:', jobId);
         socket.close();
         return;
       }
@@ -678,25 +569,35 @@ export class AiCoPilotService {
         return;
       }
 
-      const payloadExtractedId = Number(payload.extracted_document_id) || extractedDocumentId;
-      if (payloadExtractedId !== extractedDocumentId) {
-        return;
-      }
-
-      if (payload.event === 'document_processed') {
-        this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
-      }
-
-      if (payload.event === 'processing_completed' || payload.event === 'processing_failed') {
-        this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
-        socket.close();
-      }
+      onMessage(payload, socket);
     };
 
     socket.onerror = (error) => {
-      console.error('Errore WebSocket su reassign range:', error);
+      console.error('Errore WebSocket per job:', jobId, error);
+      onError?.(error);
       socket.close();
     };
+  }
+
+  private subscribeToReassignRangeUpdates(jobId: string, extractedDocumentId: number): void {
+    this.subscribeToJobUpdates(
+      jobId,
+      (payload, socket) => {
+        const payloadExtractedId = Number(payload.extracted_document_id) || extractedDocumentId;
+        if (payloadExtractedId !== extractedDocumentId) {
+          return;
+        }
+
+        if (payload.event === 'document_processed') {
+          this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+        }
+
+        if (payload.event === 'processing_completed' || payload.event === 'processing_failed') {
+          this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+          socket.close();
+        }
+      }
+    );
   }
 
   /** PATCH /documents/extracted/:id/metadata */
@@ -765,10 +666,6 @@ export class AiCoPilotService {
     });
   }
 
-  //todo modifica data di un result
-  //todo modifica categoria di un result
-  // todo modifica azienda di un result
-  // todo modifica dipartimento di un result
 
     public updateResult(result: ResultSplit): void {
     this.resultSubject.next(result);

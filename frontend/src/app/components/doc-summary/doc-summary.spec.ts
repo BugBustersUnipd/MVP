@@ -18,6 +18,10 @@ describe('DocSummary', () => {
     await fixture.whenStable();
   });
 
+  afterEach(() => {
+    fixture?.destroy();
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -58,10 +62,10 @@ describe('DocSummary', () => {
   });
 
   it('should format month_year as MM/YYYY', () => {
-    component.result = { month_year: '2026-02-20' } as any;
+    component.result = { data: '2026-02-20' } as any;
     expect(component.getMonthYearValue()).toBe('02/2026');
 
-    component.pendingModifications = { month_year: '3/2025' } as any;
+    component.pendingModifications = { data: '3/2025' } as any;
     expect(component.getMonthYearValue()).toBe('03/2025');
   });
 });

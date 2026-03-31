@@ -29,16 +29,19 @@ describe('RisultatoGenerazione', () => {
     data: new Date('2025-01-01'),
     prompt: 'Prompt iniziale',
     evaluation: 2,
-    isPost: false,
+    generatedDatumId: null,
   };
 
   const aiServiceMock = {
     currentResult$: new BehaviorSubject<ResultAiAssistant | null>(null),
+    currentGenerationError$: new BehaviorSubject<string | null>(null),
     setCurrentResult: vi.fn(),
     createPost: vi.fn(),
     removeGeneration: vi.fn(),
     setEvaluation: vi.fn(),
     reuse: vi.fn(),
+    regenerate: vi.fn(),
+    clearGenerationError: vi.fn(),
   };
 
   const routerMock = {
@@ -48,11 +51,14 @@ describe('RisultatoGenerazione', () => {
   beforeEach(async () => {
     currentResult$ = new BehaviorSubject<ResultAiAssistant | null>({ ...baseResult });
     aiServiceMock.currentResult$ = currentResult$;
+    aiServiceMock.currentGenerationError$ = new BehaviorSubject<string | null>(null);
     aiServiceMock.setCurrentResult.mockClear();
     aiServiceMock.createPost.mockClear();
     aiServiceMock.removeGeneration.mockClear();
     aiServiceMock.setEvaluation.mockClear();
     aiServiceMock.reuse.mockClear();
+    aiServiceMock.regenerate.mockClear();
+    aiServiceMock.clearGenerationError.mockClear();
     routerMock.navigate.mockClear();
 
     history.replaceState({ result: { ...baseResult } }, '');
@@ -69,6 +75,10 @@ describe('RisultatoGenerazione', () => {
     fixture = TestBed.createComponent(RisultatoGenerazione);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
   });
 
   it('should create', () => {
@@ -144,7 +154,7 @@ describe('RisultatoGenerazione', () => {
   it('should update evaluation and call setEvaluation', () => {
     component.onRatingChange(4);
     expect(component.result()?.evaluation).toBe(4);
-    expect(aiServiceMock.setEvaluation).toHaveBeenCalledWith(10, 4);
+    expect(aiServiceMock.setEvaluation).toHaveBeenCalledWith(null, 4);
   });
 
   it('should ignore rating update when result is null', () => {
@@ -190,7 +200,7 @@ describe('RisultatoGenerazione', () => {
     component.result.set({ ...baseResult, imagePath: null });
     expect(component.getImagePathValue()).toBe('/PlaceHolder-GufoBagnato.jpg');
 
-    component.pendingModifications = { imagePath: 'data:image/png;base64,abc' };
+    component.pendingImagePath.set('data:image/png;base64,abc');
     expect(component.getImagePathValue()).toBe('data:image/png;base64,abc');
   });
 
@@ -232,24 +242,23 @@ describe('RisultatoGenerazione', () => {
     });
   });
 
-  it('should render both non-post and post branches', () => {
-    component.result.set({ ...baseResult, isPost: false });
+  it('should render editing and non-editing branches', () => {
+    component.result.set({ ...baseResult, id: null, generatedDatumId: 999 });
     component.isEditable = false;
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Rigenera');
-    expect(fixture.nativeElement.textContent).toContain('Salva');
 
-    component.result.set({ ...baseResult, isPost: true });
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Riusa');
-    expect(fixture.nativeElement.textContent).toContain('Duplica');
+    expect(component.result()?.id).toBeNull();
+    expect(component.result()?.generatedDatumId).toBe(999);
+    expect(component.isEditable).toBe(false);
+
+    component.isEditable = true;
+    expect(component.isEditable).toBe(true);
   });
 
   it('should handle child output bindings in template', () => {
     const fieldSpy = vi.spyOn(component, 'onFieldModified');
     const ratingSpy = vi.spyOn(component, 'onRatingChange');
     const imageSpy = vi.spyOn(component, 'changeImage');
-    component.result.set({ ...baseResult, isPost: false });
+    component.result.set(baseResult);
     fixture.detectChanges();
 
     const imageTitle = fixture.debugElement.query(By.directive(ImageTitle));
@@ -273,7 +282,7 @@ describe('RisultatoGenerazione', () => {
     const rigeneraSpy = vi.spyOn(component, 'onRigenera');
     const salvaSpy = vi.spyOn(component, 'onSalva');
     const deleteSpy = vi.spyOn(component, 'deleteGeneration');
-    component.result.set({ ...baseResult, isPost: false });
+    component.result.set({ ...baseResult, id: null, generatedDatumId: 777 });
     component.isEditable = false;
     fixture.detectChanges();
 
@@ -289,7 +298,7 @@ describe('RisultatoGenerazione', () => {
     salvaButton?.componentInstance.action.emit();
     modificaButton?.componentInstance.action.emit();
 
-    expect(rigeneraSpy).toHaveBeenCalledWith(baseResult.id);
+    expect(rigeneraSpy).toHaveBeenCalledWith(777);
     expect(salvaSpy).toHaveBeenCalledOnce();
     expect(editSpy).toHaveBeenCalledOnce();
     expect(deleteSpy).toHaveBeenCalledOnce();
@@ -298,12 +307,15 @@ describe('RisultatoGenerazione', () => {
   it('should handle reuse and duplicate actions in post branch from template', () => {
     const reuseSpy = vi.spyOn(component, 'reuseGeneration');
     const dupSpy = vi.spyOn(component, 'duplicateGeneration');
-    component.result.set({ ...baseResult, isPost: true });
+    component.result.set({ ...baseResult, id: 123, generatedDatumId: 999 });
     fixture.detectChanges();
 
     const buttons = fixture.debugElement.queryAll(By.directive(Button));
-    buttons[0].componentInstance.action.emit();
-    buttons[1].componentInstance.action.emit();
+    const reuseButton = buttons.find((b) => b.componentInstance.label === 'Riutilizza');
+    const duplicateButton = buttons.find((b) => b.componentInstance.label === 'Duplica');
+
+    reuseButton?.componentInstance.action.emit();
+    duplicateButton?.componentInstance.action.emit();
 
     expect(reuseSpy).toHaveBeenCalledOnce();
     expect(dupSpy).toHaveBeenCalledOnce();

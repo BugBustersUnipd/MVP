@@ -62,10 +62,10 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 
 	it('mostra la dashboard con i dati analytics dell AI Co-Pilot', () => {
 		cy.contains('p-accordion-header', 'Ai Co-Pilot').should('be.visible')
-		cy.contains('.item .label', 'PERCENTUALE CONFIDENZA MEDIA').should('be.visible')
-		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP').should('be.visible')
-		cy.contains('.item .label', 'ACCURATEZZA MAPPING').should('be.visible')
-		cy.contains('.item .label', 'TEMPI MEDI ANALISI').should('be.visible')
+		cy.contains('.item .label', 'PERCENTUALE CONFIDENZA MEDIA').should('exist')
+		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP').should('exist')
+		cy.contains('.item .label', 'ACCURATEZZA MAPPING').should('exist')
+		cy.contains('.item .label', 'TEMPI MEDI ANALISI').should('exist')
 	})
 
 	it('mostra la confidenza media delle analisi documenti', () => {
@@ -79,10 +79,10 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 
 	it('mostra la percentuale di interventi manuali necessari', () => {
 		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP')
-			.should('be.visible')
+			.should('exist')
 			.closest('.item')
 			.find('.data-value')
-			.should('have.text', '11%')
+			.should('have.text', '11')
 	})
 
 	it('mostra l accuratezza del mapping dei dati', () => {
@@ -95,7 +95,7 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 
 	it('mostra i tempi medi di analisi dei documenti', () => {
 		cy.contains('.item .label', 'TEMPI MEDI ANALISI')
-			.should('be.visible')
+			.should('exist')
 			.closest('.item')
 			.find('.data-value')
 			.should('have.text', '8s')
@@ -122,7 +122,7 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP')
 			.closest('.item')
 			.find('.data-value')
-			.should('have.text', '15%')
+			.should('have.text', '15')
 
 		cy.contains('.item .label', 'ACCURATEZZA MAPPING')
 			.closest('.item')

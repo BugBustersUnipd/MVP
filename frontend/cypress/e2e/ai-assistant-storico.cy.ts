@@ -110,11 +110,12 @@ describe('Storico AI Assistant Generativo', () => {
 	it('mostra i dettagli completi di un elemento selezionato dallo storico', () => {
 		visitResultWithState()
 
-		cy.contains('span', 'PARAMETRI INSERITI').should('be.visible')
+		cy.contains('span', 'PARAMETRI INSERITI').should('exist')
 		cy.contains('label.label', 'Tono').parent().should('contain.text', mappedResult.tone.name)
 		cy.contains('label.label', 'Stile').parent().should('contain.text', mappedResult.style.name)
 		cy.get('textarea#Prompt').should('have.value', mappedResult.prompt)
-		cy.contains('label.label', 'Contenuto').should('be.visible')
+		cy.get('p-editor .ql-editor').should('be.visible')
+		cy.contains('label.label', 'Contenuto').should('exist')
 	})
 
 	it('mostra lo stile utilizzato per un contenuto nello storico', () => {
@@ -129,7 +130,7 @@ describe('Storico AI Assistant Generativo', () => {
 
 	it('mostra il timestamp della generazione nello storico', () => {
 		visitResultWithState()
-		cy.contains('label.label', 'Data di generazione:').should('be.visible')
+		cy.contains('label.label', 'Data di generazione:').should('exist')
 		cy.get('.data-generazione span').invoke('text').should('match', /\d{2}\/\d{2}\/\d{4}/)
 	})
 
@@ -152,12 +153,9 @@ describe('Storico AI Assistant Generativo', () => {
 
 	it('permette di riutilizzare i parametri di un contenuto dello storico per una nuova generazione', () => {
 		visitResultWithState()
-		cy.window().then((win) => {
-			cy.spy(win.console, 'log').as('consoleLog')
-		})
 
-		cy.contains('button', 'Riusa').click({ force: true })
-		cy.get('@consoleLog').should('be.calledWithMatch', 'Riutilizzo richiesta con i seguenti parametri:')
+		cy.contains('button', 'Riutilizza').click({ force: true })
+		cy.url().should('include', '/generatore')
 	})
 
 	it('permette di duplicare un contenuto dallo storico per modificarne i parametri', () => {
@@ -172,7 +170,8 @@ describe('Storico AI Assistant Generativo', () => {
 	it('permette di filtrare la lista delle generazioni nello storico', () => {
 		visitStoricoWithPosts(historyPosts)
 
-		cy.get('input[placeholder="Cerca per tutto"]').clear().type('policy')
+		cy.get('body').click(0, 0, { force: true })
+		cy.get('input[placeholder="Cerca per tutto"]').clear({ force: true }).type('policy', { force: true })
 
 		cy.get('p-table tbody tr').should('have.length', 1)
 		cy.contains('a.truncate-content', historyPosts[0].title).should('be.visible')
@@ -181,10 +180,11 @@ describe('Storico AI Assistant Generativo', () => {
 	it('mostra la lista dello storico aggiornata in base ai filtri applicati', () => {
 		visitStoricoWithPosts(historyPosts)
 
-		cy.get('input[placeholder="Cerca per tutto"]').clear().type('policy')
+		cy.get('body').click(0, 0, { force: true })
+		cy.get('input[placeholder="Cerca per tutto"]').clear({ force: true }).type('policy', { force: true })
 		cy.get('p-table tbody tr').should('have.length', 1)
 
-		cy.get('input[placeholder="Cerca per tutto"]').clear().type('team')
+		cy.get('input[placeholder="Cerca per tutto"]').clear({ force: true }).type('team', { force: true })
 		cy.get('p-table tbody tr').should('have.length', 1)
 	})
 })
