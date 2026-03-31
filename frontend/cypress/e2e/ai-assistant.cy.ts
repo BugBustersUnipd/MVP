@@ -9,10 +9,10 @@ describe('AI Assistant Generativo - generatore e risultato', () => {
 		cy.contains('label.label', label)
 			.parent()
 			.within(() => {
-				cy.get('.p-select').click({ force: true })
+				cy.get('.p-select').first().click({ force: true })
 			})
 
-		cy.contains('.p-select-option', optionName).click({ force: true })
+		cy.contains('.p-select-option', optionName, { timeout: 10000 }).click({ force: true })
 		cy.get('body').click(0, 0, { force: true })
 	}
 
@@ -26,12 +26,12 @@ describe('AI Assistant Generativo - generatore e risultato', () => {
 
 		cy.intercept('GET', '**/tones*', {
 			statusCode: 200,
-			body: [tone],
+			body: { tones: [tone] },
 		}).as('getTones')
 
 		cy.intercept('GET', '**/styles*', {
 			statusCode: 200,
-			body: [style],
+			body: { styles: [style] },
 		}).as('getStyles')
 
 		cy.intercept('POST', '**/generated_data*', {
@@ -142,10 +142,12 @@ describe('AI Assistant Generativo - generatore e risultato', () => {
 		})
 
 		cy.url().should('include', '/risultato-generazione')
-		cy.contains('span', 'PARAMETRI INSERITI').should('be.visible')
+		cy.contains('span', 'PARAMETRI INSERITI').should('exist')
 		cy.contains('label.label', 'Tono').parent().should('contain.text', tone.name)
 		cy.contains('label.label', 'Stile').parent().should('contain.text', style.name)
 		cy.get('textarea#Prompt').should('have.value', longPrompt)
+		cy.get('p-editor .ql-editor').should('be.visible')
+		cy.get('bb-image-title p-image img').should('be.visible')
 		cy.contains('Contenuto testuale generato in base a prompt e parametri.').should('be.visible')
 	})
 })

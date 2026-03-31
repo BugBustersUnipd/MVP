@@ -1,5 +1,3 @@
-import { TestBed } from '@angular/core/testing';
-
 import { ResultAiCopilotSerializer } from './result-ai-copilot.serializer';
 import { State } from '../models/result-split.model';
 
@@ -7,8 +5,7 @@ describe('ResultAiCopilotSerializer', () => {
   let serializer: ResultAiCopilotSerializer;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    serializer = TestBed.inject(ResultAiCopilotSerializer);
+    serializer = new ResultAiCopilotSerializer();
   });
 
   it('should create initial state from file', () => {
@@ -85,7 +82,7 @@ describe('ResultAiCopilotSerializer', () => {
       uploaded_document_id: 60,
     });
 
-    expect(split.state).toBe(State.DaValidare);
+    expect(split.state).toBe(State.InElaborazione);
     expect(split.confidence).toBe(75);
     expect(split.name).toBe('Luca');
     expect(split.month_year).toBe('03/2025');
@@ -102,6 +99,6 @@ describe('ResultAiCopilotSerializer', () => {
     });
 
     expect(split.confidence).toBe(0);
-    expect(split.state).toBe(State.DaValidare);
+    expect(split.state).toBe(State.InElaborazione);
   });
 });

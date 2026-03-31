@@ -8,6 +8,7 @@ describe('DateRangePicker', () => {
   let fixture: ComponentFixture<DateRangePicker>;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [DateRangePicker]
     })
@@ -16,6 +17,10 @@ describe('DateRangePicker', () => {
     fixture = TestBed.createComponent(DateRangePicker);
     component = fixture.componentInstance;
     await fixture.whenStable();
+  });
+
+  afterEach(() => {
+    fixture?.destroy();
   });
 
   it('should create', () => {

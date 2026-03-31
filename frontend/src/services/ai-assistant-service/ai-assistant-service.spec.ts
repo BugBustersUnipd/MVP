@@ -21,10 +21,11 @@ describe('AiAssistantService', () => {
     data: new Date('2025-01-01'),
     prompt: 'Prompt',
     evaluation: 3,
-    isPost: false,
+    generatedDatumId: null,
   };
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -54,7 +55,7 @@ describe('AiAssistantService', () => {
     expect(tonesValue).toEqual([{ id: 10, name: 'Amichevole' }]);
   });
 
-  it('should fetch tones when backend returns direct array', () => {
+  it('should return empty tones when backend payload shape is not supported', () => {
     let tonesValue: any[] = [];
     service.tones$.subscribe((value) => (tonesValue = value));
 
@@ -63,10 +64,10 @@ describe('AiAssistantService', () => {
     const req = httpMock.expectOne((r) => r.url === 'http://localhost:3000/tones');
     req.flush([{ id: 55, name: 'Empatico' }]);
 
-    expect(tonesValue).toEqual([{ id: 55, name: 'Empatico' }]);
+    expect(tonesValue).toEqual([]);
   });
 
-  it('should fetch styles by company when backend returns an array', () => {
+  it('should return empty styles when backend payload shape is not supported', () => {
     let stylesValue: any[] = [];
     service.styles$.subscribe((value) => (stylesValue = value));
 
@@ -77,7 +78,7 @@ describe('AiAssistantService', () => {
     expect(req.request.params.get('company_id')).toBe('3');
 
     req.flush([{ id: 20, name: 'Tecnico' }]);
-    expect(stylesValue).toEqual([{ id: 20, name: 'Tecnico' }]);
+    expect(stylesValue).toEqual([]);
   });
 
   it('should fetch styles by company when backend returns wrapped object', () => {
@@ -123,7 +124,7 @@ describe('AiAssistantService', () => {
       },
     });
 
-    req.flush({ id: 99 });
+    req.flush({ id: 99, name: 'Nuovo tono' });
     expect(tonesValue).toEqual([
       { id: 1, name: 'Base' },
       { id: 99, name: 'Nuovo tono' },
@@ -148,7 +149,7 @@ describe('AiAssistantService', () => {
       },
     });
 
-    req.flush({ id: 88 });
+    req.flush({ id: 88, name: 'Nuovo stile' });
     expect(stylesValue).toEqual([
       { id: 1, name: 'Base style' },
       { id: 88, name: 'Nuovo stile' },
@@ -198,6 +199,10 @@ describe('AiAssistantService', () => {
     service.setCurrentResult(sampleResult);
     service.setEvaluation(sampleResult.id, 5);
 
+    const req = httpMock.expectOne('http://localhost:3000/generated_data/12/rating');
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ ok: true });
+
     expect(current).not.toBeNull();
     if (!current) {
       throw new Error('current result should be defined');
@@ -222,12 +227,15 @@ describe('AiAssistantService', () => {
 
     service.createPost(sampleResult);
 
+    const req = httpMock.expectOne('http://localhost:3000/posts');
+    expect(req.request.method).toBe('POST');
+    req.flush({ id: 234 });
+
     expect(history).not.toBeNull();
     if (!history) {
       throw new Error('history should be defined');
     }
     expect(history.length).toBe(1);
-    expect(history[0].isPost).toBe(true);
     expect(history[0].id).toBe(234);
   });
 
@@ -271,11 +279,14 @@ describe('AiAssistantService', () => {
     service.currentResult$.subscribe((value) => (current = value));
 
     service.reuse(sampleResult.tone, sampleResult.style, sampleResult.company, sampleResult.prompt);
-    expect(current?.id).toBe(-1);
+    expect(current?.id).toBeNull();
 
-    const id = service.requireGeneration('P', sampleResult.tone, sampleResult.style, sampleResult.company);
-    expect(id).toBe(-1);
-    expect(current?.id).toBe(-1);
+    const reqFromReuse = httpMock.expectOne('http://localhost:3000/generated_data');
+    expect(reqFromReuse.request.method).toBe('POST');
+    reqFromReuse.flush({ id: 0 });
+
+    service.requireGeneration('P', sampleResult.tone, sampleResult.style, sampleResult.company);
+    expect(current?.id).toBeNull();
 
     const req = httpMock.expectOne('http://localhost:3000/generated_data');
     expect(req.request.method).toBe('POST');
@@ -300,7 +311,7 @@ describe('AiAssistantService', () => {
     const req = httpMock.expectOne('http://localhost:3000/generated_data');
     req.flush('err', { status: 500, statusText: 'Server Error' });
 
-    expect(current?.id).toBe(-1);
+    expect(current?.id).toBeNull();
   });
 
   it('should ignore fetchResultsHistory when history already exists', () => {
@@ -312,6 +323,10 @@ describe('AiAssistantService', () => {
   it('should set empty history on first fetchResultsHistory call', () => {
     (service as any).ResultsHistorySubject.next(null);
     service.fetchResultsHistory();
+
+    const req = httpMock.expectOne('http://localhost:3000/posts');
+    req.flush('err', { status: 500, statusText: 'Server Error' });
+
     expect((service as any).ResultsHistorySubject.value).toEqual([]);
   });
 
@@ -362,7 +377,7 @@ describe('AiAssistantService', () => {
         message: { id: 999, status: 'completed', title: 'Wrong', text: 'Wrong' },
       }),
     });
-    expect(current.id).toBe(321);
+    expect(current.generatedDatumId).toBe(321);
 
     ws.onmessage?.({
       data: JSON.stringify({
@@ -370,7 +385,7 @@ describe('AiAssistantService', () => {
       }),
     });
 
-    expect(current.id).toBe(321);
+    expect(current.generatedDatumId).toBe(321);
     expect(current.title).toBe('Titolo finale');
     expect(current.content).toBe('Testo finale');
     expect(ws.close).toHaveBeenCalled();
@@ -383,7 +398,7 @@ describe('AiAssistantService', () => {
 
     service.fetchTonesByCompany(3);
 
-    const req = httpMock.expectOne('http://localhost:3000/tones?company_id=3');
+    const req = httpMock.expectOne((r) => r.url === 'http://localhost:3000/tones' && r.params.get('company_id') === '3');
     req.flush('err', { status: 500, statusText: 'Server Error' });
 
     expect(errorSpy).toHaveBeenCalled();
@@ -395,7 +410,7 @@ describe('AiAssistantService', () => {
 
     service.fetchStylesByCompany(3);
 
-    const req = httpMock.expectOne('http://localhost:3000/styles?company_id=3');
+    const req = httpMock.expectOne((r) => r.url === 'http://localhost:3000/styles' && r.params.get('company_id') === '3');
     req.flush('err', { status: 500, statusText: 'Server Error' });
 
     expect(errorSpy).toHaveBeenCalled();

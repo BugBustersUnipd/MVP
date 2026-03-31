@@ -14,6 +14,7 @@ describe('RiconoscimentoDocumenti', () => {
   const sessionParents$ = new BehaviorSubject<any[]>([]);
   const parentNames$ = new BehaviorSubject<Record<number, string>>({});
   const parentPageCounts$ = new BehaviorSubject<Record<number, number>>({});
+  const currentBatchParentIds$ = new BehaviorSubject<Set<number>>(new Set());
 
   const aiServiceMock = {
     confidence$: of(['0-20%']),
@@ -23,9 +24,9 @@ describe('RiconoscimentoDocumenti', () => {
     state$: of([State.DaValidare]),
     currentResultsHistory$: history$,
     currentSessionParents$: sessionParents$,
+    currentBatchParentIds$: currentBatchParentIds$,
     currentParentNames$: parentNames$,
     currentParentPageCounts$: parentPageCounts$,
-    fetchHistoryResults: vi.fn(),
     fetchCategories: vi.fn(),
     fetchCompanies: vi.fn(),
     fetchDepartment: vi.fn(),
@@ -36,9 +37,9 @@ describe('RiconoscimentoDocumenti', () => {
   beforeEach(async () => {
     history$.next([]);
     sessionParents$.next([]);
+    currentBatchParentIds$.next(new Set());
     parentNames$.next({});
 
-    aiServiceMock.fetchHistoryResults.mockClear();
     aiServiceMock.fetchCategories.mockClear();
     aiServiceMock.fetchCompanies.mockClear();
     aiServiceMock.fetchDepartment.mockClear();
@@ -60,8 +61,7 @@ describe('RiconoscimentoDocumenti', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should call all fetch methods on init', () => {
-    expect(aiServiceMock.fetchHistoryResults).toHaveBeenCalled();
+  it('should call all lookup fetch methods on init', () => {
     expect(aiServiceMock.fetchCategories).toHaveBeenCalled();
     expect(aiServiceMock.fetchCompanies).toHaveBeenCalled();
     expect(aiServiceMock.fetchDepartment).toHaveBeenCalled();

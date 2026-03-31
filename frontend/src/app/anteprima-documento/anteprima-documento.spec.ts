@@ -126,7 +126,7 @@ describe('AnteprimaDocumento', () => {
       otherRows = rows;
     });
 
-    component.extractedEmployeeRows = [{ name: 'A', email: 'a@a', employeeCode: '1' }];
+    component.extractedEmployeeRows = [{ name: "A", email: "a@a", employeeCode: "1", rawName: "A Raw", hasMatch: true, recipientConfidence: 85 }];
     aiServiceMock.otherExtractedDocuments$.next([{ id: 1, recipientName: 'Mario', confidence: 80 }]);
 
     component.handleRemoveExtractedEmployeeRow(0);
@@ -170,10 +170,10 @@ describe('AnteprimaDocumento', () => {
 
   it('should save metadata changes and call metadata endpoint', () => {
     component.enableEditing();
-    component.onFieldModified({ field: 'recipientName' as any, value: 'Nuovo Nome' });
+    component.onFieldModified({ field: 'category' as any, value: 'Nuova Categoria' });
     component.saveChanges();
 
-    expect(aiServiceMock.updateDocumentMetadata).toHaveBeenCalledWith(1, { recipientName: 'Nuovo Nome' });
+    expect(aiServiceMock.updateDocumentMetadata).toHaveBeenCalledWith(1, { category: 'Nuova Categoria' });
     expect(aiServiceMock.modifyDocumentRange).not.toHaveBeenCalled();
     expect(aiServiceMock.updateResult).toHaveBeenCalledTimes(1);
     expect(component.isEditable).toBe(false);

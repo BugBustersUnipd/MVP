@@ -137,8 +137,8 @@ describe('Generatore', () => {
 
     expect(component.selectedTone).toBeNull();
     expect(component.selectedStyle).toBeNull();
-    expect(aiServiceMock.fetchTonesByCompany).toHaveBeenCalledWith(5);
-    expect(aiServiceMock.fetchStylesByCompany).toHaveBeenCalledWith(5);
+    expect(aiServiceMock.fetchTonesByCompany).toHaveBeenCalledWith(5, true);
+    expect(aiServiceMock.fetchStylesByCompany).toHaveBeenCalledWith(5, true);
   });
 
   it('should handle null company change and reset selections', () => {
@@ -150,8 +150,8 @@ describe('Generatore', () => {
     expect(component.selectedCompany).toBeNull();
     expect(component.selectedTone).toBeNull();
     expect(component.selectedStyle).toBeNull();
-    expect(aiServiceMock.fetchTonesByCompany).toHaveBeenCalledWith(undefined);
-    expect(aiServiceMock.fetchStylesByCompany).toHaveBeenCalledWith(undefined);
+    expect(aiServiceMock.fetchTonesByCompany).toHaveBeenCalledWith(undefined, true);
+    expect(aiServiceMock.fetchStylesByCompany).toHaveBeenCalledWith(undefined, true);
   });
 
   it('should handle template events from button, prompt and company menu', () => {

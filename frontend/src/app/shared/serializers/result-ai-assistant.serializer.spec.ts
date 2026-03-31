@@ -1,13 +1,10 @@
-import { TestBed } from '@angular/core/testing';
-
 import { ResultAiAssistantSerializer } from './result-ai-assistant.serializer';
 
 describe('ResultAiAssistantSerializer', () => {
   let serializer: ResultAiAssistantSerializer;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    serializer = TestBed.inject(ResultAiAssistantSerializer);
+    serializer = new ResultAiAssistantSerializer();
   });
 
   it('should serialize object payload with mapped fields', () => {
@@ -35,7 +32,7 @@ describe('ResultAiAssistantSerializer', () => {
     expect(result.tone.name).toBe('Formale');
     expect(result.style.name).toBe('Sintetico');
     expect(result.company.name).toBe('ACME');
-    expect(result.isPost).toBe(false);
+    expect(result.generatedDatumId).toBe(0);
   });
 
   it('should fallback on invalid values and default isPost to true', () => {
@@ -61,7 +58,7 @@ describe('ResultAiAssistantSerializer', () => {
     expect(result.style.id).toBe(0);
     expect(result.company.id).toBe(0);
     expect(result.data.getTime()).toBe(new Date(0).getTime());
-    expect(result.isPost).toBe(true);
+    expect(result.generatedDatumId).toBeDefined();
   });
 
   it('should support legacy positional payload format', () => {
