@@ -15,21 +15,21 @@ class TonesController < ApplicationController
   end
 
   def create
-    @tone = Tone.new(tone_params)
-    if @tone.save
+    tone = Tone.new(tone_params)
+    if tone.save
 
-      render json: { id: @tone.id, name: @tone.name, description: @tone.description, is_active: @tone.is_active }, status: :ok
+      render json: { id: tone.id, name: tone.name, description: tone.description, is_active: tone.is_active }, status: :ok
     else
       # Gestione errore semplice
-      render json: { error: @tone.errors.full_messages.join(', ') }, status: :bad_request
+      render json: { error: tone.errors.full_messages.join(', ') }, status: :bad_request
     end
   end
 
   def destroy
-    @tone = Tone.find_by(id: params[:id])
+    tone = Tone.find_by(id: params[:id])
 
-    if @tone && @tone.is_active
-      @tone.update(is_active: false)
+    if tone && tone.is_active
+      tone.update(is_active: false)
       render json: { message: "Tono eliminato con successo!" }, status: :ok
     else
       render json: { error: "Errore durante l'eliminazione del tono." }, status: :bad_request

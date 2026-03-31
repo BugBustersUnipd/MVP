@@ -16,19 +16,19 @@ class StylesController < ApplicationController
   end
 
   def create
-    @style = Style.new(style_params)
-    if @style.save
-      render json: { id: @style.id, name: @style.name, description: @style.description, is_active: @style.is_active }, status: :ok
+    style = Style.new(style_params)
+    if style.save
+      render json: { id: style.id, name: style.name, description: style.description, is_active: style.is_active }, status: :ok
     else
-      render json: { error: @style.errors.full_messages.join(', ') }, status: :bad_request
+      render json: { error: style.errors.full_messages.join(', ') }, status: :bad_request
     end
   end
 
   def destroy
-    @style = Style.find_by(id: params[:id])
+    style = Style.find_by(id: params[:id])
 
-    if @style && @style.is_active
-      @style.update(is_active: false)
+    if style && style.is_active
+      style.update(is_active: false)
       render json: { message: "Stile eliminato con successo!" }, status: :ok
     else
       render json: { error: "Errore durante l'eliminazione dello stile." }, status: :bad_request

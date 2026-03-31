@@ -1,7 +1,7 @@
 class PostsController < ApplicationController
   def create
     safe_params = post_params
-    post = AiGenerator::PostCreatorService.new.create_post(safe_params)
+    post = AiGenerator::PostCreatorService.create_post(safe_params)
 
     if post.persisted?
       render json: { message: "Post creato con successo!", id: post.id }, status: :ok
@@ -16,9 +16,9 @@ class PostsController < ApplicationController
   end
 
   def destroy
-    @post = Post.find_by(id: params[:id])
+    post = Post.find_by(id: params[:id])
     
-    if @post && @post.destroy
+    if post && post.destroy
       render json: { message: "Post eliminato con successo!" }, status: :ok
     else
       render json: { error: "Errore durante l'eliminazione del post." }, status: :bad_request

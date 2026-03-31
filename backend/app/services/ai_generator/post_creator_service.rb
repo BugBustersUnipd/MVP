@@ -1,6 +1,6 @@
 module AiGenerator
 class PostCreatorService
-  def create_post(safe_params)
+  def self.create_post(safe_params)
     return invalid_post("ID mancante") if safe_params[:generated_datum_id].blank?
 
     generation = GeneratedDatum.find_by(id: safe_params[:generated_datum_id])
@@ -26,10 +26,10 @@ class PostCreatorService
     post
   end
 
-  private
-
-  def invalid_post(message)
+  def self.invalid_post(message)
     Post.new.tap { |post| post.errors.add(:base, message) }
   end
+
+  private_class_method :invalid_post
 end
 end
