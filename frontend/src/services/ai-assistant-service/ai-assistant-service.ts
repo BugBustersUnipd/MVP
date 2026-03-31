@@ -226,10 +226,7 @@ export class AiAssistantService {
     // il reindirizzamento va gestito nella view, un esempio di come dovrebbe venire è:
     
   }
-  // todo implementare
-  removeGeneration(id: number) : void {
-    console.log(`Scarto generazione con id ${id} richiesto`);
-  }
+
 
   deletePost(id: number): void {
     this.http.delete<any>(`${API_BASE}/posts/${id}`).subscribe({

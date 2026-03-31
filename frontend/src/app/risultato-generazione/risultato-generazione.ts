@@ -104,7 +104,7 @@ export class RisultatoGenerazione {
   }
 
   deleteGeneration(): void {
-    this.aiService.removeGeneration(this.result()?.id ?? 0);
+    this.aiService.deletePost(this.result()?.id ?? 0);
     this.router.navigate(['/generatore']);
   }
 
