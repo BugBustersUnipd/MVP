@@ -68,7 +68,9 @@ export class Generatore {
     const companyId = this.selectedCompany?.id || 0;
     if (companyId > 0) {
       this.aiService.fetchTonesByCompany(companyId, true);
+      console.log('toni caricati', this.tones$);
       this.aiService.fetchStylesByCompany(companyId, true);
+      console.log('stili caricati', this.styles$);
     }
   }
 

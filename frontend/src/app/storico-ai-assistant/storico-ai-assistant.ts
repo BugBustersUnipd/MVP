@@ -55,13 +55,13 @@ export class StoricoAiAssistant {
     this.aiService.tones$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((tones) => {
-        this.tonoOptions = (tones ?? []).map(t => ({ id: t.id, name: t.name }));
+        this.tonoOptions = (tones ?? []).map(t => ({ id: t.id, name: t.name, isActive: t.isActive }));
       });
 
     this.aiService.styles$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((styles) => {
-        this.stileOptions = (styles ?? []).map(s => ({ id: s.id, name: s.name }));
+        this.stileOptions = (styles ?? []).map(s => ({ id: s.id, name: s.name, isActive: s.isActive }));
       });
 
     this.aiService.companies$

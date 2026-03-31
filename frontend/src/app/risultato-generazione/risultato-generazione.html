@@ -61,19 +61,30 @@
             <hr class="parametri-divider">
             @if(result.id!==null){
                 <div class="actions">
-                    <app-button label="Riutilizza" class="btn btn-primary" [fluid]="true" (action)="reuseGeneration()"></app-button>
-                    <app-button label="Duplica" class="btn btn-primary" [fluid]="true" (action)="duplicateGeneration()"></app-button>
+                    <app-button 
+                        label="Riutilizza" 
+                        class="btn btn-primary" 
+                        [fluid]="true" 
+                        [disabled]="!result.style.isActive || !result.tone.isActive"
+                        (action)="reuseGeneration()">
+                    </app-button>
+                    <app-button 
+                        label="Duplica" 
+                        class="btn btn-primary" 
+                        [fluid]="true" 
+                        (action)="duplicateGeneration()">
+                    </app-button>
                 </div>
             }
             <div>
                  <div class="menu-row mb-3">
-                     <menutendina [options]="[result.tone]" [selected]="result.tone"
-                         label="Tono" placeholder="Nessun tono selezionato" [disabled]="true"></menutendina>
-     
-                     <menutendina [options]="[result.style]" [selected]="result.style"
-                         label="Stile" placeholder="Nessuno stile selezionato" [disabled]="true"></menutendina>
                      <menutendina [options]="[result.company]" [selected]="result.company"
                          label="Azienda" placeholder="Nessuna azienda selezionata" [disabled]="true"></menutendina>
+                     <menutendina [options]="[result.tone]" [selected]="result.tone"
+                         label="Tono" placeholder="Nessun tono selezionato" [disabled]="true" [ngClass]="result.tone.isActive==false?'text-danger':''"></menutendina>
+     
+                     <menutendina [options]="[result.style]" [selected]="result.style"
+                         label="Stile" placeholder="Nessuno stile selezionato" [disabled]="true" [ngClass]="result.style.isActive==false?'text-danger':''"></menutendina>
                  </div>
                 <app-prompt [prompt]="result.prompt" label="Prompt" [autoResize]="true" [disabled]="true"></app-prompt>
             </div>

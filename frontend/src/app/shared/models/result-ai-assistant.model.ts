@@ -16,11 +16,13 @@ export interface ResultAiAssistant extends Result {
 export interface Style {
 	id: number;
 	name: string;
+	isActive: boolean;
 }
 
 export interface Tone {
 	id: number;
 	name: string;
+	isActive: boolean;
 }
 
 export interface Company {

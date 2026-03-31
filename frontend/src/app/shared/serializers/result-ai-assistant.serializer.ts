@@ -123,12 +123,14 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
 
     const tone = this.deserializeToneItem({
       id: source['toneId'],
-      name: source['toneName']
+      name: source['toneName'],
+      isActive: source['is_tone_active']
     });
 
     const style = this.deserializeStyleItem({
       id: source['styleId'],
-      name: source['styleName']
+      name: source['styleName'],
+      isActive: source['is_style_active']
     });
 
     const company = this.deserializeCompanyItem({
@@ -263,7 +265,14 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
     const source = this.isRecord(payload) ? payload : {};
     return {
       id: this.asNumber(source['id'], 0),
-      name: this.asString(source['name'])
+      name: this.asString(source['name']),
+      isActive: this.asBoolean(source['isActive'], true)
     };
+  }
+  asBoolean(value: unknown, defaultValue: boolean): boolean {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    if (typeof value === 'number') return value !== 0;
+    return defaultValue;
   }
 }

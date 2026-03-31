@@ -148,7 +148,11 @@ export class RisultatoGenerazione {
   }
 
   getImagePathValue(): string {
-    return this.imagePathForView();
+    const path = this.imagePathForView();
+    if (path && !path.startsWith('data:') && !path.startsWith('http')) {
+      return `http://localhost:3000${path}`;
+    }
+    return path;
   }
 
   saveChanges(): void {
@@ -220,15 +224,15 @@ export class RisultatoGenerazione {
 
   reuseGeneration(): void {
     const current = this.result();
-    this.aiService.reuse(current?.tone ?? { id: 0, name: '' }, current?.style ?? { id: 0, name: '' }, current?.company ?? { id: 0, name: '' }, current?.prompt ?? '');
+    this.aiService.reuse(current?.tone ?? { id: 0, name: '', isActive: false }, current?.style ?? { id: 0, name: '', isActive: false }, current?.company ?? { id: 0, name:''}, current?.prompt ?? '');
   }
 
   duplicateGeneration(): void {
     const current = this.result();
     this.router.navigate(['/generatore'], {
       state: {
-      tone: current?.tone ?? { id: 0, name: '' },
-      style: current?.style ?? { id: 0, name: '' },
+      tone: current?.tone ?? { id: 0, name: '', isActive: false },
+      style: current?.style ?? { id: 0, name: '', isActive: false },
       company: current?.company ?? { id: 0, name: '' },
       prompt: current?.prompt ?? ''
       }
