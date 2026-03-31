@@ -23,8 +23,8 @@ describe('RisultatoGenerazione', () => {
     title: 'Titolo iniziale',
     content: 'Contenuto iniziale',
     imagePath: null,
-    tone: { id: 1, name: 'Formale' },
-    style: { id: 2, name: 'Sintetico' },
+    tone: { id: 1, name: 'Formale', isActive: true },
+    style: { id: 2, name: 'Sintetico', isActive: true },
     company: { id: 3, name: 'ACME' },
     data: new Date('2025-01-01'),
     prompt: 'Prompt iniziale',
@@ -37,7 +37,7 @@ describe('RisultatoGenerazione', () => {
     currentGenerationError$: new BehaviorSubject<string | null>(null),
     setCurrentResult: vi.fn(),
     createPost: vi.fn(),
-    removeGeneration: vi.fn(),
+    deletePost: vi.fn(),
     setEvaluation: vi.fn(),
     reuse: vi.fn(),
     regenerate: vi.fn(),
@@ -54,7 +54,7 @@ describe('RisultatoGenerazione', () => {
     aiServiceMock.currentGenerationError$ = new BehaviorSubject<string | null>(null);
     aiServiceMock.setCurrentResult.mockClear();
     aiServiceMock.createPost.mockClear();
-    aiServiceMock.removeGeneration.mockClear();
+    aiServiceMock.deletePost.mockClear();
     aiServiceMock.setEvaluation.mockClear();
     aiServiceMock.reuse.mockClear();
     aiServiceMock.regenerate.mockClear();
@@ -100,7 +100,7 @@ describe('RisultatoGenerazione', () => {
 
   it('should remove generation and navigate on delete', () => {
     component.deleteGeneration();
-    expect(aiServiceMock.removeGeneration).toHaveBeenCalledWith(10);
+    expect(aiServiceMock.deletePost).toHaveBeenCalledWith(10);
     expect(routerMock.navigate).toHaveBeenCalledWith(['/generatore']);
   });
 
@@ -198,7 +198,7 @@ describe('RisultatoGenerazione', () => {
 
   it('should use image fallback and pending image override', () => {
     component.result.set({ ...baseResult, imagePath: null });
-    expect(component.getImagePathValue()).toBe('/PlaceHolder-GufoBagnato.jpg');
+    expect(component.getImagePathValue()).toBe('http://localhost:3000/PlaceHolder-GufoBagnato.jpg');
 
     component.pendingImagePath.set('data:image/png;base64,abc');
     expect(component.getImagePathValue()).toBe('data:image/png;base64,abc');
@@ -225,8 +225,8 @@ describe('RisultatoGenerazione', () => {
 
     component.reuseGeneration();
     expect(aiServiceMock.reuse).toHaveBeenCalledWith(
-      { id: 0, name: '' },
-      { id: 0, name: '' },
+      { id: 0, name: '', isActive: false },
+      { id: 0, name: '', isActive: false },
       { id: 0, name: '' },
       '',
     );
@@ -234,8 +234,8 @@ describe('RisultatoGenerazione', () => {
     component.duplicateGeneration();
     expect(routerMock.navigate).toHaveBeenCalledWith(['/generatore'], {
       state: {
-        tone: { id: 0, name: '' },
-        style: { id: 0, name: '' },
+        tone: { id: 0, name: '', isActive: false },
+        style: { id: 0, name: '', isActive: false },
         company: { id: 0, name: '' },
         prompt: '',
       },

@@ -15,8 +15,8 @@ describe('AiAssistantService', () => {
     title: 'Titolo',
     content: 'Contenuto',
     imagePath: null,
-    tone: { id: 1, name: 'Formale' },
-    style: { id: 2, name: 'Sintetico' },
+    tone: { id: 1, name: 'Formale', isActive: true },
+    style: { id: 2, name: 'Sintetico', isActive: true },
     company: { id: 3, name: 'ACME' },
     data: new Date('2025-01-01'),
     prompt: 'Prompt',
@@ -52,7 +52,7 @@ describe('AiAssistantService', () => {
     expect(req.request.params.get('company_id')).toBe('7');
 
     req.flush({ tones: [{ id: 10, name: 'Amichevole' }] });
-    expect(tonesValue).toEqual([{ id: 10, name: 'Amichevole' }]);
+    expect(tonesValue).toEqual([{ id: 10, name: 'Amichevole', isActive: true }]);
   });
 
   it('should return empty tones when backend payload shape is not supported', () => {
@@ -90,7 +90,7 @@ describe('AiAssistantService', () => {
     const req = httpMock.expectOne((r) => r.url === 'http://localhost:3000/styles');
     req.flush({ styles: [{ id: 42, name: 'Narrativo' }] });
 
-    expect(stylesValue).toEqual([{ id: 42, name: 'Narrativo' }]);
+    expect(stylesValue).toEqual([{ id: 42, name: 'Narrativo', isActive: true }]);
   });
 
   it('should fetch companies and update companies$', () => {
@@ -127,7 +127,7 @@ describe('AiAssistantService', () => {
     req.flush({ id: 99, name: 'Nuovo tono' });
     expect(tonesValue).toEqual([
       { id: 1, name: 'Base' },
-      { id: 99, name: 'Nuovo tono' },
+      { id: 99, name: 'Nuovo tono', isActive: true },
     ]);
   });
 
@@ -152,7 +152,7 @@ describe('AiAssistantService', () => {
     req.flush({ id: 88, name: 'Nuovo stile' });
     expect(stylesValue).toEqual([
       { id: 1, name: 'Base style' },
-      { id: 88, name: 'Nuovo stile' },
+      { id: 88, name: 'Nuovo stile', isActive: true },
     ]);
   });
 
@@ -330,11 +330,10 @@ describe('AiAssistantService', () => {
     expect((service as any).ResultsHistorySubject.value).toEqual([]);
   });
 
-  it('should call duplicate and removeGeneration without throwing', () => {
+  it('should call duplicate without throwing', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     expect(() => service.duplicate(sampleResult.tone, sampleResult.style, sampleResult.company, 'Prompt')).not.toThrow();
-    expect(() => service.removeGeneration(10)).not.toThrow();
 
     logSpy.mockRestore();
   });
