@@ -10,6 +10,30 @@ puts "Creazione delle Aziende (Companies)..."
 company_a = Company.create!(name: "TechCorp Italia", description: "Azienda italiana specializzata in soluzioni software e servizi tecnologici per le imprese.")
 company_b = Company.create!(name: "Innovazione S.p.A.", description: "Società leader nell'innovazione digitale e nella trasformazione tecnologica delle organizzazioni.")
 
+puts "Aggiungo MILES BEYOND S.R.L. e Claudio Pastore..."
+
+company_c = Company.create!(
+  name: "MILES BEYOND S.R.L.",
+  description: "Azienda specializzata in servizi logistici avanzati e soluzioni B2B."
+)
+
+user_claudio = User.create!(
+  cf: "PSTRCL80A01H501X",
+  username: "claudio.pastore",
+  password: "Passw0rd!2026",
+  email: "claudio.pastore@milesbeyond.it",
+  name: "Claudio",
+  surname: "Pastore"
+)
+
+Employee.create!(
+  department: "Amministrazione",
+  user: user_claudio,
+  company: company_c
+)
+
+puts "MILES BEYOND S.R.L. e Claudio Pastore creati."
+
 puts "Creazione degli Utenti (Users)..."
 user1 = User.create!(
   cf: "RSSMRA80A01H501U", username: "mario.rossi", password: "password123", 

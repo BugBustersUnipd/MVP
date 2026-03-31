@@ -42,33 +42,33 @@ describe('Analytics Dashboard - AI Assistant Generativo', () => {
 
   it('mostra la dashboard con i dati analytics dell AI Assistant', () => {
     cy.contains('p-accordion-header', 'Ai Assistant Generativo').should('be.visible')
-    cy.contains('.label', 'Quando:').should('exist')
+    cy.contains('.label', 'Quando:').should('be.visible')
   })
 
   it('mostra totale prompt, rating medio e numero rigenerazioni', () => {
     cy.contains('.item .label', 'N. PROMPT GENERATI')
-      .should('exist')
+      .should('be.visible')
       .closest('.item')
       .find('.data-value')
-      .should('contain.text', '120')
+      .should('have.text', '120')
 
     cy.contains('.item .label', 'RATING MEDIO PROMPT')
-      .should('exist')
+      .should('be.visible')
       .closest('.item')
       .find('.data-value')
-      .should('contain.text', '4.6')
+      .should('have.text', '4.6')
 
     cy.contains('.item .label', 'N. RIGENERAZIONI MEDIE PER PROMPT')
-      .should('exist')
+      .should('be.visible')
       .closest('.item')
       .find('.data-value')
-      .should('contain.text', '2')
+      .should('have.text', '2')
   })
 
   it('mostra le statistiche su toni e stili piu usati', () => {
-    cy.contains('.chart .label', 'Toni').should('exist')
-    cy.contains('.Chart .label', 'Stili').should('exist')
-    cy.get('app-analytics-charts canvas').should('have.length.at.least', 2)
+    cy.contains('.chart .label', 'Toni').should('be.visible')
+    cy.contains('.Chart .label', 'Stili').should('be.visible')
+    cy.get('app-analytics-charts canvas').should('have.length', 2)
   })
 })
 
@@ -107,13 +107,13 @@ describe('Analytics Dashboard - fallback grafici AI Assistant', () => {
   })
 
   it('mostra il messaggio di dati insufficienti quando i grafici toni e stili sono vuoti', () => {
-    cy.contains('.chart .label', 'Toni').should('exist')
-    cy.contains('.Chart .label', 'Stili').should('exist')
+    cy.contains('.chart .label', 'Toni').should('be.visible')
+    cy.contains('.Chart .label', 'Stili').should('be.visible')
     cy.get('.Charts-Container .no-data-message')
       .should('have.length', 2)
       .each(($el) => {
-        cy.wrap($el).should('contain.text', 'Non ci sono dati sufficienti per le analisi')
+        cy.wrap($el).should('have.text', 'Non ci sono dati sufficienti per le analisi')
       })
-    cy.get('app-analytics-charts canvas').should('have.length.at.least', 2)
+    cy.get('app-analytics-charts canvas').should('have.length', 2)
   })
 })

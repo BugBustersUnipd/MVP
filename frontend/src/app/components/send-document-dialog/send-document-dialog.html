@@ -1,12 +1,9 @@
 <div class="d-flex flex-column h-100">
     <div class="d-flex gap-3 mb-2 justify-content-end menu-row">
-        <menutendina [options]="(templates$ | async) || []" [(selected)]="selectedTemplate" label="Template" placeholder="Seleziona un template" [addButtonLabel]="'Nuovo template'" (addNew)="openAddDialog('template')"></menutendina>
+        <menutendina [options]="(templates$ | async) || []" [selected]="selectedTemplate" (selectedChange)="onTemplateSelected($event)" label="Template" placeholder="Seleziona un template" [addButtonLabel]="'Nuovo template'" (addNew)="openAddDialog('template')"></menutendina>
     </div>
     <div class="mb-2">
-        <app-prompt label="Messaggio" [prompt]="messaggio" (promptChange)="messaggio = $event" [placeholder]="'Usa un template o scrivi un messaggio personalizzato'" [autoResize]="true"></app-prompt>
-    </div>
-    <div class="mt-2 mb-3 flex gap-4">
-        <app-attach-file #attachFile></app-attach-file>
+        <app-prompt label="Messaggio" [prompt]="messaggio" [value]="messaggio" (promptChange)="messaggio = $event" [placeholder]="'Usa un template o scrivi un messaggio personalizzato'" [autoResize]="true"></app-prompt>
     </div>
     <div class="mb-4">
         <div class="d-flex align-items-center gap-2">
@@ -25,4 +22,4 @@
         <app-button label="Conferma invio" class="btn-primary" (action)="confirmDialog()" />
     </div>
 </div>
-<app-add-dialog [(visible)]="addDialogVisible" [type]="addDialogType"></app-add-dialog>
+<app-add-dialog [(visible)]="addDialogVisible" [type]="addDialogType" (saveRequested)="handleAddSave($event)"></app-add-dialog>

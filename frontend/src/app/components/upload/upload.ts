@@ -13,6 +13,7 @@ export interface UploadValidationError {
 })
 export class Upload {
     @ViewChild('nativeFileInput') nativeFileInput!: ElementRef<HTMLInputElement>;
+  private selectedPrimeFiles: File[] = [];
 
     @Input() accept: string = '.pdf,.csv,.jpg';
     @Input() maxFileSize: number = 10000000; // In byte (es. 10MB)
@@ -24,8 +25,33 @@ export class Upload {
     @Output() fileValidationError = new EventEmitter<UploadValidationError>();
     
     onPrimeSelect(event: any) {
-    const files = this.extractFiles(event);
-    this.emitValidatedFiles(files);
+      const files = this.extractCurrentFiles(event) || this.extractFiles(event);
+      const validFiles = this.emitValidatedFiles(files);
+      this.selectedPrimeFiles = [...validFiles];
+    }
+
+    onPrimeRemove(event: any) {
+      const currentFiles = this.extractCurrentFiles(event) || this.extractFiles(event);
+
+      if (currentFiles.length > 0) {
+        this.selectedPrimeFiles = [...currentFiles];
+        this.filesSelected.emit(currentFiles);
+        return;
+      }
+
+      if (event?.file) {
+        this.selectedPrimeFiles = this.removeSingleFile(this.selectedPrimeFiles, event.file as File);
+        this.filesSelected.emit(this.selectedPrimeFiles);
+        return;
+      }
+
+      this.selectedPrimeFiles = [];
+      this.filesSelected.emit([]);
+    }
+
+    onPrimeClear() {
+      this.selectedPrimeFiles = [];
+      this.filesSelected.emit([]);
     }
 
     onNativeSelect(event: Event) {
@@ -37,7 +63,7 @@ export class Upload {
       input.value = '';
     }
 
-    private emitValidatedFiles(files: File[]): void {
+    private emitValidatedFiles(files: File[]): File[] {
       const validFiles = files.filter((file) => this.isAllowedFile(file));
       const invalidFiles = files.filter((file) => !this.isAllowedFile(file));
 
@@ -48,6 +74,7 @@ export class Upload {
       }
 
       this.filesSelected.emit(validFiles);
+      return validFiles;
     }
 
     private isAllowedFile(file: File): boolean {
@@ -92,6 +119,29 @@ export class Upload {
       }
 
       return [];
+    }
+
+    private extractCurrentFiles(event: any): File[] | null {
+      if (Array.isArray(event?.currentFiles)) {
+        return event.currentFiles;
+      }
+
+      return null;
+    }
+
+    private removeSingleFile(files: File[], toRemove: File): File[] {
+      const index = files.findIndex(
+        (file) =>
+          file.name === toRemove.name &&
+          file.size === toRemove.size &&
+          file.lastModified === toRemove.lastModified
+      );
+
+      if (index < 0) {
+        return files;
+      }
+
+      return [...files.slice(0, index), ...files.slice(index + 1)];
     }
 
 }

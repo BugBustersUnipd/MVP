@@ -8,15 +8,106 @@
 	color: var(--txt-color);
 }
 
-.action-column {
-	width: 90px;
-	text-align: center;
-}
-
 .empty-message {
 	text-align: center;
 	color: #6b7280;
 	padding: 1rem 0;
+}
+
+.no-match-message {
+	font-size: 0.8rem;
+	color: #9ca3af;
+	font-style: italic;
+	margin: 0;
+}
+
+.recipient-card {
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 1rem 1.25rem;
+	margin-bottom: 0.75rem;
+	background-color: #fafafa;
+}
+
+/* Sezione nome grezzo LLM */
+.extracted-name-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.field-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #6b7280;
+}
+
+.extracted-name-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.extracted-name-value {
+	font-size: 1rem;
+	font-weight: 500;
+	color: #374151;
+}
+
+.recipient-confidence-pill {
+	display: inline-block;
+	font-size: 0.625rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #4a4a4a;
+	background-color: #e9ecef;
+	border-radius: 999px;
+	padding: 0.15rem 0.55rem;
+	white-space: nowrap;
+}
+
+.divider {
+	border: none;
+	border-top: 1px solid #e5e7eb;
+	margin: 0.75rem 0;
+}
+
+/* Sezione destinatario matchato */
+.matched-section {
+	/* niente di speciale, usa Bootstrap per il grid */
+}
+
+.matched-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 0.75rem;
+}
+
+.matched-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	background: #ffffff;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	padding: 0.5rem 0.75rem;
+}
+
+.matched-field-label {
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #9ca3af;
+}
+
+.matched-field-value {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: #111827;
 }
 
 :host ::ng-deep .extracted-edit-btn {

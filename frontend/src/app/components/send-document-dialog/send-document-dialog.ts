@@ -1,4 +1,4 @@
-import {Component, inject, Input, ViewChild} from '@angular/core';
+import {Component, inject, Input} from '@angular/core';
 import {DynamicDialogRef} from 'primeng/dynamicdialog';
 import {DynamicDialogConfig} from 'primeng/dynamicdialog';
 import { TableModule } from 'primeng/table';
@@ -8,35 +8,35 @@ import { Button} from '../button/button';
 import { Menutendina } from '../menutendina/menutendina';
 import { Prompt } from '../prompt/prompt';
 import { Observable } from 'rxjs';
-import { AddDialog,AddDialogType } from '../add-dialog/add-dialog';
-import { AttachFile } from "../attach-file/attach-file";
+import { AddDialog,AddDialogType, AddDialogSaveData } from '../add-dialog/add-dialog';
+import { AiCoPilotService, TemplateOption } from '../../../services/ai-co-pilot-service/ai-co-pilot-service';
 
 // Interface per i dati da inviare
 export interface SendDocumentData {
     messaggio: string;
     orarioInvio: {  name: string; value: string};
     fileAttachments: File[];
-    template?: string;
+    templateId?: number;
+    templateName?: string;
 }
 @Component({
     selector: 'app-send-document-dialog',
     templateUrl: './send-document-dialog.html',
     styleUrl: './send-document-dialog.css',
     providers: [],
-    imports: [TableModule, Button, Menutendina, Prompt, AsyncPipe, AddDialog, AttachFile]
+    imports: [TableModule, Button, Menutendina, Prompt, AsyncPipe, AddDialog]
 })
 export class SendDocumentDialog {
     public ref: DynamicDialogRef= inject(DynamicDialogRef);
     public config: DynamicDialogConfig= inject(DynamicDialogConfig);
-
-    @ViewChild('attachFile') attachFileComponent!: AttachFile;
+    private aiService = inject(AiCoPilotService);
 
     addDialogVisible: boolean = false;
     addDialogType: AddDialogType = 'tone';
     
     @Input() options: any[] = [];
-    templates$: Observable<any[]> | undefined;
-    selectedTemplate: any = null;
+    templates$: Observable<TemplateOption[]> | undefined;
+    selectedTemplate: TemplateOption | null = null;
     private _messaggio: string = '';
     
     get messaggio(): string {
@@ -45,6 +45,11 @@ export class SendDocumentDialog {
     
     set messaggio(value: string) {
         this._messaggio = value;
+    }
+
+    onTemplateSelected(template: TemplateOption | null): void {
+        this.selectedTemplate = template;
+        this._messaggio = template?.content ?? '';
     }
     
     timeOptions: any[] = [
@@ -65,6 +70,14 @@ export class SendDocumentDialog {
         this.addDialogVisible = true;
     }
 
+    handleAddSave(event: AddDialogSaveData): void {
+        if (event.type !== 'template') {
+            return;
+        }
+
+        this.aiService.newTemplate(event.name, event.description);
+    }
+
     closeDialog() {
         this.ref.close();
     }
@@ -73,8 +86,9 @@ export class SendDocumentDialog {
         const sendData: SendDocumentData = {
             messaggio: this.messaggio,
             orarioInvio: this.selectedTime ? this.selectedTime : this.timeOptions[0],
-            fileAttachments: this.attachFileComponent.files,
-            template: this.selectedTemplate?.name
+            fileAttachments: [],
+            templateId: this.selectedTemplate?.id,
+            templateName: this.selectedTemplate?.name,
         };
         this.ref.close(sendData);
     }

@@ -25,6 +25,7 @@ describe('AnteprimaDocumento', () => {
     otherExtractedDocuments$: new BehaviorSubject<any[]>([]),
     employees$: of([{ id: 1, name: 'Mario' }]),
     fetchTemplates: vi.fn(),
+    fetchExtractedDocument: vi.fn(),
     getDocumentsByParent: vi.fn(),
     getOriginalPdfById: vi.fn(),
     getPdfById: vi.fn(),
@@ -32,6 +33,7 @@ describe('AnteprimaDocumento', () => {
     updateResult: vi.fn(),
     updateDocumentMetadata: vi.fn(),
     modifyDocumentRange: vi.fn(),
+    createSending$: vi.fn(() => of({ status: 'ok' })),
   };
 
   const dialogRefMock = {
@@ -77,6 +79,7 @@ describe('AnteprimaDocumento', () => {
     );
 
     aiServiceMock.fetchTemplates.mockClear();
+    aiServiceMock.fetchExtractedDocument.mockClear();
     aiServiceMock.getDocumentsByParent.mockClear();
     aiServiceMock.getOriginalPdfById.mockClear();
     aiServiceMock.getPdfById.mockClear();
@@ -84,6 +87,7 @@ describe('AnteprimaDocumento', () => {
     aiServiceMock.updateResult.mockClear();
     aiServiceMock.updateDocumentMetadata.mockClear();
     aiServiceMock.modifyDocumentRange.mockClear();
+    aiServiceMock.createSending$.mockClear();
     dialogServiceMock.open.mockClear();
     messageServiceMock.add.mockClear();
 
@@ -110,6 +114,7 @@ describe('AnteprimaDocumento', () => {
 
   it('should fetch templates and sibling docs on init', () => {
     expect(aiServiceMock.fetchTemplates).toHaveBeenCalledTimes(1);
+    expect(aiServiceMock.fetchExtractedDocument).toHaveBeenCalledWith(1);
     expect(aiServiceMock.getDocumentsByParent).toHaveBeenCalledWith(11, 1);
     expect(component.extractedEmployeeRows.length).toBe(1);
     expect(component.pages).toBe(10);
@@ -204,6 +209,31 @@ describe('AnteprimaDocumento', () => {
   it('should open send dialog', () => {
     component.showDialog();
     expect(dialogServiceMock.open).toHaveBeenCalled();
+  });
+
+  it('should call createSending$ when send dialog returns data', () => {
+    dialogServiceMock.open.mockReturnValueOnce({
+      onClose: of({
+        messaggio: 'Test invio',
+        orarioInvio: { name: 'Adesso', value: 'now' },
+        fileAttachments: [],
+        templateId: 1,
+        templateName: 'Template Test',
+      }),
+    } as any);
+
+    component.showDialog();
+
+    expect(aiServiceMock.createSending$).toHaveBeenCalledTimes(1);
+    expect(aiServiceMock.createSending$).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extracted_document_id: 1,
+        recipient_id: 2,
+        subject: 'Template Test',
+        body: 'Test invio',
+        template_id: 1,
+      })
+    );
   });
 
   it('should react to doc-summary output bindings in template', () => {

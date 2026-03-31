@@ -5,7 +5,6 @@ import { ResultAiAssistant } from '../../app/shared/models/result-ai-assistant.m
 import { Tone, Style, Company } from '../../app/shared/models/result-ai-assistant.model';
 import { ResultAiAssistantSerializer } from '../../app/shared/serializers/result-ai-assistant.serializer';
 import { BehaviorSubject } from 'rxjs';
-import { AnalyticsAbstractService } from '../analytics-abstract-service';
 const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
 const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 
@@ -15,8 +14,19 @@ const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 export class AiAssistantService {
   private serializer = inject(ResultAiAssistantSerializer);
   private http = inject(HttpClient);
+  
+  private tonesSubject = new BehaviorSubject<Tone[]>([]);
+  tones$ = this.tonesSubject.asObservable();
+
+  private stylesSubject = new BehaviorSubject<Style[]>([]);
+  styles$ = this.stylesSubject.asObservable();
+
+  private companiesSubject = new BehaviorSubject<Company[]>([]);
+  companies$ = this.companiesSubject.asObservable();
+
   private resultSubject : BehaviorSubject<ResultAiAssistant | null> = new BehaviorSubject<ResultAiAssistant | null>(null);
   currentResult$ = this.resultSubject.asObservable();
+
   private generationErrorSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
   currentGenerationError$ = this.generationErrorSubject.asObservable();
 
@@ -102,14 +112,6 @@ export class AiAssistantService {
   }
 
 
-  private tonesSubject = new BehaviorSubject<Tone[]>([]);
-  tones$ = this.tonesSubject.asObservable();
-
-  private stylesSubject = new BehaviorSubject<Style[]>([]);
-  styles$ = this.stylesSubject.asObservable();
-
-  private companiesSubject = new BehaviorSubject<Company[]>([]);
-  companies$ = this.companiesSubject.asObservable();
 
 
   fetchTonesByCompany(company: number, is_active?: boolean) : void {
@@ -119,8 +121,7 @@ export class AiAssistantService {
     }
     this.http.get<any>(`${API_BASE}/tones`, { params }).subscribe({
       next: (response) => {
-        const tonesArray = Array.isArray(response) ? response : response.tones || [];
-        const tones: Tone[] = tonesArray.map((item: any) => ({ id: item.id, name: item.name }));
+        const tones = this.serializer.deserializeTonesResponse(response);
         this.tonesSubject.next(tones);
         console.log('Toni recuperati:', tones);
       },
@@ -135,8 +136,7 @@ export class AiAssistantService {
     }
     this.http.get<any>(`${API_BASE}/styles`, { params }).subscribe({
         next: (response) => {
-        const stylesArray = Array.isArray(response) ? response : response.styles || [];
-        const styles: Style[] = stylesArray.map((item: any) => ({ id: item.id, name: item.name }));
+        const styles = this.serializer.deserializeStylesResponse(response);
         this.stylesSubject.next(styles);
         console.log('Stili recuperati:', styles);
       },
@@ -144,49 +144,55 @@ export class AiAssistantService {
     });
 
   }
-
+    /**
+     * NOTA qui il serializer è stato usato per mantenere coerenza architetturale, tuttavia prima bastava una riga:
+     * this.companiesSubject.next(response.companies);
+     * tuttavia questo è migliore anche per una questione di robustezza e coerenza futura: unico punto centralizzato dove cambiare la deserializzazione degli elementi se il backend cambia->ai-assistant-serializer
+     */
   fetchCompanies(): void {
     this.http.get<any>(`${API_BASE}/lookups/companies`).subscribe({
       next: (response) => {
-        this.companiesSubject.next(response.companies);
-        console.log('Aziende recuperate:', response.companies);
+        const companies = this.serializer.deserializeCompaniesResponse(response);
+        this.companiesSubject.next(companies);
+        console.log('Aziende recuperate:', companies);
         },
       error: (err) => console.error('Errore nel recupero delle aziende:', err),
     });
   }
   newTone(name: string, code: string, companyId: number) : void {
-    this.http.post<any>(`${API_BASE}/tones`, {
-      tone: {
-        name: name,
-        description: code,
-        company_id: companyId
-      }
-    }).subscribe({
+    const payload = this.serializer.serializeNewToneRequest(name, code, companyId);
+    this.http.post<any>(`${API_BASE}/tones`, payload).subscribe({
       next: (response) => {
-        const mockTone = { id: response.id, name };
-        this.tonesSubject.next([...this.tonesSubject.value, mockTone]);
-        console.log('Tono creato:', mockTone);
+        const createdTone = this.serializer.deserializeToneItem(response);
+        this.tonesSubject.next(this.upsertById(this.tonesSubject.value, createdTone));
+        console.log('Tono creato:', createdTone);
       },
       error: (err) => console.error('Errore nella creazione del tono:', err),
     });
   }
 
   newStyle(name: string, code: string, companyId: number) : void {
-    this.http.post<any>(`${API_BASE}/styles`, {
-      style: {
-        name: name,
-        description: code,
-        company_id: companyId
-      }
-    }).subscribe({
+    const payload = this.serializer.serializeNewStyleRequest(name, code, companyId);
+    this.http.post<any>(`${API_BASE}/styles`, payload).subscribe({
       next: (response) => {
         console.log('Risposta alla creazione dello stile:', response);
-        const mockStyle = { id: response.id, name };
-        this.stylesSubject.next([...this.stylesSubject.value, mockStyle]);
-        console.log('Stile creato:', mockStyle);
+        const createdStyle = this.serializer.deserializeStyleItem(response);
+        this.stylesSubject.next(this.upsertById(this.stylesSubject.value, createdStyle));
+        console.log('Stile creato:', createdStyle);
       },
       error: (err) => console.error('Errore nella creazione dello stile:', err),
     });
+  }
+
+  private upsertById<T extends { id: number }>(list: T[], item: T): T[] {
+    const existingIndex = list.findIndex((entry) => entry.id === item.id);
+    if (existingIndex < 0) {
+      return [...list, item];
+    }
+
+    const next = [...list];
+    next[existingIndex] = item;
+    return next;
   }
 
   removeTone(id: number) : void {
@@ -300,30 +306,23 @@ export class AiAssistantService {
     this.resultSubject.next(newResult);
   }
   createPost(result: ResultAiAssistant): void {
-    // Costruisce il payload per POST /posts con i dati del result
-    // Il backend accetta: title, body_text, img_path, date_time, generated_datum_id
-    const payload = {
-      generated_datum_id: result.generatedDatumId,
-      title: result.title,
-      body_text: result.content,
-      img_path: result.imagePath,
-      date_time: result.data
-    };
+    const payload = this.serializer.serializeCreatePostRequest(result);
 
     console.log('[createPost] Invio POST /posts con payload:', payload);
 
     this.http.post<any>(`${API_BASE}/posts`, payload).subscribe({
       next: (response) => {
         console.log('[createPost] Risposta POST /posts:', response);
+        const createdPostId = this.serializer.deserializeCreatePostResponseId(response);
 
         const postResult: ResultAiAssistant = {
           ...result,
-          id: response?.id ?? result.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
+          id: createdPostId > 0 ? createdPostId : result.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
         };
 
         this.resultSubject.next(postResult);
         this.ResultsHistorySubject.next([...(this.ResultsHistorySubject.value || []), postResult]);
-        console.log('[createPost] Post creato con successo, id:', response?.id);
+        console.log('[createPost] Post creato con successo, id:', createdPostId);
       },
       error: (err) => {
         console.error('[createPost] Errore nella POST /posts:', err);
@@ -351,14 +350,15 @@ export class AiAssistantService {
         title: '',
         content: '',
         imagePath: null,
-        generatedDatumId: null
+        generatedDatumId: null,
+        evaluation: -1
       });
     }
 
     this.http.post<any>(`${API_BASE}/generated_data/${generationId}/regenerate`, {}).subscribe({
       next: (response) => {
         console.log('[regenerate] risposta POST /generated_data/:id/regenerate:', response);
-        const regeneratedId = Number(response?.id ?? response?.generated_datum_id) || 0;
+        const regeneratedId = this.serializer.deserializeGenerationStartResponse(response);
 
         if (regeneratedId <= 0) {
           console.error('[regenerate] Risposta senza id valido:', response);
@@ -392,42 +392,17 @@ export class AiAssistantService {
       companyId: company?.id,
     });
 
-    const pendingResult: ResultAiAssistant = {
-        id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
-        title: '',
-        content: '',
-        imagePath: null,
-        tone: tone,
-        style: style,
-        company: company,
-        data: new Date(),
-        prompt: prompt,
-        evaluation: -1,
-        generatedDatumId: null //per ora non so quale sia sto id del generated datum
-    };
+    const pendingResult = this.buildPendingResult(prompt, tone, style, company);
 
     this.resultSubject.next(pendingResult);
     console.log('[requireGeneration] pending result pubblicato con id temporaneo:', pendingResult.id);
 
-    console.log('[requireGeneration] POST /generated_data payload:', {
-      generation_datum: {
-        prompt,
-        company_id: company.id,
-        style_id: style.id,
-        tone_id: tone.id
-      }
-    });
-    this.http.post<any>(`${API_BASE}/generated_data`, {
-      generation_datum: {
-        prompt,
-        company_id: company.id,
-        style_id: style.id,
-        tone_id: tone.id
-      }
-    }).subscribe({
+    const payload = this.serializer.serializeRequireGenerationRequest(prompt, tone, style, company);
+    console.log('[requireGeneration] POST /generated_data payload:', payload);
+    this.http.post<any>(`${API_BASE}/generated_data`, payload).subscribe({
       next: (response) => {
         console.log('[requireGeneration] risposta POST /generated_data:', response);
-        const generatedId = Number(response?.id) || 0;
+        const generatedId = this.serializer.deserializeGenerationStartResponse(response);
         if (generatedId <= 0) {
           console.error('Risposta create_generated_data senza id valido:', response);
           return;
@@ -448,6 +423,22 @@ export class AiAssistantService {
         this.notifyGenerationError(message);
       }
     });
+  }
+
+  private buildPendingResult(prompt: string, tone: Tone, style: Style, company: Company): ResultAiAssistant {
+    return {
+      id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
+      title: '',
+      content: '',
+      imagePath: null,
+      tone,
+      style,
+      company,
+      data: new Date(),
+      prompt,
+      evaluation: -1,
+      generatedDatumId: null //per ora non so quale sia sto id del generated datum
+    };
   }
 
   private subscribeToGenerationChannel(generationId: number): void {
@@ -546,39 +537,8 @@ export class AiAssistantService {
 
     this.http.get<any>(`${API_BASE}/posts`).subscribe({
       next: (response) => {
-        const postsArray = Array.isArray(response) ? response : response?.posts || [];
         console.log('[fetchResultsHistory] risposta /posts:', response);
-        const history: ResultAiAssistant[] = postsArray.map((item: any) => {
-          const toneId = Number(item?.toneId ?? item?.tone_id) || 0;
-          const styleId = Number(item?.styleId ?? item?.style_id) || 0;
-
-          const rawDate = item?.dateTime ?? item?.date_time;
-          const parsedDate = rawDate ? new Date(rawDate) : new Date(0);
-          const data = Number.isNaN(parsedDate.getTime()) ? new Date(0) : parsedDate;
-
-          return {
-            id: Number(item?.id) || 0,
-            title: item?.title ?? '',
-            content: item?.PostText ?? item?.postText ?? item?.body_text ?? item?.content ?? '',
-            imagePath: item?.imgPath ?? item?.img_path ?? item?.imagePath ?? null,
-            tone: {
-              id: toneId,
-              name: item?.toneName ?? (toneId > 0 ? `Tono #${toneId}` : '')
-            },
-            style: {
-              id: styleId,
-              name: item?.styleName ?? (styleId > 0 ? `Stile #${styleId}` : '')
-            },
-            company: {
-              id: Number(item?.companyId ?? item?.company_id) || 0,
-              name: item?.companyName ?? ''
-            },
-            data,
-            prompt: item?.prompt ?? '',
-            evaluation: Number(item?.rating) || -1,
-            generatedDatumId: Number(item?.generatedDatumId ?? item?.generated_datum_id) || null
-          };
-        });
+        const history = this.serializer.deserializePostsResponse(response);
 
         this.ResultsHistorySubject.next(history);
         console.log('[fetchResultsHistory] Storico recuperato:', history);

@@ -94,25 +94,27 @@ describe('Storico AI Assistant Generativo', () => {
 	it('mostra la visualizzazione dello storico delle generazioni AI', () => {
 		visitStoricoWithPosts(historyPosts)
 
-		cy.get('p-table').should('exist')
-		cy.contains('th', 'Titolo').should('exist')
-		cy.contains('th', 'Prompt').should('exist')
+		cy.get('p-table').should('be.visible')
+		cy.get('p-table tbody tr').should('have.length', historyPosts.length)
+		cy.contains('th', 'Titolo').should('be.visible')
+		cy.contains('th', 'Prompt').should('be.visible')
 	})
 
 	it('notifica assenza elementi quando lo storico e vuoto', () => {
 		visitStoricoWithPosts([])
 
-		cy.contains('Nessun dato disponibile').should('exist')
+		cy.contains('Nessun dato disponibile').should('be.visible')
+		cy.get('p-table tbody tr').should('have.length', 1)
 	})
 
 	it('mostra i dettagli completi di un elemento selezionato dallo storico', () => {
 		visitResultWithState()
 
-		cy.contains('span', 'PARAMETRI INSERITI').should('exist')
+		cy.contains('span', 'PARAMETRI INSERITI').should('be.visible')
 		cy.contains('label.label', 'Tono').parent().should('contain.text', mappedResult.tone.name)
 		cy.contains('label.label', 'Stile').parent().should('contain.text', mappedResult.style.name)
 		cy.get('textarea#Prompt').should('have.value', mappedResult.prompt)
-		cy.contains('label.label', 'Contenuto').should('exist')
+		cy.contains('label.label', 'Contenuto').should('be.visible')
 	})
 
 	it('mostra lo stile utilizzato per un contenuto nello storico', () => {
@@ -127,14 +129,14 @@ describe('Storico AI Assistant Generativo', () => {
 
 	it('mostra il timestamp della generazione nello storico', () => {
 		visitResultWithState()
-		cy.contains('label.label', 'Data di generazione:').should('exist')
+		cy.contains('label.label', 'Data di generazione:').should('be.visible')
 		cy.get('.data-generazione span').invoke('text').should('match', /\d{2}\/\d{2}\/\d{4}/)
 	})
 
 	it('mostra la valutazione assegnata dall utente nello storico', () => {
 		visitResultWithState()
-		cy.get('app-valutazione').scrollIntoView().should('exist')
-		cy.get('app-valutazione .p-rating').should('exist')
+		cy.get('app-valutazione').scrollIntoView().should('be.visible')
+		cy.get('app-valutazione .p-rating').should('be.visible')
 		cy.get('app-valutazione .p-rating .p-rating-option').should('have.length', 5)
 	})
 
@@ -173,7 +175,7 @@ describe('Storico AI Assistant Generativo', () => {
 		cy.get('input[placeholder="Cerca per tutto"]').clear().type('policy')
 
 		cy.get('p-table tbody tr').should('have.length', 1)
-		cy.contains('a.truncate-content', historyPosts[0].title).should('exist')
+		cy.contains('a.truncate-content', historyPosts[0].title).should('be.visible')
 	})
 
 	it('mostra la lista dello storico aggiornata in base ai filtri applicati', () => {

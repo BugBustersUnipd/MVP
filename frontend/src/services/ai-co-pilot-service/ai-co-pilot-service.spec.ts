@@ -139,15 +139,19 @@ describe('AiCoPilotService', () => {
 
     service.fetchTemplates();
 
-    const req = httpMock.expectOne('http://localhost:3000/templates');
-    expect(req.request.method).toBe('GET');
-    req.flush({ templates: [{ name: 'Template A', content: 'Body A' }] });
+    const indexReq = httpMock.expectOne('http://localhost:3000/templates');
+    expect(indexReq.request.method).toBe('GET');
+    indexReq.flush({ templates: [{ id: 1, subject: 'Template A' }] });
 
-    expect(templates).toEqual([{ name: 'Template A', content: 'Body A' }]);
+    const showReq = httpMock.expectOne('http://localhost:3000/templates/1');
+    expect(showReq.request.method).toBe('GET');
+    showReq.flush({ template: { id: 1, subject: 'Template A', body: 'Body A' } });
+
+    expect(templates).toEqual([{ id: 1, name: 'Template A', content: 'Body A' }]);
   });
 
   it('should create new template and append to templates stream', () => {
-    (service as any).templatesSubject.next([{ name: 'Base', content: 'x' }]);
+    (service as any).templatesSubject.next([{ id: 10, name: 'Base', content: 'x' }]);
 
     let templates: any[] = [];
     service.templates$.subscribe((value) => (templates = value));
@@ -156,12 +160,12 @@ describe('AiCoPilotService', () => {
 
     const req = httpMock.expectOne('http://localhost:3000/templates');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ name: 'Nuovo', content: 'Contenuto' });
-    req.flush({ template: { name: 'Nuovo', content: 'Contenuto' } });
+    expect(req.request.body).toEqual({ subject: 'Nuovo', body: 'Contenuto' });
+    req.flush({ template: { id: 11, subject: 'Nuovo', body: 'Contenuto' } });
 
     expect(templates).toEqual([
-      { name: 'Base', content: 'x' },
-      { name: 'Nuovo', content: 'Contenuto' },
+      { id: 10, name: 'Base', content: 'x' },
+      { id: 11, name: 'Nuovo', content: 'Contenuto' },
     ]);
   });
 

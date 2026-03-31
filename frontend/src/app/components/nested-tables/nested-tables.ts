@@ -24,6 +24,8 @@ export class NestedTables {
 @Output() retryAction = new EventEmitter<number>();
 @Output() rowRemoved = new EventEmitter<ResultSplit>();
 
+activeValues: string[] = [];
+
 onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void {
   this.menuAction.emit(event);
 }

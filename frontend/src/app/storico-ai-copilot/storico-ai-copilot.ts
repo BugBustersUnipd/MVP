@@ -71,8 +71,8 @@ export class StoricoAiCopilot {
   DocumentType: string[] = [];
   selectedDocument: string | undefined;
   columns = [
+    { field: 'id', header: 'Id Documento Splittato', type: 'splitid' },
     { field: 'name', header: 'Nome Documento Originale' },
-    { field: 'id', header: 'Id' },
     { field: 'confidence', header: 'Confidenza' },
     { field: 'recipientName', header: 'Destinatario' },
     { field: 'state', header: 'Stato' },
@@ -175,7 +175,9 @@ export class StoricoAiCopilot {
       parentId: split.parentId,
       id: split.id,
       confidence: split.confidence,
+      fieldConfidences: split.fieldConfidences,
       recipientName: split.recipientName,
+      rawRecipientName: split.rawRecipientName,
       state: split.state,
       data: split.data,
       recipientId: split.recipientId,

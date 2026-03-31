@@ -5,6 +5,9 @@ import { Button } from '../button/button';
 
 export interface ExtractedEmployeeInfoRow {
   name: string;
+  rawName: string;
+  hasMatch: boolean;
+  recipientConfidence: number | null;
   employeeCode: string;
   email: string;
 }

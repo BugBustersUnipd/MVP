@@ -26,6 +26,7 @@ export class RiconoscimentoDocumenti {
   NestedButtonLabel = 'Riprova Analisi';
   items: MenuItem[] = [];
   sessionParents: ResultAiCopilot[] = [];
+  currentBatchParentIds = new Set<number>();
   parentNames: Record<number, string> = {};
   parentPageCounts: Record<number, number> = {};
 
@@ -132,7 +133,11 @@ export class RiconoscimentoDocumenti {
       (this.dates && this.dates[0] && this.dates[1])
     );
 
-    this.DocumentiSplittatiFiltrati = this.DocumentiSplittati.filter((doc) => {
+    const sessionDocuments = this.currentBatchParentIds.size > 0
+      ? this.DocumentiSplittati.filter((doc) => this.currentBatchParentIds.has(doc.parentId))
+      : this.DocumentiSplittati;
+
+    this.DocumentiSplittatiFiltrati = sessionDocuments.filter((doc) => {
       const matchesSearch = this.matchesGlobalSearch(doc, this.searchvalue);
       const matchesDate = this.dates ? (doc.data >= this.dates[0] && doc.data <= this.dates[1]) : true;
       const matchesConfidence = this.matchesConfidenceRange(doc.confidence, this.selectedconfidence);
@@ -150,7 +155,11 @@ export class RiconoscimentoDocumenti {
       byParentId.set(parent.id!, parent);
     }
 
-    for (const parent of this.sessionParents) {
+    const batchParents = this.currentBatchParentIds.size > 0
+      ? this.sessionParents.filter((p) => this.currentBatchParentIds.has(p.id!))
+      : this.sessionParents;
+
+    for (const parent of batchParents) {
       const existing = byParentId.get(parent.id!);
       if (!existing) {
         byParentId.set(parent.id!, { ...parent });
@@ -231,6 +240,8 @@ export class RiconoscimentoDocumenti {
     switch (state) {
       case State.Inviato:
         return DocumentState.Completato;
+      case State.InElaborazione:
+        return DocumentState.InElaborazione;
       case State.DaValidare:
         return DocumentState.InElaborazione;
       case State.Programmato:
@@ -268,7 +279,6 @@ export class RiconoscimentoDocumenti {
   }
 
   ngOnInit() {
-    this.aiCoPilotService.fetchHistoryResults();
     this.aiCoPilotService.fetchCategories();
     this.aiCoPilotService.fetchCompanies();
     this.aiCoPilotService.fetchDepartment();
@@ -288,6 +298,15 @@ export class RiconoscimentoDocumenti {
       .subscribe((parents) => {
         this.runInZone(() => {
           this.sessionParents = [...parents];
+          this.applyFilters();
+        });
+      });
+
+    this.aiCoPilotService.currentBatchParentIds$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ids: Set<number>) => {
+        this.runInZone(() => {
+          this.currentBatchParentIds = ids;
           this.applyFilters();
         });
       });

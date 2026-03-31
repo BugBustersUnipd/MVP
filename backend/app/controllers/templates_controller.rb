@@ -8,7 +8,13 @@ class TemplatesController < ApplicationController
   # GET /templates/:id
   def show
     template = Template.find(params[:id])
-    render json: { template: template.as_json(only: [:id, :subject, :body]) }
+    render json: {
+      template: {
+        id: template.id,
+        subject: template.subject,
+        body: template.body
+      }
+    }
   rescue ActiveRecord::RecordNotFound
     render json: { status: "error", message: "Template non trovato" }, status: :not_found
   end
@@ -17,7 +23,14 @@ class TemplatesController < ApplicationController
   def create
     t = Template.new(template_params)
     if t.save
-      render json: { status: "ok", template: t.as_json(only: [:id, :subject, :body]) }, status: :created
+      render json: {
+        status: "ok",
+        template: {
+          id: t.id,
+          subject: t.subject,
+          body: t.body
+        }
+      }, status: :created
     else
       render json: { status: "error", errors: t.errors.full_messages }, status: :unprocessable_entity
     end

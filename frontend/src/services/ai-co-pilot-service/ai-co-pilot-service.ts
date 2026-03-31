@@ -10,6 +10,21 @@ import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-a
 const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
 const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
 
+export interface TemplateOption {
+  id: number;
+  name: string;
+  content: string;
+}
+
+export interface CreateSendingPayload {
+  extracted_document_id: number;
+  recipient_id: number;
+  sent_at: string;
+  subject?: string;
+  body?: string;
+  template_id?: number;
+}
+
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +33,10 @@ export class AiCoPilotService {
   private http = inject(HttpClient);
   private serializer = inject(ResultAiCopilotSerializer);
   private tempParentId = -1;
+  private scheduledDocuments = new Map<number, Date>();
+  private currentBatchTempIds = new Set<number>();
+  private currentBatchParentIdsSubject = new BehaviorSubject<Set<number>>(new Set());
+  currentBatchParentIds$ = this.currentBatchParentIdsSubject.asObservable();
   
   private resultSubject : BehaviorSubject<ResultSplit | null> = new BehaviorSubject<ResultSplit | null>(null);
   currentResult$ = this.resultSubject.asObservable();
@@ -35,7 +54,7 @@ export class AiCoPilotService {
   currentParentPageCounts$ = this.parentPageCountsSubject.asObservable();
 
 
-  private templatesSubject = new BehaviorSubject<{ name: string; content: string }[]>([]);
+  private templatesSubject = new BehaviorSubject<TemplateOption[]>([]);
   templates$ = this.templatesSubject.asObservable();
 
   private categorySubject = new BehaviorSubject<string[]>([]);
@@ -61,10 +80,14 @@ export class AiCoPilotService {
 
 
   public uploadFiles(files: File[], company: string, department: string, category: string, competence_period: string): void {
+    this.currentBatchTempIds.clear();
+    this.currentBatchParentIdsSubject.next(new Set());
     for (const file of files) {
       const temporaryParentId = this.addPendingParent(file);
+      this.currentBatchTempIds.add(temporaryParentId);
       this.processDocument(file, company, department, category, competence_period, temporaryParentId);
     }
+    this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds));
   }
 
   // ESEMPIO DI COME DOVRÀ ESSERE IMPLEMENTATO IL METODO PROCESSDOCUMENT
@@ -170,6 +193,18 @@ export class AiCoPilotService {
         next: (response) => {
           const uploadedDocumentId = Number(response?.uploaded_document_id) || 0;
           reactiveResult.id = uploadedDocumentId;
+
+          // Duplicate: backend reuses an existing document, no job will run.
+          if (!response.job_id) {
+            reactiveResult.state = DocumentState.Completato;
+            this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.Completato);
+            if (uploadedDocumentId > 0) {
+              this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+              this.updateSessionParentState(uploadedDocumentId, DocumentState.Completato);
+            }
+            return;
+          }
+
           reactiveResult.state = DocumentState.InElaborazione; // Stato iniziale
           this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione);
           // Use ActionCable subprotocols for better compatibility with Rails cable server.
@@ -214,7 +249,7 @@ export class AiCoPilotService {
               if (uploadedDocumentId > 0) {
                 // Show extracted rows as soon as split artifacts are created.
                 this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
-                this.updateParentStateInHistory(uploadedDocumentId, State.DaValidare);
+                this.updateParentStateInHistory(uploadedDocumentId, State.InElaborazione);
                 this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
               }
             }
@@ -272,6 +307,14 @@ export class AiCoPilotService {
     );
     this.sessionParentsSubject.next(updated);
 
+    if (this.currentBatchTempIds.has(temporaryParentId)) {
+      this.currentBatchTempIds.delete(temporaryParentId);
+      const current = this.currentBatchParentIdsSubject.value;
+      current.delete(temporaryParentId);
+      current.add(realParentId);
+      this.currentBatchParentIdsSubject.next(new Set(current));
+    }
+
     const names = this.parentNamesSubject.value;
     const pendingName = names[temporaryParentId];
     if (pendingName) {
@@ -316,14 +359,24 @@ export class AiCoPilotService {
     if (current[parentId] === normalized) return;
     this.parentPageCountsSubject.next({ ...current, [parentId]: normalized });
   }
+  private resolveScheduledState(split: ResultSplit): ResultSplit {
+    if (split.state !== State.Inviato || !split.id) return split;
+    const scheduledAt = this.scheduledDocuments.get(split.id);
+    if (!scheduledAt) return split;
+    if (scheduledAt > new Date()) return { ...split, state: State.Programmato };
+    this.scheduledDocuments.delete(split.id);
+    return split;
+  }
+
   private upsertInHistory(split: ResultSplit): void {
+    const resolved = this.resolveScheduledState(split);
     const current = this.resultsHistorySubject.value ?? [];
-    const idx = current.findIndex((r) => r.id === split.id);
+    const idx = current.findIndex((r) => r.id === resolved.id);
     if (idx === -1) {
-      this.resultsHistorySubject.next([...current, split]);
+      this.resultsHistorySubject.next([...current, resolved]);
     } else {
       const copy = [...current];
-      copy[idx] = split;
+      copy[idx] = resolved;
       this.resultsHistorySubject.next(copy);
     }
     this.refreshDynamicFilterOptions();
@@ -397,11 +450,28 @@ export class AiCoPilotService {
 
     /** GET /documents/extracted/:id */
   public fetchExtractedDocument(id: number): void {
-    this.http.get<any>(`${API_BASE}/documents/extracted/${id}`).subscribe({
-      next: ({ extracted_document }) =>
-        this.resultSubject.next(this.serializer.deserializeExtractedDocument(extracted_document)),
-      error: (err) => console.error('Errore nel recupero del documento estratto:', err),
+    this.refreshScheduledDocuments$().subscribe(() => {
+      this.http.get<any>(`${API_BASE}/documents/extracted/${id}`).subscribe({
+        next: ({ extracted_document }) => {
+          const split = this.resolveScheduledState(this.serializer.deserializeExtractedDocument(extracted_document));
+          this.resultSubject.next(split);
+        },
+        error: (err) => console.error('Errore nel recupero del documento estratto:', err),
+      });
     });
+  }
+
+  private refreshScheduledDocuments$(): Observable<void> {
+    return this.http.get<any>(`${API_BASE}/sendings`).pipe(
+      map((res) => {
+        const now = new Date();
+        this.scheduledDocuments = new Map(
+          (res.sendings as any[])
+            .filter((s) => new Date(s.sent_at) > now)
+            .map((s) => [s.extracted_document_id as number, new Date(s.sent_at)])
+        );
+      })
+    );
   }
    /** GET /documents/uploads/:parentId/extracted */
   public getDocumentsByParent(parentId: number, currentResultId?: number): void {
@@ -459,11 +529,11 @@ export class AiCoPilotService {
 
   /** POST /templates */
   public newTemplate(name: string, content: string): void {
-    this.http.post<any>(`${API_BASE}/templates`, { name, content }).subscribe({
+    this.http.post<any>(`${API_BASE}/templates`, { subject: name, body: content }).subscribe({
       next: ({ template }) =>
         this.templatesSubject.next([
           ...this.templatesSubject.value,
-          { name: template.name, content: template.content },
+          { id: template.id, name: template.subject, content: template.body },
         ]),
       error: (err) => console.error('Errore nella creazione del template:', err),
     });
@@ -471,10 +541,43 @@ export class AiCoPilotService {
   /** GET /templates */
   public fetchTemplates(): void {
     this.http.get<any>(`${API_BASE}/templates`).subscribe({
-      next: ({ templates }) =>
-        this.templatesSubject.next(templates.map((t: any) => ({ name: t.name, content: t.content }))),
+      next: ({ templates }) => {
+        const baseTemplates = (templates ?? []) as { id: number; subject: string }[];
+
+        if (baseTemplates.length === 0) {
+          this.templatesSubject.next([]);
+          return;
+        }
+
+        forkJoin(
+          baseTemplates.map((template) =>
+            this.http.get<any>(`${API_BASE}/templates/${template.id}`).pipe(
+              map(({ template: fullTemplate }) => ({
+                id: fullTemplate.id,
+                name: fullTemplate.subject,
+                content: fullTemplate.body,
+              }))
+            )
+          )
+        ).subscribe({
+          next: (fullTemplates) => this.templatesSubject.next(fullTemplates),
+          error: (err) => console.error('Errore nel recupero dei dettagli template:', err),
+        });
+      },
       error: (err) => console.error('Errore nel recupero dei template:', err),
     });
+  }
+
+  /** POST /sendings */
+  public createSending$(payload: CreateSendingPayload): Observable<any> {
+    return this.http.post<any>(`${API_BASE}/sendings`, payload).pipe(
+      tap(() => {
+        const sentAt = new Date(payload.sent_at);
+        if (sentAt > new Date()) {
+          this.scheduledDocuments.set(payload.extracted_document_id, sentAt);
+        }
+      })
+    );
   }
  
   /*public addCategory() : void {
@@ -616,34 +719,32 @@ export class AiCoPilotService {
       );
   }
 
-    /** GET /documents/uploads → carica la history iniziale via HTTP */
-public fetchHistoryResults(): void {
-  
+  /** GET /documents/uploads → carica la history iniziale via HTTP */
+  public fetchHistoryResults(): void {
+    this.refreshScheduledDocuments$().pipe(
+      switchMap(() => this.http.get<any>(`${API_BASE}/documents/uploads`)),
+      switchMap((uploadsResponse) => {
+        const requests: Observable<any>[] = uploadsResponse.uploaded_documents.map((ud: any) => {
+          if (ud?.id && ud?.original_filename) {
+            this.setParentName(ud.id, ud.original_filename);
+            this.setParentPageCount(ud.id, ud.page_count);
+          }
+          return this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`);
+        });
 
-  this.http.get<any>(`${API_BASE}/documents/uploads`).pipe(
-    switchMap(({ uploaded_documents }) => {
-      const requests : Observable<any>[] = uploaded_documents.map((ud: any) => {
-        if (ud?.id && ud?.original_filename) {
-          this.setParentName(ud.id, ud.original_filename);
-          this.setParentPageCount(ud.id, ud.page_count);
-        }
-
-        return this.http.get<any>(`${API_BASE}/documents/uploads/${ud.id}/extracted`);
-      });
-
-      return forkJoin(requests);
-    })
-  ).subscribe({
-    next: (responses) => {
-      responses.forEach(response => {
-        response.extracted_documents
-          .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
-          .forEach((s: ResultSplit) => this.upsertInHistory(s));
-      });
-    },
-    error: (err) => console.error('Errore generale:', err),
-  });
-}
+        return forkJoin(requests);
+      })
+    ).subscribe({
+      next: (responses) => {
+        responses.forEach(response => {
+          response.extracted_documents
+            .map((raw: any) => this.serializer.deserializeExtractedDocument(raw))
+            .forEach((s: ResultSplit) => this.upsertInHistory(s));
+        });
+      },
+      error: (err) => console.error('Errore generale:', err),
+    });
+  }
   /** GET /lookups/users?company=<n> */
   public fetchEmployeesByCompany(company: string): void {
     if (!company) {
