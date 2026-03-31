@@ -115,6 +115,7 @@ export class RiconoscimentoDocumenti {
 
     const pages = this.parentPageCounts[targetRow.parentId] ?? Math.max(1, targetRow.page_end - targetRow.page_start + 1);
     this.router.navigate(['/anteprima-documento'], {
+      replaceUrl: true,
       state: {
         result: targetRow,
         pages,

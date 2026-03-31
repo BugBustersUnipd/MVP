@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem, MessageService } from 'primeng/api';
 
@@ -11,6 +12,7 @@ import { MenuItem, MessageService } from 'primeng/api';
 })
 export class Menu {
   private messageService = inject(MessageService);
+  private router = inject(Router);
   items: MenuItem[] | undefined;
   ngOnInit() {
     this.items = [
@@ -40,7 +42,10 @@ export class Menu {
           {
              label: 'Storico',
             icon: 'bb-custom-icon bb-icon-storico',
-            routerLink: '/storico-ai-copilot'
+            command: () => {
+              const fromRiconoscimento = this.router.url === '/riconoscimento-documenti';
+              this.router.navigate(['/storico-ai-copilot'], { replaceUrl: fromRiconoscimento });
+            }
           }
         ]
       },
