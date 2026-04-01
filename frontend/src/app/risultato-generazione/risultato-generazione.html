@@ -5,7 +5,7 @@
                 <app-button label="Annulla Modifiche" class="btn btn-secondary" [fluid]="true" (action)="cancelEditing()"></app-button>
                 <app-button label="Salva Modifiche" class="btn btn-primary" [fluid]="true" [disabled]="!hasPendingModifications" (action)="saveChanges()"></app-button>
             </div>
-        }@else if(result.generatedDatumId!=null && result.id==null){
+        }@else if(result.generatedDatumId!=null && result.id==null && isContentLoading==false){
             <div class="actions">
                 <app-button label="Rigenera" class="btn btn-secondary" [fluid]="true" (action)="onRigenera(result.generatedDatumId)"></app-button>
                 <app-button label="Salva" class="btn btn-primary" [fluid]="true" (action)="onSalva()"></app-button>
@@ -36,11 +36,13 @@
         </div>
 
         <div class="d-flex gap-3">
-            <div class="valutazione">
-                <app-valutazione [rating]="result.evaluation" (ratingChange)="onRatingChange($event)"></app-valutazione>
-            </div>
+            @if(isContentLoading==false){
+                <div class="valutazione">
+                    <app-valutazione [rating]="result.evaluation" (ratingChange)="onRatingChange($event)"></app-valutazione>
+                </div>
+            }
             
-            @if(result.id==null){
+            @if(result.id==null && isContentLoading==false){
                 <div class="modifica ms-auto d-flex align-items-end">
                     <app-button label="Modifica" class="btn btn-primary" [fluid]="true" (action)="enableEditing()"></app-button>
                 </div>
