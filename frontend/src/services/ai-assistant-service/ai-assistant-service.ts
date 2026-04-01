@@ -1,3 +1,8 @@
+/* appunti utili:
+* - BehaviorSubject è un tipo particolare di observable (libreria rxjs) che mantiene sempre l'ultimo valore emesso: un subject normale non ha memoria, i subscriber ricevono solo i valori futuri. Si usa per implementare una logica simile a uno "store"
+  - tonesSubject e tones$ sono combinati per mantenere una separazione corretta dei ruoli: tones$ è read-only ed è pubblico e quindi i componenti possono solamente leggere il valore mentre tonesSubject è privato e il service lo usa per aggiornare il valore (e mandare la notifica contempoaneamente)
+  - in generale il service mantiene memoria dei dati utili alle view, in questo modo non vengono fatte chiamate ridondanti al backend e si ha un punto centralizzato di gestione dello stato (ad esempio se più view devono conoscere i toni, questi vengono fetchati una volta sola e poi mantenuti in memoria dal service, tutte le view che si iscrivono a tones$ ricevono l'ultimo valore senza dover rifare la get al backend)
+*/
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -15,11 +20,77 @@ export class AiAssistantService {
   private serializer = inject(ResultAiAssistantSerializer);
   private http = inject(HttpClient);
   
+
   private tonesSubject = new BehaviorSubject<Tone[]>([]);
   tones$ = this.tonesSubject.asObservable();
 
+  private allTonesSubject = new BehaviorSubject<Tone[]>([]);
+  allTones$ = this.allTonesSubject.asObservable();
+
   private stylesSubject = new BehaviorSubject<Style[]>([]);
   styles$ = this.stylesSubject.asObservable();
+
+  private allStylesSubject = new BehaviorSubject<Style[]>([]);
+  allStyles$ = this.allStylesSubject.asObservable();
+  // Recupera tutti i toni di tutte le aziende (una sola volta)
+  fetchAllTones(): void {
+    if ((this.allTonesSubject.value ?? []).length > 0) {
+      return;
+    }
+    const companies = this.companiesSubject.value ?? [];
+    if (!companies.length) return;
+    let allTones: Tone[] = [];
+    let completed = 0;
+    companies.forEach((company, idx) => {
+      this.http.get<any>(`${API_BASE}/tones`, { params: { company_id: company.id } }).subscribe({
+        next: (response) => {
+          const tones = this.serializer.deserializeTonesResponse(response);
+          allTones = allTones.concat(tones);
+          completed++;
+          if (completed === companies.length) {
+            this.allTonesSubject.next(allTones);
+          }
+        },
+        error: (err) => {
+          console.error('Errore nel recupero dei toni per company', company.id, err);
+          completed++;
+          if (completed === companies.length) {
+            this.allTonesSubject.next(allTones);
+          }
+        }
+      });
+    });
+  }
+
+  // Recupera tutti gli stili di tutte le aziende (una sola volta)
+  fetchAllStyles(): void {
+    if ((this.allStylesSubject.value ?? []).length > 0) {
+      return;
+    }
+    const companies = this.companiesSubject.value ?? [];
+    if (!companies.length) return;
+    let allStyles: Style[] = [];
+    let completed = 0;
+    companies.forEach((company, idx) => {
+      this.http.get<any>(`${API_BASE}/styles`, { params: { company_id: company.id } }).subscribe({
+        next: (response) => {
+          const styles = this.serializer.deserializeStylesResponse(response);
+          allStyles = allStyles.concat(styles);
+          completed++;
+          if (completed === companies.length) {
+            this.allStylesSubject.next(allStyles);
+          }
+        },
+        error: (err) => {
+          console.error('Errore nel recupero degli stili per company', company.id, err);
+          completed++;
+          if (completed === companies.length) {
+            this.allStylesSubject.next(allStyles);
+          }
+        }
+      });
+    });
+  }
 
   private companiesSubject = new BehaviorSubject<Company[]>([]);
   companies$ = this.companiesSubject.asObservable();
@@ -165,6 +236,8 @@ export class AiAssistantService {
       next: (response) => {
         const createdTone = this.serializer.deserializeToneItem(response);
         this.tonesSubject.next(this.upsertById(this.tonesSubject.value, createdTone));
+        // Aggiorna anche la lista globale
+        this.allTonesSubject.next(this.upsertById(this.allTonesSubject.value, createdTone));
         console.log('Tono creato:', createdTone);
       },
       error: (err) => console.error('Errore nella creazione del tono:', err),
@@ -178,6 +251,8 @@ export class AiAssistantService {
         console.log('Risposta alla creazione dello stile:', response);
         const createdStyle = this.serializer.deserializeStyleItem(response);
         this.stylesSubject.next(this.upsertById(this.stylesSubject.value, createdStyle));
+        // Aggiorna anche la lista globale
+        this.allStylesSubject.next(this.upsertById(this.allStylesSubject.value, createdStyle));
         console.log('Stile creato:', createdStyle);
       },
       error: (err) => console.error('Errore nella creazione dello stile:', err),
@@ -528,10 +603,12 @@ export class AiAssistantService {
 
 
   fetchResultsHistory(): void {
+    // se lo storico è già stato fetchato in precedenza, non rifà la get al backend
     if ((this.ResultsHistorySubject.value ?? []).length > 0) {
       return;
     }
 
+    // lo storico è vuoto, lo fetcha dal backend
     this.http.get<any>(`${API_BASE}/posts`).subscribe({
       next: (response) => {
         console.log('[fetchResultsHistory] risposta /posts:', response);
