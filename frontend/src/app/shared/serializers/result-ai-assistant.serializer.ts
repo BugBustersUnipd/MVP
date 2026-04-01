@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ResultAiAssistant } from '../models/result-ai-assistant.model';
-import { ResultSerializer } from './result.serializer';
 import { Tone, Style, Company } from '../models/result-ai-assistant.model';
 @Injectable({
   providedIn: 'root'
