@@ -9,10 +9,7 @@ import { AddDialog, AddDialogSaveData, AddDialogType } from '../components/add-d
 import { Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { filter, take } from 'rxjs';
-
-//servizi
 import { AiAssistantService } from '../../services/ai-assistant-service/ai-assistant-service';
-
 
 
 @Component({
@@ -49,10 +46,7 @@ export class Generatore {
 
     this.aiService.requireGeneration(this.prompt, this.selectedTone, this.selectedStyle, this.selectedCompany); // Invia la richiesta di generazione al servizio
     this.aiService.currentResult$
-      .pipe(
-        filter((result): result is NonNullable<typeof result> => !!result),
-        take(1)
-      )
+      .pipe(filter((result): result is NonNullable<typeof result> => !!result), take(1))
       .subscribe(result => {
       this.router.navigate(['/risultato-generazione'], {
         state: {
@@ -62,15 +56,12 @@ export class Generatore {
     });
   }
   ngOnInit() {
-    this.aiService.fetchCompanies(); //todo
-
+    this.aiService.fetchCompanies();
     //questo serve esclusivamente per quando l'azienda e' gia' caricata (per esempio quando si arriva alla pagina da 'Duplica')
     const companyId = this.selectedCompany?.id || 0;
     if (companyId > 0) {
       this.aiService.fetchTonesByCompany(companyId, true);
-      console.log('toni caricati', this.tones$);
       this.aiService.fetchStylesByCompany(companyId, true);
-      console.log('stili caricati', this.styles$);
     }
   }
 
@@ -80,17 +71,13 @@ export class Generatore {
   }
 
   handleAddDialogSave(data: AddDialogSaveData): void {
-
     if (data.type === 'tone') {
       this.aiService.newTone(data.name, data.description, this.selectedCompany?.id);
       return;
     }
-
     if (data.type === 'style') {
       this.aiService.newStyle(data.name, data.description, this.selectedCompany?.id);
     }
-
-   
   }
 
   removeOption(id: number, type: AddDialogType): void {
@@ -99,8 +86,6 @@ export class Generatore {
       return;
     }else if (type === 'style') {
       this.aiService.removeStyle(id);
-    }else{
-      //todo remove company
     }
   }
 
