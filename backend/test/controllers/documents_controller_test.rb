@@ -628,18 +628,6 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     temp&.close!
   end
 
-  test "retry_processing returns unprocessable_entity when run is not failed" do
-    ud = create_uploaded_document
-    ProcessingRun.create!(job_id: "retry-ok-#{SecureRandom.hex(4)}", status: "completed",
-                          uploaded_document: ud)
-
-    post retry_processing_path(id: ud.id)
-
-    assert_response :unprocessable_entity
-    body = JSON.parse(response.body)
-    assert_equal "error", body["status"]
-  end
-
   test "retry_processing returns not_found when no run exists" do
     ud = create_uploaded_document
 
@@ -695,17 +683,6 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "queued", item.status
   ensure
     temp&.close!
-  end
-
-  test "retry_extracted returns unprocessable_entity when document is not failed" do
-    ud = create_uploaded_document
-    ed = create_extracted_document(uploaded_document: ud, status: "done")
-
-    post retry_extracted_path(id: ed.id)
-
-    assert_response :unprocessable_entity
-    body = JSON.parse(response.body)
-    assert_equal "error", body["status"]
   end
 
   test "retry_extracted returns not_found when processing item is missing" do

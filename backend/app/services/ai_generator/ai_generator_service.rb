@@ -18,7 +18,9 @@ class AIGeneratorService
     toneDescription = @aiGeneratorDataManager.fetchToneDescription(generationData.tone_id)
     styleDescription = @aiGeneratorDataManager.fetchStyleDescription(generationData.style_id)
     companyDescription = @aiGeneratorDataManager.fetchCompanyDescription(generationData.company_id)
-    companyName = Company.find(generationData.company_id).name
+    company = Company.find_by(id: generationData.company_id)
+    raise ActiveRecord::RecordNotFound, "Company #{generationData.company_id} non trovata" unless company
+    companyName = company.name
 
     textSetter = @setterFactory.create_text_setter({
       prompt: generationData.prompt,

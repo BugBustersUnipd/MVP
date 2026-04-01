@@ -3,7 +3,7 @@ class GeneratedDatumSerializer
     {
       id: generation.id,
       title: generation.title,
-      text_result: generation.body_text,
+      text_result: generation.text_result,
       imgPath: image_path(generation),
       dateTime: generation.data_time&.iso8601,
       toneId: generation&.tone_id,
