@@ -259,21 +259,6 @@ describe('AiAssistantService', () => {
     ]);
   });
 
-  it('should update local image/content/title modifications', () => {
-    let current: any = null;
-    service.currentResult$.subscribe((value) => (current = value));
-
-    service.setCurrentResult(sampleResult);
-    service.modifyImageLocal(sampleResult, 'data:image/png;base64,abc');
-    expect(current.imagePath).toBe('data:image/png;base64,abc');
-
-    service.modifyContentLocal(sampleResult, 'Contenuto nuovo');
-    expect(current.content).toBe('Contenuto nuovo');
-
-    service.modifyTitleLocal(sampleResult, 'Titolo nuovo');
-    expect(current.title).toBe('Titolo nuovo');
-  });
-
   it('should publish pending result on reuse and requireGeneration', () => {
     let current: any = null;
     service.currentResult$.subscribe((value) => (current = value));

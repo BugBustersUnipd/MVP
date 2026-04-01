@@ -361,36 +361,7 @@ export class AiAssistantService {
 
     console.log(`Valutazione per generazione ${id} impostata a ${evaluation}`);
   }
-  // todo implementare
-  modifyImageLocal(result: ResultAiAssistant, nuovoPathBase64: string): void {//obv manca la chiamata al backend, se va a buon fine aggiorna resultSubject
-    const updated: ResultAiAssistant = {
-      ...result,
-      imagePath: nuovoPathBase64, // usa il nome proprietà corretto del tuo model
-    };
-    console.log('Ehi sto modificando l\'immagine wohoo');
-    this.resultSubject.next(updated);
-
-  }
-  // todo implementare
-  modifyContentLocal(result: ResultAiAssistant, newContent: string) : void {
-    // chiamata al backend (post)
-    //se va a buon fine result si modifica result
-    const newResult = { 
-        ...result, 
-        content: newContent 
-    };
-    this.resultSubject.next(newResult);
-  }
-  // todo implementare
-  modifyTitleLocal(result: ResultAiAssistant, newTitle: string) : void {
-    // chiamata al backend (post)
-    //se va a buon fine result si modifica result
-    const newResult = { 
-        ...result, 
-        title: newTitle 
-    };
-    this.resultSubject.next(newResult);
-  }
+  
   createPost(result: ResultAiAssistant): void {
     const payload = this.serializer.serializeCreatePostRequest(result);
 
