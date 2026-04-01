@@ -207,7 +207,7 @@ describe('AiCoPilotService', () => {
   });
 
   it('should patch range and then refetch extracted document', () => {
-    service.modifyDocumentRange(8, 1, 3);
+    service.modifyDocumentRange$(8, 1, 3).subscribe();
 
     const patchReq = httpMock.expectOne('http://localhost:3000/documents/extracted/8/reassign_range');
     expect(patchReq.request.method).toBe('PATCH');
@@ -225,7 +225,7 @@ describe('AiCoPilotService', () => {
     service.currentResult$.subscribe((value) => (current = value));
     service.currentResultsHistory$.subscribe((value) => (history = value));
 
-    service.updateDocumentMetadata(5, { recipient: 'Mario' });
+    service.updateDocumentMetadata$(5, { recipient: 'Mario' }).subscribe();
 
     const req = httpMock.expectOne('http://localhost:3000/documents/extracted/5/metadata');
     expect(req.request.method).toBe('PATCH');
@@ -540,7 +540,9 @@ describe('AiCoPilotService', () => {
   it('should handle modify range error branch', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    service.modifyDocumentRange(9, 1, 4);
+    service.modifyDocumentRange$(9, 1, 4).subscribe({
+      error: (err) => console.error('Errore nella modifica del range:', err),
+    });
 
     const req = httpMock.expectOne('http://localhost:3000/documents/extracted/9/reassign_range');
     req.flush('err', { status: 500, statusText: 'Server Error' });
@@ -553,7 +555,9 @@ describe('AiCoPilotService', () => {
   it('should handle update metadata error branch', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    service.updateDocumentMetadata(6, { recipient: 'X' });
+    service.updateDocumentMetadata$(6, { recipient: 'X' }).subscribe({
+      error: () => {},
+    });
 
     const req = httpMock.expectOne('http://localhost:3000/documents/extracted/6/metadata');
     req.flush('err', { status: 500, statusText: 'Server Error' });

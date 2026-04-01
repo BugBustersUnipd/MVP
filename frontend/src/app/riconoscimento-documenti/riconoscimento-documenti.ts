@@ -1,4 +1,4 @@
-import { Component, DestroyRef, NgZone, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NestedTables } from '../components/nested-tables/nested-tables';
 import { Filters } from '../components/filters/filters';
@@ -21,7 +21,6 @@ import { MenuItem } from 'primeng/api';
 export class RiconoscimentoDocumenti {
   private aiCoPilotService = inject(AiCoPilotService);
   private destroyRef = inject(DestroyRef);
-  private ngZone = inject(NgZone);
   private router = inject(Router);
   NestedButtonLabel = 'Riprova Analisi';
   items: MenuItem[] = [];
@@ -89,7 +88,7 @@ export class RiconoscimentoDocumenti {
     this.applyFilters();
   }
 
-  onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void {
+  onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void { //Gestise logica dei pulsanti "Modifica" ed "Elimina".
     const action = event.item.label?.toLowerCase();
     if (action === 'modifica') {
       this.navigateToResult(event.row);
@@ -246,7 +245,7 @@ export class RiconoscimentoDocumenti {
       case State.DaValidare:
         return DocumentState.InElaborazione;
       case State.Programmato:
-        return DocumentState.InCoda;
+        return DocumentState.Completato;
       case State.Pronto:
       default:
         return DocumentState.Completato;
@@ -288,46 +287,36 @@ export class RiconoscimentoDocumenti {
     this.aiCoPilotService.currentResultsHistory$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((results) => {
-        this.runInZone(() => {
-          this.DocumentiSplittati = [...(results ?? [])];
-          this.applyFilters();
-        });
+        this.DocumentiSplittati = [...(results ?? [])];
+        this.applyFilters();
       });
 
     this.aiCoPilotService.currentSessionParents$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((parents) => {
-        this.runInZone(() => {
-          this.sessionParents = [...parents];
-          this.applyFilters();
-        });
+        this.sessionParents = [...parents];
+        this.applyFilters();
       });
 
     this.aiCoPilotService.currentBatchParentIds$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((ids: Set<number>) => {
-        this.runInZone(() => {
-          this.currentBatchParentIds = ids;
-          this.applyFilters();
-        });
+        this.currentBatchParentIds = ids;
+        this.applyFilters();
       });
 
     this.aiCoPilotService.currentParentNames$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((names) => {
-        this.runInZone(() => {
-          this.parentNames = { ...names };
-          this.applyFilters();
-        });
+        this.parentNames = { ...names };
+        this.applyFilters();
       });
 
     this.aiCoPilotService.currentParentPageCounts$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((pageCounts) => {
-        this.runInZone(() => {
-          this.parentPageCounts = { ...pageCounts };
-          this.applyFilters();
-        });
+        this.parentPageCounts = { ...pageCounts };
+        this.applyFilters();
       });
     
       this.items = [
@@ -347,16 +336,6 @@ export class RiconoscimentoDocumenti {
 
 
   }
-
-  private runInZone(action: () => void): void {
-    if (NgZone.isInAngularZone()) {
-      action();
-      return;
-    }
-
-    this.ngZone.run(action);
-  }
-
 columns = [
   { field: 'id', header: 'ID' },
   { field: 'confidence', header: 'Confidenza' },

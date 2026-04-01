@@ -126,7 +126,7 @@ export class AiCoPilotService {
 
           reactiveResult.state = DocumentState.InElaborazione; // Stato In Elaborazione del padre poichè il job_id è presente poichè il doc non è duplicato.
           this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione); // Sostituisco l'id temporaneo del parent con quello reale arrivato dal backend in risposta, e imposto stato in elaborazione
-          // Faccio la subscribe al cancale websocket passandogli il job_id.
+          // Faccio la subscribe al canale websocket passandogli il job_id.
           this.subscribeToJobUpdates(
             response.job_id,
             (payload, socket) => {
@@ -269,7 +269,7 @@ export class AiCoPilotService {
     return split;
   }
 
-  private upsertInHistory(split: ResultSplit): void {
+  private upsertInHistory(split: ResultSplit): void {// aggiunge documenti alla history dei risultati, se il documento ha un id presente lo aggiorna, altrimenti lo aggiunge.
     const resolved = this.resolveScheduledState(split);
     const current = this.resultsHistorySubject.value ?? []; // Prendo lo stato attuale della history, se è null uso un array vuoto
     const idx = current.findIndex((r) => r.id === resolved.id);
@@ -283,33 +283,33 @@ export class AiCoPilotService {
     this.refreshDynamicFilterOptions(); // Refresho i filtri dinamici, nel nostro caso Categorie e Reparti che si basano su valori presenti nei documenti della history.
   }
 
-  private refreshDynamicFilterOptions(): void {
+  private refreshDynamicFilterOptions(): void { //refresh dei filter categorie e reparti.
     this.fetchCategories();
     this.fetchDepartment();
   }
 
-  private removeUploadedDocumentFromLocalState(uploadedDocumentId: number): void {
+  private removeUploadedDocumentFromLocalState(uploadedDocumentId: number): void { // Serve per rimuovere un documento caricato, dalla view senza far refresh completo della pagina.
     const currentHistory = this.resultsHistorySubject.value ?? [];
-    this.resultsHistorySubject.next(currentHistory.filter((row) => row.parentId !== uploadedDocumentId));
+    this.resultsHistorySubject.next(currentHistory.filter((row) => row.parentId !== uploadedDocumentId)); // rimuove dalla history i documenti che hanno come parentId l'id passato.
 
     const currentSessionParents = this.sessionParentsSubject.value;
-    this.sessionParentsSubject.next(currentSessionParents.filter((parent) => parent.id !== uploadedDocumentId));
+    this.sessionParentsSubject.next(currentSessionParents.filter((parent) => parent.id !== uploadedDocumentId)); // rimuove il doc padre dalla lista dei parent della sessione
 
-    const currentNames = this.parentNamesSubject.value;
+    const currentNames = this.parentNamesSubject.value; // rimuove il nome associato a quell'id del documento padre
     if (uploadedDocumentId in currentNames) {
       const nextNames = { ...currentNames };
       delete nextNames[uploadedDocumentId];
       this.parentNamesSubject.next(nextNames);
     }
 
-    const currentPageCounts = this.parentPageCountsSubject.value;
+    const currentPageCounts = this.parentPageCountsSubject.value; // rimuove il numero di pagine associato a quell'id del documento padre
     if (uploadedDocumentId in currentPageCounts) {
       const nextPageCounts = { ...currentPageCounts };
       delete nextPageCounts[uploadedDocumentId];
       this.parentPageCountsSubject.next(nextPageCounts);
     }
 
-    this.refreshDynamicFilterOptions();
+    this.refreshDynamicFilterOptions(); // refresh dei filtri dinamici
   }
 
   private fetchExtractedDocumentAndUpsert(extractedDocumentId: number): void { // Il metodo usa l'id passato del documento estratto, recupera il documento dal backend e lo deserializza, poi lo upserta nella history dei risultati.
@@ -340,7 +340,7 @@ export class AiCoPilotService {
   }
 
     /** GET /documents/extracted/:id */
-  public fetchExtractedDocument(id: number): void {
+  public fetchExtractedDocument(id: number): void {  // il metodo usa l'id del documento estratto, si subscriba prima a refreshScheduledDocuments per aggiornare la mappa dei documenti programmati e poi recupera il documento dal backend, controlla se il suo stato è ancora programmato o no e lo emette come risultato corrente da mostrare nella view dei dettagli del documento.
     this.refreshScheduledDocuments$().subscribe(() => {
       this.http.get<any>(`${API_BASE}/documents/extracted/${id}`).subscribe({
         next: ({ extracted_document }) => {
@@ -352,7 +352,7 @@ export class AiCoPilotService {
     });
   }
 
-  private refreshScheduledDocuments$(): Observable<void> {
+  private refreshScheduledDocuments$(): Observable<void> { // recupera i sendings dal database e aggiorna la mappa dei documenti programmati, con solo i documenti che hanno data di invio futura, lavora con resolveScheuledState per aggiornare lo stato dei documenti estratti che risultano programmati.
     return this.http.get<any>(`${API_BASE}/sendings`).pipe(
       map((res) => {
         const now = new Date();
@@ -365,7 +365,7 @@ export class AiCoPilotService {
     );
   }
    /** GET /documents/uploads/:parentId/extracted */
-  public getDocumentsByParent(parentId: number, currentResultId?: number): void {
+  public getDocumentsByParent(parentId: number, currentResultId?: number): void { // il metodo usa l'id del documento padre, recupera i documenti fratelli (con stesso padre), li deserializza e li emette come lista dei documenti estratti associati al documento padre, da mostrare nella view dei dettagli del documento, dove vengono mostrati i documenti fratelli ovvero con stesso documento padre.
     if (!parentId) {
       this.otherExtractedDocumentsSubject.next([]);
       return;
@@ -382,31 +382,103 @@ export class AiCoPilotService {
     });
   }
 
-  /** POST /documents/uploads/:id/retry */
-  public retryDocumentProcessing(uploadedDocumentId: number): void {
+  /** POST /documents/uploads/:id/retry */ 
+  public retryDocumentProcessing(uploadedDocumentId: number): void { // rianalizza un documento già caricato, viene utilizzato quando un documento è in stato di errore.
     this.http.post<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}/retry`, {}).subscribe({
       next: (response) => {
         console.log('Riprocessamento avviato:', response);
-        // Opzionalmente, aggiorna lo stato del documento
-        this.fetchHistoryResults();
+        const jobId = response?.job_id;
+        
+        if (!jobId) {
+          // Se non c'è job_id, significa che il documento è già elaborato
+          this.fetchHistoryResults();
+          return;
+        }
+
+        // Aggiorna lo stato del documento padre a InElaborazione
+        this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
+        
+        // Sottoscritti ai WebSocket updates per il retry
+        this.subscribeToJobUpdates(
+          jobId,
+          (payload, socket) => {
+            const evt = payload.event;
+
+            if (evt === 'document_processed') {
+              const extractedDocumentId = Number(payload.extracted_document_id) || 0;
+              if (extractedDocumentId > 0) {
+                this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+              }
+            }
+
+            if (evt === 'split_completed') {
+              if (payload.status === 'error') {
+                this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed);
+                this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+                socket.close();
+                return;
+              }
+              this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+              this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione);
+            }
+
+            if (evt === 'processing_completed') {
+              const completedWithError = payload.status === 'error';
+              this.updateSessionParentState(uploadedDocumentId, completedWithError ? DocumentState.Failed : DocumentState.Completato);
+              this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+              socket.close();
+            }
+
+            if (evt === 'processing_failed') {
+              console.error('Elaborazione fallita per il documento:', payload.error);
+              this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed);
+              this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+              socket.close();
+            }
+          },
+          () => {
+            this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+          }
+        );
       },
       error: (err) => console.error('Errore nel riavvio del processamento:', err),
     });
   }
 
   /** POST /documents/extracted/:id/retry */
-  public retryExtractedDocumentProcessing(extractedDocumentId: number): void {
+  public retryExtractedDocumentProcessing(extractedDocumentId: number): void { //il metodo viene utilizzato per rianalizzare un documento già splittato, ma che risulta in stato di errore.
     this.http.post<any>(`${API_BASE}/documents/extracted/${extractedDocumentId}/retry`, {}).subscribe({
       next: (response) => {
         console.log('Rianalisi documento come estratto avviata:', response);
-        this.fetchHistoryResults();
+        const jobId = response?.job_id;
+        
+        if (!jobId) {
+          // Se non c'è job_id, significa che il documento è già elaborato
+          this.fetchHistoryResults();
+          return;
+        }
+
+        // Sottoscritti ai WebSocket updates per il retry del documento estratto
+        this.subscribeToJobUpdates(
+          jobId,
+          (payload, socket) => {
+            if (payload.event === 'document_processed') {
+              this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+            }
+
+            if (payload.event === 'processing_completed' || payload.event === 'processing_failed') {
+              this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+              socket.close();
+            }
+          }
+        );
       },
       error: (err) => console.error('Errore nel riavvio della rianalisi:', err),
     });
   }
 
   /** DELETE /documents/uploads/:id */
-  public deleteUploadedDocument(uploadedDocumentId: number): void {
+  public deleteUploadedDocument(uploadedDocumentId: number): void { // il metodo elimina un documento padre, e dunque elimina anche tutti i suoi documenti figli estratti. Chiama la delete, si sottoscrive e appena riceve la conferma dell'eliminazione, rimuove il documento padre e i suoi figli dalla view senza dover fare un refresh completo della pagina.
     if (!uploadedDocumentId) {
       return;
     }
@@ -419,7 +491,7 @@ export class AiCoPilotService {
 
 
   /** POST /templates */
-  public newTemplate(name: string, content: string): void {
+  public newTemplate(name: string, content: string): void { // il metodo crea un nuovo template, chiamando l'endpoint di creazione template del backend, e appena riceve la conferma 
     this.http.post<any>(`${API_BASE}/templates`, { subject: name, body: content }).subscribe({
       next: ({ template }) =>
         this.templatesSubject.next([
@@ -430,7 +502,7 @@ export class AiCoPilotService {
     });
   }
   /** GET /templates */
-  public fetchTemplates(): void {
+  public fetchTemplates(): void { // Il metodo recupera i template, prima recupera id e subject di tutti i template, poi per ognuno fa la chiamata per recuperare i detagli completi (id,subject,body) e li salva nello stato templatesSubject.
     this.http.get<any>(`${API_BASE}/templates`).subscribe({
       next: ({ templates }) => {
         const baseTemplates = (templates ?? []) as { id: number; subject: string }[];
@@ -460,22 +532,22 @@ export class AiCoPilotService {
   }
 
   /** POST /sendings */
-  public createSending$(payload: CreateSendingPayload): Observable<any> {
+  public createSending$(payload: CreateSendingPayload): Observable<any> { // fa la post inviando dati del recipient, oggetto,corpo,template scelto e data di invio, poi quando si riceve la conferma, se la data di invio è nel futuro, aggiunge il documento alla mappa dei documenti programmati.
     return this.http.post<any>(`${API_BASE}/sendings`, payload).pipe(
-      tap(() => {
-        const sentAt = new Date(payload.sent_at);
+      tap((res) => {
+        const sentAt = new Date(res.sent_at);
         if (sentAt > new Date()) {
-          this.scheduledDocuments.set(payload.extracted_document_id, sentAt);
+          this.scheduledDocuments.set(res.extracted_document_id, sentAt);
         }
       })
     );
   }
 
-  public fetchCategories(): void {
+  public fetchCategories(): void {// il metodo estrae tutte le categorie presenti nei documenti della history, crea una lista di categorie uniche e la emette nello stato categorySubject, che viene usato per mostrare le opzioni di filtro per categoria nella view.
     const unique = [...new Set((this.resultsHistorySubject.value ?? []).map((r) => r.category).filter(Boolean))];
     this.categorySubject.next(unique);
   }
-  public fetchDepartment(): void {
+  public fetchDepartment(): void {// il metodo estrae tutti i reparti presenti nei documenti della history, crea una lista di reparti unici e la emette nello stato departmentSubject, che viene usato per mostrare le opzioni di filtro per reparto nella view.
     const unique = [...new Set((this.resultsHistorySubject.value ?? []).map((r) => r.department).filter(Boolean))];
     this.departmentSubject.next(unique);
   }
@@ -501,29 +573,40 @@ export class AiCoPilotService {
     window.open(`${API_BASE}/documents/uploads/${id}/file`, '_blank');
   }
   public getPdfById(id: number): void {
-    // Add a cache buster to avoid serving a stale PDF after range reassignment.
+    // C'è un cache buster per evitare pdf vecchi, si forza il browser a fare una nuova richiesta invece di prendere il pdf dalla cache.
     window.open(`${API_BASE}/documents/extracted/${id}/pdf?t=${Date.now()}`, '_blank');
   }
 
-  /** PATCH /documents/extracted/:id/reassign_range */
-  public modifyDocumentRange(id: number, page_start: number, page_end: number): void {
-    this.modifyDocumentRange$(id, page_start, page_end).subscribe({
-      error: (err) => console.error('Errore nella modifica del range:', err),
-    });
-  }
-
   /** PATCH /documents/extracted/:id/reassign_range (async) */
-  public modifyDocumentRange$(id: number, page_start: number, page_end: number): Observable<ResultSplit> {
+  public modifyDocumentRange$(id: number, page_start: number, page_end: number): Observable<ResultSplit> { // il metodo viene utilizzato per modificare l'intervallo di pagine da analizzare di un documento già splittato e analizzato, ma che si vuole rianalizzare con un intervallo di pagine diverso.
     return this.http
       .patch<any>(`${API_BASE}/documents/extracted/${id}/reassign_range`, { page_start, page_end })
       .pipe(
         tap((response) => {
           const jobId = String(response?.job_id ?? '').trim();
           if (jobId) {
-            this.subscribeToReassignRangeUpdates(jobId, id);
+            // Subscribe to WebSocket updates for range reassignment
+            this.subscribeToJobUpdates(
+              jobId,
+              (payload, socket) => {
+                const payloadExtractedId = Number(payload.extracted_document_id) || id;
+                if (payloadExtractedId !== id) {
+                  return;
+                }
+
+                if (payload.event === 'document_processed') {
+                  this.fetchExtractedDocumentAndUpsert(id);
+                }
+
+                if (payload.event === 'processing_completed' || payload.event === 'processing_failed') {
+                  this.fetchExtractedDocumentAndUpsert(id);
+                  socket.close();
+                }
+              }
+            );
           }
         }),
-        // Initial refresh to align UI with immediate queued/in_progress transition.
+        // appena riceve la riposta della patch fa la get per recuperare il documento aggiornato,lo deserializza e lo upserta in history
         switchMap(() => this.http.get<any>(`${API_BASE}/documents/extracted/${id}`)),
         map(({ extracted_document }) => this.serializer.deserializeExtractedDocument(extracted_document)),
         tap((updated) => {
@@ -533,7 +616,7 @@ export class AiCoPilotService {
       );
   }
 
-  private subscribeToJobUpdates(
+  private subscribeToJobUpdates( //metodo per fare il subscribe ai WebSocket updates di ActionCable, si passa il jobId, una callback da chiamare ad ogni messaggio ricevuto, una callback opzionale da chiamare alla conferma della sottoscrizione e una callback opzionale da chiamare in caso di errore del socket.
     jobId: string,
     onMessage: (payload: any, socket: WebSocket) => void,
     onConfirmSubscription?: () => void,
@@ -579,34 +662,6 @@ export class AiCoPilotService {
     };
   }
 
-  private subscribeToReassignRangeUpdates(jobId: string, extractedDocumentId: number): void {
-    this.subscribeToJobUpdates(
-      jobId,
-      (payload, socket) => {
-        const payloadExtractedId = Number(payload.extracted_document_id) || extractedDocumentId;
-        if (payloadExtractedId !== extractedDocumentId) {
-          return;
-        }
-
-        if (payload.event === 'document_processed') {
-          this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
-        }
-
-        if (payload.event === 'processing_completed' || payload.event === 'processing_failed') {
-          this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
-          socket.close();
-        }
-      }
-    );
-  }
-
-  /** PATCH /documents/extracted/:id/metadata */
-  public updateDocumentMetadata(id: number, metadataUpdates: Record<string, unknown>): void {
-    this.updateDocumentMetadata$(id, metadataUpdates).subscribe({
-      error: (err) => console.error('Errore nell\'aggiornamento dei metadati:', err),
-    });
-  }
-
   /** PATCH /documents/extracted/:id/metadata (async) */
   public updateDocumentMetadata$(id: number, metadataUpdates: Record<string, unknown>): Observable<ResultSplit> {
     return this.http
@@ -647,7 +702,7 @@ export class AiCoPilotService {
     });
   }
   /** GET /lookups/users?company=<n> */
-  public fetchEmployeesByCompany(company: string): void {
+  public fetchEmployeesByCompany(company: string): void { // Data una specifica azienda, si recuperano gli utenti associati a quell'azienda e si emettono nel Subject (employeesSubject).
     if (!company) {
       this.employeesSubject.next([]);
       return;
@@ -667,7 +722,7 @@ export class AiCoPilotService {
   }
 
 
-    public updateResult(result: ResultSplit): void {
+    public updateResult(result: ResultSplit): void { //metodo per sincronizzare lo stato del documento mostrato nei dettagli con eventuali modifiche. (Usato in anteprima documento)
     this.resultSubject.next(result);
     this.upsertInHistory(result);
   }

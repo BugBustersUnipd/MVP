@@ -31,8 +31,8 @@ describe('AnteprimaDocumento', () => {
     getPdfById: vi.fn(),
     fetchEmployeesByCompany: vi.fn(),
     updateResult: vi.fn(),
-    updateDocumentMetadata: vi.fn(),
-    modifyDocumentRange: vi.fn(),
+    updateDocumentMetadata$: vi.fn(() => of({})),
+    modifyDocumentRange$: vi.fn(() => of({})),
     createSending$: vi.fn(() => of({ status: 'ok' })),
   };
 
@@ -85,8 +85,8 @@ describe('AnteprimaDocumento', () => {
     aiServiceMock.getPdfById.mockClear();
     aiServiceMock.fetchEmployeesByCompany.mockClear();
     aiServiceMock.updateResult.mockClear();
-    aiServiceMock.updateDocumentMetadata.mockClear();
-    aiServiceMock.modifyDocumentRange.mockClear();
+    aiServiceMock.updateDocumentMetadata$.mockClear();
+    aiServiceMock.modifyDocumentRange$.mockClear();
     aiServiceMock.createSending$.mockClear();
     dialogServiceMock.open.mockClear();
     messageServiceMock.add.mockClear();
@@ -173,8 +173,8 @@ describe('AnteprimaDocumento', () => {
     component.onFieldModified({ field: 'category' as any, value: 'Nuova Categoria' });
     component.saveChanges();
 
-    expect(aiServiceMock.updateDocumentMetadata).toHaveBeenCalledWith(1, { category: 'Nuova Categoria' });
-    expect(aiServiceMock.modifyDocumentRange).not.toHaveBeenCalled();
+    expect(aiServiceMock.updateDocumentMetadata$).toHaveBeenCalledWith(1, { recipientName: 'Nuovo Nome' });
+    expect(aiServiceMock.modifyDocumentRange$).not.toHaveBeenCalled();
     expect(aiServiceMock.updateResult).toHaveBeenCalledTimes(1);
     expect(component.isEditable).toBe(false);
     expect(component.hasPendingModifications).toBe(false);
@@ -186,8 +186,8 @@ describe('AnteprimaDocumento', () => {
     component.onFieldModified({ field: 'page_end' as any, value: 5 });
     component.saveChanges();
 
-    expect(aiServiceMock.modifyDocumentRange).toHaveBeenCalledWith(1, 3, 5);
-    expect(aiServiceMock.updateDocumentMetadata).not.toHaveBeenCalled();
+    expect(aiServiceMock.modifyDocumentRange$).toHaveBeenCalledWith(1, 3, 5);
+    expect(aiServiceMock.updateDocumentMetadata$).not.toHaveBeenCalled();
   });
 
   it('should show error and not save when page range exceeds max pages', () => {
@@ -198,8 +198,8 @@ describe('AnteprimaDocumento', () => {
 
     component.saveChanges();
 
-    expect(aiServiceMock.modifyDocumentRange).not.toHaveBeenCalled();
-    expect(aiServiceMock.updateDocumentMetadata).not.toHaveBeenCalled();
+    expect(aiServiceMock.modifyDocumentRange$).not.toHaveBeenCalled();
+    expect(aiServiceMock.updateDocumentMetadata$).not.toHaveBeenCalled();
     expect(aiServiceMock.updateResult).not.toHaveBeenCalled();
     expect(component.isEditable).toBe(true);
     expect(component.hasPendingModifications).toBe(true);
