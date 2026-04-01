@@ -5,7 +5,7 @@ import { Tone, Style, Company } from '../models/result-ai-assistant.model';
 @Injectable({
   providedIn: 'root'
 })
-export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssistant> {
+export class ResultAiAssistantSerializer {
   serializeCreatePostRequest(result: ResultAiAssistant): {
     generated_datum_id: number | null;
     title: string;
@@ -151,40 +151,6 @@ export class ResultAiAssistantSerializer extends ResultSerializer<ResultAiAssist
       evaluation: this.asNullableNumber(source['rating']) ?? -1,
       generatedDatumId: this.asNumber(source['generatedDatumId'], 0)
     };
-  }
-
-  serialize(payload: unknown[]): ResultAiAssistant {
-    const source = this.normalizePayload(payload); // Normalizza il payload per supportare sia array posizionali che oggetti chiave-valore
-
-    return {
-      id: this.asNumber(source['id'], 0),
-      title: this.asString(source['title']),
-      content: this.asString(source['content']),
-      imagePath: this.asString(source['imagePath']), //da ricordare che il backend potrebbe non restituire un imagePath (immagine precedentemente tolta dall'utente e salvato così), deve essere messo null
-      tone: { id: this.asNumber(source['toneID']), name: this.asString(source['toneName']) } as Tone,
-      style: { id: this.asNumber(source['styleID']), name: this.asString(source['styleName']) } as Style,
-      company: { id: this.asNumber(source['companyID']), name: this.asString(source['companyName']) },
-      data: this.asDate(source['data']),
-      prompt: this.asString(source['prompt']),
-      evaluation: this.asNumber(source['evaluation'], 0),
-      generatedDatumId: this.asNumber(source['generatedDatumId'], 0) // Se il campo è opzionale, potrebbe essere null o undefined, gestito come null
-    };
-  }
-
-  deserialize(result: ResultAiAssistant): unknown[] {
-    return [
-      {
-        id: result.id,
-        title: result.title,
-        content: result.content,
-        imagePath: result.imagePath,
-        tone: result.tone,
-        style: result.style,
-        data: result.data.toISOString(),
-        prompt: result.prompt,
-        evaluation: result.evaluation
-      }
-    ];
   }
 
 // La logica di normalizzazione è un esempio e potrebbe essere adattata in base alla struttura effettiva del payload che riceverai dal backend. L'obiettivo è rendere il serializer flessibile per supportare sia formati legacy che nuovi formati basati su oggetti.
