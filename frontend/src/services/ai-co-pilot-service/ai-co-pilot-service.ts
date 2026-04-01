@@ -58,11 +58,11 @@ export class AiCoPilotService {
   private departmentSubject = new BehaviorSubject<string[]>([]);
   department$ = this.departmentSubject.asObservable();
 
-  private StateSubject = new BehaviorSubject<string[]>([]);
-  state$ = this.StateSubject.asObservable();
+  private stateSubject = new BehaviorSubject<string[]>([]);
+  state$ = this.stateSubject.asObservable();
   
-  private ConfidenceSubject = new BehaviorSubject<string[]>([]);
-  confidence$ = this.ConfidenceSubject.asObservable();
+  private confidenceSubject = new BehaviorSubject<string[]>([]);
+  confidence$ = this.confidenceSubject.asObservable();
 // aggiunto MA VEDIAMO SE VA BENE; SERVE PER ALTRI DOCUMENTI ESTRATTI
   private otherExtractedDocumentsSubject = new BehaviorSubject<ResultSplit[]>([]);
   otherExtractedDocuments$ = this.otherExtractedDocumentsSubject.asObservable();
@@ -537,10 +537,10 @@ export class AiCoPilotService {
     this.departmentSubject.next(unique);
   }
   public fetchState(): void {
-    this.StateSubject.next(Object.values(State));
+    this.stateSubject.next(Object.values(State));
   }
   public fetchConfidence(): void {
-    this.ConfidenceSubject.next(['0-20', '21-40', '41-60', '61-80', '81-100']);
+    this.confidenceSubject.next(['0-20', '21-40', '41-60', '61-80', '81-100']);
   }
   /** GET /lookups/companies */
   public fetchCompanies(): void {
