@@ -494,50 +494,39 @@ export class AiAssistantService {
       data: new Date(),
       prompt,
       evaluation: -1,
-      generatedDatumId: null //per ora non so quale sia sto id del generated datum
+      generatedDatumId: null
     };
   }
 
   private subscribeToGenerationChannel(generationId: number): void {
-    console.log('[ws] apertura websocket verso:', WS_URL, 'per generationId:', generationId);
     const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
     const identifier = JSON.stringify({ channel: 'GenerationChannel' });
-    console.log('[ws] identifier subscribe:', identifier);
 
     socket.onopen = () => {
       socket.send(JSON.stringify({ command: 'subscribe', identifier }));
-      console.log('Subscription inviata a GenerationChannel per id:', generationId);
     };
 
     socket.onmessage = (event) => {
-      console.log('[ws] raw message:', event.data);
       const cable = JSON.parse(event.data);
 
       if (cable.type === 'welcome' || cable.type === 'ping' || cable.type === 'confirm_subscription') {
-        console.log('[ws] messaggio di sistema ignorato:', cable.type);
         return;
       }
 
       if (!cable.message) {
-        console.log('[ws] messaggio senza payload applicativo, ignorato:', cable);
         return;
       }
 
       const payload = cable.message;
       const payloadId = Number(payload.id) || 0;
-      console.log('[ws] payload applicativo:', payload, 'payloadId:', payloadId, 'generationId atteso:', generationId);
 
-      // Il canale e condiviso: aggiorniamo solo la generazione appena creata via POST.
       if (payloadId !== generationId) {
-        console.log('[ws] payload ignorato per id diverso');
         return;
       }
 
       if (payload.status === 'completed') {
-        console.log('[ws] completed ricevuto per id corretto');
         const current = this.resultSubject.value;
         if (!current) {
-          console.log('[ws] nessun current result disponibile, skip update');
           return;
         }
 
@@ -554,38 +543,18 @@ export class AiAssistantService {
         };
 
         this.resultSubject.next(updated);
-        console.log('[ws] resultSubject aggiornato con title/content da completed');
         socket.close();
-        console.log('[ws] unsubscribe websocket dopo completed');
       } else if (payload.status === 'failed') {
         const errorMessage = this.extractRealtimeFailureMessage(payload);
-
-        console.error('[ws] failed ricevuto:', payload);
         this.notifyGenerationError(errorMessage);
         socket.close();
-        console.log('[ws] unsubscribe websocket dopo failed');
-      } else {
-        console.log('[ws] status ricevuto ma non gestito in update finale:', payload.status);
       }
     };
 
-    socket.onclose = (event) => {
-      console.log('[ws] connessione chiusa:', {
-        code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean
-      });
-    };
-
     socket.onerror = (error) => {
-      console.error('Errore nella connessione WebSocket:', error);
       this.notifyGenerationError('Errore di connessione realtime. Controlla la rete e riprova.');
     };
   }
-
-  // todo implementare
-  getGeneration(jobid: number) : void {}
-
 
   fetchResultsHistory(): void {
     // se lo storico è già stato fetchato in precedenza, non rifà la get al backend
