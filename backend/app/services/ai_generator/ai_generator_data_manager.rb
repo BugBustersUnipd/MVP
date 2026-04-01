@@ -2,8 +2,9 @@ module AiGenerator
 class AIGeneratorDataManager
 
   def fetchCompanyDescription(companyID)
-    companyDescription = Company.find(companyID).description
-    return companyDescription
+    company = Company.find_by(id: companyID)
+    raise ActiveRecord::RecordNotFound, "Company #{companyID} non trovata" unless company
+    company.description
   end
 
   def fetchToneDescription(toneId)
@@ -17,12 +18,14 @@ class AIGeneratorDataManager
   end
 
   def fetchGenerationData(generationID)
-    generationData = GeneratedDatum.find(generationID)
-    return generationData
+    generationData = GeneratedDatum.find_by(id: generationID)
+    raise ActiveRecord::RecordNotFound, "GeneratedDatum #{generationID} non trovato" unless generationData
+    generationData
   end
 
   def saveContent(generationID, aiResponseData)
-    generationData = GeneratedDatum.find(generationID)
+    generationData = GeneratedDatum.find_by(id: generationID)
+    return unless generationData
 
     if aiResponseData[:image].present?
       base64_string = aiResponseData[:image]

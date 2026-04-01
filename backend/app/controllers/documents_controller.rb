@@ -188,13 +188,12 @@ class DocumentsController < ActionController::Base
   end
 
   # POST /documents/uploads/:id/retry
-  # Riaccoda il processing per un UploadedDocument il cui ProcessingRun è in stato failed.
+  # Riaccoda il processing per un UploadedDocument (qualunque stato).
   def retry_processing
     uploaded = UploadedDocument.find(params[:id])
     run = ProcessingRun.where(uploaded_document: uploaded).order(:created_at).last
 
     return render json: { status: "error", message: "Nessun processing run trovato" }, status: :not_found unless run
-    return render json: { status: "error", message: "Solo i run in stato 'failed' possono essere riprovati" }, status: :unprocessable_entity unless run.status == "failed"
     return render_error("File sorgente non disponibile") unless file_storage.exist?(uploaded.storage_path)
 
     run.update!(status: "queued", error_message: nil, started_at: nil, completed_at: nil)
@@ -215,13 +214,9 @@ class DocumentsController < ActionController::Base
   end
 
   # POST /documents/extracted/:id/retry
-  # Riaccoda la data extraction per un singolo ExtractedDocument in stato failed.
+  # Riaccoda la data extraction per un singolo ExtractedDocument (qualunque stato).
   def retry_extracted
     extracted = ExtractedDocument.find(params[:id])
-
-    unless extracted.failed?
-      return render json: { status: "error", message: "Solo i documenti in stato 'failed' possono essere riprovati" }, status: :unprocessable_entity
-    end
 
     item = ProcessingItem.find_by(extracted_document: extracted)
     return render json: { status: "error", message: "Processing item non trovato" }, status: :not_found unless item
@@ -244,7 +239,7 @@ class DocumentsController < ActionController::Base
       extracted_document_id: extracted.id
     })
 
-    render json: { status: "queued", message: "Rianalisi avviata", extracted_document_id: extracted.id }
+    render json: { status: "queued", message: "Rianalisi avviata", extracted_document_id: extracted.id, job_id: run.job_id }
   rescue ActiveRecord::RecordNotFound
     render json: { status: "error", message: "Documento estratto non trovato" }, status: :not_found
   rescue ArgumentError => e

@@ -135,4 +135,99 @@ class GeneratedDataControllerTest < ActionDispatch::IntegrationTest
     json = JSON.parse(response.body)
     assert_includes json["error"], "tone"
   end
+
+  # === GET /generated_data/:id ===
+
+  test "show restituisce i dati di una generazione completata" do
+    get generated_data_path(@parent.id)
+
+    assert_response :ok
+    json = JSON.parse(response.body)
+    assert_equal @parent.id,          json["id"]
+    assert_equal @parent.title,       json["title"]
+    assert_equal @parent.text_result, json["text_result"]
+  end
+
+  test "show restituisce 404 se la generazione non esiste" do
+    get generated_data_path(99999)
+
+    assert_response :not_found
+    json = JSON.parse(response.body)
+    assert json["error"].present?
+  end
+
+  test "show restituisce 404 se la generazione non è completata" do
+    pending = GeneratedDatum.create!(
+      company: @company, tone: @tone, style: @style,
+      prompt: "In attesa", status: "pending"
+    )
+
+    get generated_data_path(pending.id)
+
+    assert_response :not_found
+  end
+
+  # === PATCH /generated_data/:id/rating ===
+
+  test "rating salva il valore e risponde con 200" do
+    patch rating_generated_data_path(@parent.id), params: { rating: 4 }
+
+    assert_response :ok
+    json = JSON.parse(response.body)
+    assert json["message"].present?
+    assert_equal 4, @parent.reload.rating
+  end
+
+  test "rating accetta valori da 1 a 5" do
+    [1, 2, 3, 4, 5].each do |v|
+      patch rating_generated_data_path(@parent.id), params: { rating: v }
+      assert_response :ok
+      assert_equal v, @parent.reload.rating
+    end
+  end
+
+  test "rating restituisce 400 se il valore è fuori range" do
+    patch rating_generated_data_path(@parent.id), params: { rating: 6 }
+
+    assert_response :bad_request
+    json = JSON.parse(response.body)
+    assert json["error"].present?
+  end
+
+  test "rating restituisce 400 se il valore è 0" do
+    patch rating_generated_data_path(@parent.id), params: { rating: 0 }
+
+    assert_response :bad_request
+  end
+
+  test "rating restituisce 400 se la generazione non esiste" do
+    patch rating_generated_data_path(99999), params: { rating: 3 }
+
+    assert_response :bad_request
+  end
+
+  # === DELETE /generated_data/:id ===
+
+  test "destroy elimina la generazione e risponde con 200" do
+    gen = GeneratedDatum.create!(
+      company: @company, tone: @tone, style: @style,
+      prompt: "Da eliminare", status: "completed"
+    )
+
+    assert_difference "GeneratedDatum.count", -1 do
+      delete destroy_generated_data_path(gen.id)
+    end
+
+    assert_response :ok
+    json = JSON.parse(response.body)
+    assert json["message"].present?
+  end
+
+  test "destroy restituisce 422 se la generazione non esiste" do
+    delete destroy_generated_data_path(99999)
+
+    assert_response :unprocessable_entity
+    json = JSON.parse(response.body)
+    assert json["error"].present?
+  end
 end
