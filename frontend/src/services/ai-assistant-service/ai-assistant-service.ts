@@ -61,7 +61,35 @@ export class AiAssistantService {
     });
   }
 
-  // tutti gli errori da chiamate http backend vengono processati in questa funzione per estrarre un messaggo e rimbalzarlo alla view
+    /**
+   * Estrae e normalizza i messaggi di errore dalle risposte HTTP del backend.
+   * 
+   * Processa gli errori ricevuti dalle chiamate HTTP, controllando molteplici possibili
+   * formato di risposta dal backend per estrarre il messaggio di errore più significativo.
+   * 
+   * L'ordine di priorità per l'estrazione è:
+   * 1. Array di errori in `error.error.errors`
+   * 2. Stringa di errore singolo in `error.error.error`
+   * 3. Messaggio in `error.error.message`
+   * 4. Messaggio diretto in `error.message`
+   * 5. Messaggio generico di fallback
+   * 
+   * @param {any} error - L'oggetto errore ricevuto dalla risposta HTTP
+   * @returns {string} Messaggio di errore normalizzato da mostrare all'utente.
+   *                   Ritorna un messaggio generico se l'errore non contiene informazioni valide.
+   * 
+   * @example
+   * ```typescript
+   * const errorMsg = this.extractErrorMessage({ 
+   *   error: { 
+   *     errors: ['Campo obbligatorio mancante', 'Formato non valido'] 
+   *   } 
+   * });
+   * console.log(errorMsg); // 'Campo obbligatorio mancante, Formato non valido'
+   * ```
+   * 
+   * @private
+   */
   private extractErrorMessage(error: any): string {
     const generic = 'Errore durante la generazione. Riprova tra poco.';
 
@@ -90,10 +118,27 @@ export class AiAssistantService {
     return generic;
   }
 
-  // tutti gli errori websocket da backend vengono processati in questa funzione
-  // Es token expired, contenuto bloccato da guardrails e prompt non valido (esempio spam di lettere)
+  /**
+   * Estrae e normalizza i messaggi di errore dai messaggi WebSocket in tempo reale.
+   * 
+   * Processa gli errori ricevuti dal backend tramite WebSocket, come:
+   * - Token scaduto
+   * - Contenuto bloccato da guardrails
+   * - Prompt non valido (es. spam di lettere)
+   * 
+   * @param {any} payload - Il payload del messaggio WebSocket ricevuto dal backend
+   * @returns {string} Messaggio di errore normalizzato da mostrare all'utente.
+   *                   Se il payload non contiene un errore valido, ritorna un messaggio generico.
+   * 
+   * @example
+   * ```typescript
+   * const errorMsg = this.extractRealtimeFailureMessage({ error: 'Token expired' });
+   * console.log(errorMsg); // 'Token expired'
+   * ```
+   * 
+   * @private
+   */
   private extractRealtimeFailureMessage(payload: any): string {
-  
     const generic = 'Generazione fallita per un errore interno.';
 
     const rawError = payload?.error;
