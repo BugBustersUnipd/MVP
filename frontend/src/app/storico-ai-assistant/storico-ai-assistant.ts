@@ -48,17 +48,17 @@ export class StoricoAiAssistant {
   ];
 
   ngOnInit () {
-    this.aiService.fetchTonesByCompany(1);
-    this.aiService.fetchStylesByCompany(1);
+    this.aiService.fetchAllTones();
+    this.aiService.fetchAllStyles();
     this.aiService.fetchCompanies();
 
-    this.aiService.tones$
+    this.aiService.allTones$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((tones) => {
         this.tonoOptions = (tones ?? []).map(t => ({ id: t.id, name: t.name, isActive: t.isActive }));
       });
 
-    this.aiService.styles$
+    this.aiService.allStyles$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((styles) => {
         this.stileOptions = (styles ?? []).map(s => ({ id: s.id, name: s.name, isActive: s.isActive }));
