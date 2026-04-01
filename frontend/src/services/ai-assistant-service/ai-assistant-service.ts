@@ -101,7 +101,7 @@ export class AiAssistantService {
   private generationErrorSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
   currentGenerationError$ = this.generationErrorSubject.asObservable();
 
-  ResultsHistorySubject: BehaviorSubject<ResultAiAssistant[] | null> = new BehaviorSubject<ResultAiAssistant[] | null>(null);
+  private ResultsHistorySubject: BehaviorSubject<ResultAiAssistant[] | null> = new BehaviorSubject<ResultAiAssistant[] | null>(null);
   currentResultsHistory$ = this.ResultsHistorySubject.asObservable();
 
   constructor() {
