@@ -48,9 +48,17 @@ export class StoricoAiAssistant {
   ];
 
   ngOnInit () {
-    this.aiService.fetchAllTones();
-    this.aiService.fetchAllStyles();
+
+    // Prima fetchCompanies, poi fetchAllTones e fetchAllStyles solo dopo che companies$ ha emesso
     this.aiService.fetchCompanies();
+    this.aiService.companies$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((companies) => {
+        this.companiesOptions = (companies ?? []).map(c => ({ id: c.id, name: c.name }));
+        // Solo dopo aver ricevuto le companies, fetch di tones e styles
+        this.aiService.fetchAllTones();
+        this.aiService.fetchAllStyles();
+      });
 
     this.aiService.allTones$
       .pipe(takeUntilDestroyed(this.destroyRef))

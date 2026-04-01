@@ -32,65 +32,6 @@ export class AiAssistantService {
 
   private allStylesSubject = new BehaviorSubject<Style[]>([]);
   allStyles$ = this.allStylesSubject.asObservable();
-  // Recupera tutti i toni di tutte le aziende (una sola volta)
-  fetchAllTones(): void {
-    if ((this.allTonesSubject.value ?? []).length > 0) {
-      return;
-    }
-    const companies = this.companiesSubject.value ?? [];
-    if (!companies.length) return;
-    let allTones: Tone[] = [];
-    let completed = 0;
-    companies.forEach((company, idx) => {
-      this.http.get<any>(`${API_BASE}/tones`, { params: { company_id: company.id } }).subscribe({
-        next: (response) => {
-          const tones = this.serializer.deserializeTonesResponse(response);
-          allTones = allTones.concat(tones);
-          completed++;
-          if (completed === companies.length) {
-            this.allTonesSubject.next(allTones);
-          }
-        },
-        error: (err) => {
-          console.error('Errore nel recupero dei toni per company', company.id, err);
-          completed++;
-          if (completed === companies.length) {
-            this.allTonesSubject.next(allTones);
-          }
-        }
-      });
-    });
-  }
-
-  // Recupera tutti gli stili di tutte le aziende (una sola volta)
-  fetchAllStyles(): void {
-    if ((this.allStylesSubject.value ?? []).length > 0) {
-      return;
-    }
-    const companies = this.companiesSubject.value ?? [];
-    if (!companies.length) return;
-    let allStyles: Style[] = [];
-    let completed = 0;
-    companies.forEach((company, idx) => {
-      this.http.get<any>(`${API_BASE}/styles`, { params: { company_id: company.id } }).subscribe({
-        next: (response) => {
-          const styles = this.serializer.deserializeStylesResponse(response);
-          allStyles = allStyles.concat(styles);
-          completed++;
-          if (completed === companies.length) {
-            this.allStylesSubject.next(allStyles);
-          }
-        },
-        error: (err) => {
-          console.error('Errore nel recupero degli stili per company', company.id, err);
-          completed++;
-          if (completed === companies.length) {
-            this.allStylesSubject.next(allStyles);
-          }
-        }
-      });
-    });
-  }
 
   private companiesSubject = new BehaviorSubject<Company[]>([]);
   companies$ = this.companiesSubject.asObservable();
@@ -105,6 +46,7 @@ export class AiAssistantService {
   currentResultsHistory$ = this.ResultsHistorySubject.asObservable();
 
   constructor() {
+    // modifica il currentResult che subisce modifiche anche in resultsHistorySubject, in questo modo lo storico resta sempre aggiornato
     this.currentResult$.subscribe((updated) => {
       if (updated && updated.id != null) {
         const history = this.ResultsHistorySubject.value ?? [];
@@ -119,6 +61,7 @@ export class AiAssistantService {
     });
   }
 
+  // tutti gli errori da chiamate http backend vengono processati in questa funzione per estrarre un messaggo e rimbalzarlo alla view
   private extractErrorMessage(error: any): string {
     const generic = 'Errore durante la generazione. Riprova tra poco.';
 
@@ -147,43 +90,87 @@ export class AiAssistantService {
     return generic;
   }
 
-  private notifyGenerationError(message: string): void {
-    this.generationErrorSubject.next(message);
-  }
-
+  // tutti gli errori websocket da backend vengono processati in questa funzione
+  // Es token expired, contenuto bloccato da guardrails e prompt non valido (esempio spam di lettere)
   private extractRealtimeFailureMessage(payload: any): string {
+  
     const generic = 'Generazione fallita per un errore interno.';
 
     const rawError = payload?.error;
-    const message = typeof rawError === 'string' && rawError.trim().length > 0
-      ? rawError
-      : generic;
-
-    const lowered = message.toLowerCase();
-
-    // Token scaduto (AWS / security token expired): stesso flusso dell'altro errore.
-    if (lowered.includes('token') && lowered.includes('expired')) {
-      return message;
-    }
-
-    // Guardrails: esempio "Contenuto bloccato dai guardrails".
-    if (lowered.includes('guardrail') || lowered.includes('bloccato dai guardrails')) {
-      return message;
-    }
+    const message = typeof rawError === 'string' && rawError.trim().length > 0 ? rawError : generic;
 
     return message;
   }
 
+
+  // todo anche eliminabile per mettere solo generationErrorSubject.next direttamente
+  private notifyGenerationError(message: string): void {
+    this.generationErrorSubject.next(message);
+  }
+
+
+  // pulisce l'errore di generazione attuale, in questo modo non riappare ogni volta (dato che i BehaviorSubject mandano la notifica a tutti i subscribers,anche se si iscrivono dopo)
   clearGenerationError(): void {
     this.generationErrorSubject.next(null);
   }
 
+  // usata per impostare il result corrente dalla view, per esempio quando si apre un risultato dallo storico
   setCurrentResult(result: ResultAiAssistant | null): void {
     this.resultSubject.next(result ? { ...result } : null);
   }
 
 
+  fetchAllTones(): void {
+    const companies = this.companiesSubject.value ?? [];
+    if (!companies.length) return;
+    let allTones: Tone[] = [];
+    let completed = 0;
+    companies.forEach((company, idx) => {
+      this.http.get<any>(`${API_BASE}/tones`, { params: { company_id: company.id } }).subscribe({
+        next: (response) => {
+          const tones = this.serializer.deserializeTonesResponse(response);
+          allTones = allTones.concat(tones);
+          completed++;
+          if (completed === companies.length) {
+            this.allTonesSubject.next(allTones);
+          }
+        },
+        error: (err) => {
+          console.error('Errore nel recupero dei toni per company', company.id, err);
+          completed++;
+          if (completed === companies.length) {
+            this.allTonesSubject.next(allTones);
+          }
+        }
+      });
+    });
+  }
 
+  fetchAllStyles(): void {
+    const companies = this.companiesSubject.value ?? [];
+    if (!companies.length) return;
+    let allStyles: Style[] = [];
+    let completed = 0;
+    companies.forEach((company, idx) => {
+      this.http.get<any>(`${API_BASE}/styles`, { params: { company_id: company.id } }).subscribe({
+        next: (response) => {
+          const styles = this.serializer.deserializeStylesResponse(response);
+          allStyles = allStyles.concat(styles);
+          completed++;
+          if (completed === companies.length) {
+            this.allStylesSubject.next(allStyles);
+          }
+        },
+        error: (err) => {
+          console.error('Errore nel recupero degli stili per company', company.id, err);
+          completed++;
+          if (completed === companies.length) {
+            this.allStylesSubject.next(allStyles);
+          }
+        }
+      });
+    });
+  }
 
   fetchTonesByCompany(company: number, is_active?: boolean) : void {
     const params: any = { company_id: company };
@@ -230,14 +217,15 @@ export class AiAssistantService {
       error: (err) => console.error('Errore nel recupero delle aziende:', err),
     });
   }
+
+
   newTone(name: string, code: string, companyId: number) : void {
     const payload = this.serializer.serializeNewToneRequest(name, code, companyId);
     this.http.post<any>(`${API_BASE}/tones`, payload).subscribe({
       next: (response) => {
         const createdTone = this.serializer.deserializeToneItem(response);
-        this.tonesSubject.next(this.upsertById(this.tonesSubject.value, createdTone));
-        // Aggiorna anche la lista globale
-        this.allTonesSubject.next(this.upsertById(this.allTonesSubject.value, createdTone));
+        this.tonesSubject.next([...(this.tonesSubject.value ?? []), createdTone]);
+        this.allTonesSubject.next([...(this.allTonesSubject.value ?? []), createdTone]);
         console.log('Tono creato:', createdTone);
       },
       error: (err) => console.error('Errore nella creazione del tono:', err),
@@ -250,24 +238,12 @@ export class AiAssistantService {
       next: (response) => {
         console.log('Risposta alla creazione dello stile:', response);
         const createdStyle = this.serializer.deserializeStyleItem(response);
-        this.stylesSubject.next(this.upsertById(this.stylesSubject.value, createdStyle));
-        // Aggiorna anche la lista globale
-        this.allStylesSubject.next(this.upsertById(this.allStylesSubject.value, createdStyle));
+        this.stylesSubject.next([...(this.stylesSubject.value ?? []), createdStyle]);
+        this.allStylesSubject.next([...(this.allStylesSubject.value ?? []), createdStyle]);
         console.log('Stile creato:', createdStyle);
       },
       error: (err) => console.error('Errore nella creazione dello stile:', err),
     });
-  }
-
-  private upsertById<T extends { id: number }>(list: T[], item: T): T[] {
-    const existingIndex = list.findIndex((entry) => entry.id === item.id);
-    if (existingIndex < 0) {
-      return [...list, item];
-    }
-
-    const next = [...list];
-    next[existingIndex] = item;
-    return next;
   }
 
   removeTone(id: number) : void {
@@ -288,18 +264,11 @@ export class AiAssistantService {
       error: (err) => console.error('Errore nella rimozione dello stile:', err),
     });
   }
-  // todo implementare
+
+  // todo forse da togliere
   reuse(tone: Tone, style: Style, company: Company, prompt: string) : void {
     console.log('Riutilizzo richiesta con i seguenti parametri:', { tone, style, company, prompt });
     this.requireGeneration(prompt, tone, style, company);
-  }
-  // forse è da TOGLIERE COMPLETAMENTE
-  duplicate(tone: Tone, style: Style, company: Company, prompt: string) : void {
-    console.log('Duplicazione richiesta con i seguenti parametri:', { tone, style, company, prompt });
-    //porta alla pagina di generazione
-
-    // il reindirizzamento va gestito nella view, un esempio di come dovrebbe venire è:
-    
   }
 
 

@@ -330,13 +330,6 @@ describe('AiAssistantService', () => {
     expect((service as any).ResultsHistorySubject.value).toEqual([]);
   });
 
-  it('should call duplicate without throwing', () => {
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-    expect(() => service.duplicate(sampleResult.tone, sampleResult.style, sampleResult.company, 'Prompt')).not.toThrow();
-
-    logSpy.mockRestore();
-  });
 
   it('should handle websocket completed flow after generation creation', () => {
     class MockWebSocket {
