@@ -1,6 +1,7 @@
 require "test_helper"
 
 class ToneTest < ActiveSupport::TestCase
+  # Costruisce i dati di output per il flusso corrente.
   def build_tone(overrides = {})
     Tone.new({ company: companies(:one), name: "Professional", description: "Professional tone" }.merge(overrides))
   end

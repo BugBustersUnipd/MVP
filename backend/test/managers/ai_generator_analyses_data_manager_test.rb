@@ -1,7 +1,7 @@
 require "test_helper"
 
 class AiGeneratorAnalysesDataManagerTest < ActiveSupport::TestCase
-  # Il blocco setup prepara i dati finti prima di OGNI test
+  # Preparazione dati di test.
   setup do
 
     # Livello 4: Foglie estreme
@@ -47,13 +47,13 @@ class AiGeneratorAnalysesDataManagerTest < ActiveSupport::TestCase
       created_at: Time.current
     )
 
-    # Inizializziamo il manager con un range di date ampio
+    # Inizializziamo il manager con un intervallo di date ampio
     @manager = AiAnalyst::Managers::AiGeneratorAnalysesDataManager.new(start_date: 1.day.ago, end_date: 1.day.from_now)
   end
 
   test "calcola correttamente il CONTEGGIO totale dei prompt usati" do
     # Non facciamo più la somma 5+2, ma contiamo semplicemente le tuple con prompt!
-    # Ne abbiamo create 2 con prompt compilato, quindi ci aspettiamo 2.
+    # Ne abbiamo crea 2 con prompt compilato, quindi ci aspettiamo 2.
     assert_equal 2, @manager.retrieve_prompt_amount_query
   end
 

@@ -1,5 +1,6 @@
 module DocumentProcessing
   class ProcessGenericFile
+    # Inizializza le dipendenze del componente.
     def initialize(
       notifier: nil,
       file_storage: nil,
@@ -14,13 +15,14 @@ module DocumentProcessing
       @confidence_calculator_factory = confidence_calculator_factory
     end
 
+    # Esegue il flusso principale del servizio.
     def call(file_path:, job_id:, uploaded_document_id:, category: nil, override_company: nil, override_department: nil, competence_period: nil)
       uploaded_document = generic_file_repository.find_uploaded_document(uploaded_document_id)
       run = generic_file_repository.find_run_by_job_id(job_id)
       raise ActiveRecord::RecordNotFound, "ProcessingRun not found for job_id=#{job_id}" unless run
       generic_file_repository.mark_run_processing!(run)
 
-      # Build overlay params: user-provided values that override LLM extraction
+      # costruisce overlay params
       overlays = {
         category: category,
         override_company: override_company,
@@ -46,8 +48,7 @@ module DocumentProcessing
     attr_reader :notifier, :file_storage, :generic_file_repository,
       :file_processor, :confidence_calculator_factory
 
-    # Apply user-provided overrides to LLM extraction results
-    # User overlays take precedence and get confidence = 1.0
+    # Sovrascrive dati llm con quelli dati e setta confidenza = 1.0
     def apply_user_overlays(llm_metadata, llm_confidence, overlays)
       merged_metadata = llm_metadata.dup
       merged_confidence = (llm_confidence || {}).dup
@@ -75,6 +76,7 @@ module DocumentProcessing
       [merged_metadata, merged_confidence]
     end
 
+    
     def process_file(file_path, uploaded_document, run, overlays)
       result = file_processor.call(file_path)
 
@@ -119,6 +121,7 @@ module DocumentProcessing
       )]
     end
 
+    # Salva un item di tipo csv o image a seconda del caso, associandolo al documento estratto.
     def persist_item(uploaded_document, run, metadata, confidence, result, ocr_lines)
       if ocr_lines.any?
         generic_file_repository.create_image_item!(
@@ -142,6 +145,7 @@ module DocumentProcessing
       end
     end
 
+    # Costruisce i dati di output per il flusso corrente.
     def build_success_payload(filename:, recipient:, extracted_document_data:, extracted_confidence:, matched_recipient:, extracted_document_id:, document_index:, total_documents:, ocr_text: nil)
       {
         event: "document_processed",
@@ -159,6 +163,7 @@ module DocumentProcessing
       }
     end
 
+    # Costruisce i dati di output per il flusso corrente, caso errore
     def build_error_payload(message:, filename: nil, extracted_document_id: nil)
       {
         event: "document_processed",
@@ -176,6 +181,7 @@ module DocumentProcessing
       }
     end
 
+    # slegato a seconda del tipo di utente
     def format_employee(employee)
       return nil if employee.nil?
 

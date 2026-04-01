@@ -4,6 +4,7 @@ module DocumentProcessing
 
     attr_reader :status, :employee, :fallback_text, :score, :matched_term
 
+    # Inizializza le dipendenze del componente.
     def initialize(status:, employee: nil, fallback_text: nil, score: nil, matched_term: nil)
       normalized_status = status.to_s
       raise ArgumentError, "Invalid status: #{status}" unless STATUSES.include?(normalized_status)
@@ -14,7 +15,8 @@ module DocumentProcessing
       @score = score
       @matched_term = matched_term # È il termine normalizzato usato dal motore di matching per confrontare col DB.
     end
-
+    
+    # Verifica le condizioni richieste prima di procedere.
     def matched?
       status == "matched"
     end

@@ -5,6 +5,7 @@ class AIGeneratorService
   BlockedResponseError = TextResponseValidator::BlockedResponseError
   InvalidSetterParamsError = Class.new(StandardError)
 
+  # Inizializza le dipendenze del componente.
   def initialize(imgGenerator, textGenerator, aiGeneratorDataManager, setterFactory, textResponseValidator)
     @imgGenerator = imgGenerator
     @textGenerator = textGenerator
@@ -13,6 +14,7 @@ class AIGeneratorService
     @textResponseValidator = textResponseValidator
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create_content(generationID)
     generationData = @aiGeneratorDataManager.fetchGenerationData(generationID)
     toneDescription = @aiGeneratorDataManager.fetchToneDescription(generationData.tone_id)
@@ -55,6 +57,7 @@ class AIGeneratorService
 
   private
 
+  # Verifica le condizioni richieste prima di procedere.
   def validate_setters!(textSetter, imageSetter)
     errors = []
 
@@ -66,16 +69,19 @@ class AIGeneratorService
     raise InvalidSetterParamsError, "Parametri non validi: #{errors.join(', ')}"
   end
 
+  # Aggiunge un prefisso alla lista errori per distinguere il setter sorgente.
   def prefixed_errors(prefix, error_list)
     Array(error_list).map { |error| "#{prefix}: #{error}" }
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def createText(textSetter, userPrompt)
     systemPrompt = textSetter.buildSystemPrompt
     generatedText = @textGenerator.generate_text(systemPrompt, userPrompt)
     return generatedText
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def createImage(imageSetter, textResult)
     imagePrompt = imageSetter.buildImagePrompt(textResult)
     generatedImage = @imgGenerator.generate_image(imagePrompt)

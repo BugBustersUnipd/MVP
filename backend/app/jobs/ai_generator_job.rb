@@ -1,6 +1,7 @@
 class AiGeneratorJob < ApplicationJob
   queue_as :default
 
+  # Esegue la logica applicativa del metodo.
   def perform(generation_id)
     AiGenerator::AiJobOrchestrator.signal_process_start(generation_id)
     

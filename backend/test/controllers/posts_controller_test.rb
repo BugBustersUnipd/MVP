@@ -1,6 +1,7 @@
 require "test_helper"
 
 class PostsControllerTest < ActionDispatch::IntegrationTest
+  # Preparazione dati di test.
   def setup
     Post.delete_all
 
@@ -139,7 +140,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # DELETE /posts/:id
+  # elimina /posts/:id
   # ---------------------------------------------------------------------------
 
   test "destroy elimina un post esistente" do

@@ -4,10 +4,12 @@ class GenericFileProcessingJobTest < ActiveSupport::TestCase
   class FakeProcessGenericFileService
     attr_reader :calls
 
+    # Inizializza le dipendenze del componente.
     def initialize
       @calls = []
     end
 
+    # Esegue il flusso principale del servizio.
     def call(file_path:, job_id:, uploaded_document_id:)
       @calls << {
         file_path: file_path,
@@ -20,16 +22,19 @@ class GenericFileProcessingJobTest < ActiveSupport::TestCase
   class FakeContainer
     attr_reader :last_file_kind
 
+    # Inizializza le dipendenze del componente.
     def initialize(service)
       @service = service
     end
 
+    
     def process_generic_file_service(file_kind:)
       @last_file_kind = file_kind
       @service
     end
   end
 
+  # Esegue il job con container e servizio fittizio per il test.
   def run_job(file_path, job_context, service: FakeProcessGenericFileService.new)
     container = FakeContainer.new(service)
     stub_new(DocumentProcessing::Container, container) do

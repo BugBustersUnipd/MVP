@@ -1,6 +1,7 @@
 require "test_helper"
 
 class TonesControllerTest < ActionDispatch::IntegrationTest
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Tones Corp", description: "Azienda di test")
     @other   = Company.create!(name: "Other Corp",  description: "Altra azienda")
@@ -126,7 +127,7 @@ class TonesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # DELETE /tones/:id
+  # elimina /tones/:id
   # ---------------------------------------------------------------------------
 
   test "destroy disattiva un tono attivo" do

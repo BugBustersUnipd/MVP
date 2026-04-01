@@ -38,6 +38,7 @@ class TemplatesController < ApplicationController
 
   private
 
+  # Applica strong parameters per i campi del template.
   def template_params
     params.permit(:subject, :body)
   end

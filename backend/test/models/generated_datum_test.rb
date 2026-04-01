@@ -1,6 +1,7 @@
 require "test_helper"
 
 class GeneratedDatumTest < ActiveSupport::TestCase
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Test Company")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
@@ -292,7 +293,7 @@ class GeneratedDatumTest < ActiveSupport::TestCase
     assert_equal @style.description, loaded.style.description
   end
 
-  # === VALIDATIONS (if exist) ===
+  # === VALIDATIONS (se exist) ===
   test "richiede company" do
     generation = GeneratedDatum.new(
       tone: @tone,

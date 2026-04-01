@@ -2,7 +2,7 @@ require "test_helper"
 
 class AiGeneratorAnalysesControllerTest < ActionDispatch::IntegrationTest
   test "risponde con successo e restituisce il JSON con i dati richiesti del generatore" do
-    # 1. SETUP: Usiamo le colonne corrette per le anagrafiche
+    # Preparazione dati di test.
     company = Company.create!(name: "Test Company") # Corretto business_name -> name
     tono = Tone.create!(name: "Professionale", description: "Tono professionale", company: company)
     stile = Style.create!(name: "Conciso", description: "Stile conciso", company: company)

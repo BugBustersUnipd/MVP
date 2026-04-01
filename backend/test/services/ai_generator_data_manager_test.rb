@@ -1,7 +1,7 @@
 require "test_helper"
 
 class AIGeneratorDataManagerTest < ActiveSupport::TestCase
-  # === SETUP - CREA DATI DI TEST ===
+  # === PREPARAZIONE - CREA DATI DI TEST ===
   def setup
     @company = Company.create!(name: "Test Company", description: "A test company")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
@@ -50,7 +50,7 @@ class AIGeneratorDataManagerTest < ActiveSupport::TestCase
     assert_equal @generation_datum.id, data.id
   end
 
-  # === ERROR HANDLING FETCH ===
+  # === errore HANDLING FETCH ===
   test "fetchCompanyDescription solleva errore se azienda non esiste" do
     manager = AiGenerator::AIGeneratorDataManager.new
     

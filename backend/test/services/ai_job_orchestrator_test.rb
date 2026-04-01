@@ -3,6 +3,7 @@ require "test_helper"
 class AiJobOrchestratorTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Test Company")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
@@ -135,7 +136,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       status: "pending"
     )
     
-    # Mock ActionCable.server.broadcast
+    # Oggetto fittizio usato nel test.
     broadcast_called = false
     payload_captured = {}
     
@@ -147,7 +148,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
     
     AiGenerator::AiJobOrchestrator.signal_process_start(generation.id)
     
-    # Verifichiamo che il broadcast include lo stato processing
+    # Verifichiamo che il broadcast include lo stato processamento
     assert broadcast_called
     assert_equal generation.id, payload_captured[:id]
     assert_equal "processing", payload_captured[:status]
@@ -157,7 +158,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
     # Non dovrebbe sollevare eccezione
     AiGenerator::AiJobOrchestrator.signal_process_start(9999)
     
-    # Test passed if no exception
+    
     assert true
   end
 
@@ -278,7 +279,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
     assert true
   end
 
-  # === SIGNAL FAILURE ===
+  # === SEGNALAZIONE ERRORE ===
   test "signal_failure aggiorna status a failed" do
     generation = GeneratedDatum.create!(
       company: @company,
@@ -373,7 +374,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       text_result: "T"
     )
     
-    # Mock il broadcast
+    # Oggetto fittizio usato nel test.
     ActionCable::Server::Base.any_instance.stubs(:broadcast)
     
     AiGenerator::AiJobOrchestrator.complete(generation.id)
@@ -392,7 +393,7 @@ class AiJobOrchestratorTest < ActiveSupport::TestCase
       status: "processing"
     )
     
-    # Mock il broadcast
+    # Oggetto fittizio usato nel test.
     ActionCable::Server::Base.any_instance.stubs(:broadcast)
     
     AiGenerator::AiJobOrchestrator.signal_failure(generation.id, "Errore")

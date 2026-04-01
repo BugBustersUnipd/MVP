@@ -13,6 +13,7 @@ class SendingsFlowTest < ActionDispatch::IntegrationTest
     )
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create_extracted_document(uploaded_document:)
     uploaded_document.extracted_documents.create!(
       sequence:   1,
@@ -22,6 +23,7 @@ class SendingsFlowTest < ActionDispatch::IntegrationTest
     )
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create_uploaded_document(employee:, checksum: SecureRandom.hex)
     UploadedDocument.create!(
       original_filename: "source.pdf",

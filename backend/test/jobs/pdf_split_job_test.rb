@@ -4,10 +4,12 @@ class PdfSplitJobTest < ActiveSupport::TestCase
   class FakeProcessSplitRunService
     attr_reader :calls
 
+    # Inizializza le dipendenze del componente.
     def initialize
       @calls = []
     end
 
+    # Esegue il flusso principale del servizio.
     def call(file_path:, job_id:)
       @calls << { file_path: file_path, job_id: job_id }
     end
@@ -16,10 +18,12 @@ class PdfSplitJobTest < ActiveSupport::TestCase
   class FakeContainer
     attr_reader :split_run_service
 
+    # Inizializza le dipendenze del componente.
     def initialize(service)
       @split_run_service = service
     end
 
+    
     def process_split_run_service
       @split_run_service
     end

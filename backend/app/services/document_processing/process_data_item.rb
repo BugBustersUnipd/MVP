@@ -1,5 +1,6 @@
 module DocumentProcessing
   class ProcessDataItem
+    # Inizializza le dipendenze del componente.
     def initialize(
       data_item_repository:,
       notifier:,
@@ -20,6 +21,7 @@ module DocumentProcessing
       @extracted_metadata_builder_factory = extracted_metadata_builder_factory
     end
 
+    # Esegue il flusso principale del servizio.
     def call(file_path:, job_id:, processing_item_id: nil, extracted_document_id: nil)
       start_time = Time.now
       run = data_item_repository.find_run_by_job_id(job_id)
@@ -37,7 +39,7 @@ module DocumentProcessing
 
       extracted_data = data_extractor.extract(full_text)
       recipient_names = extracted_data[:recipients]
-      # Normalize to single recipient: take first extracted name if any
+      # normalizza al destinatario singolo
       recipient = Array(recipient_names).compact.first
       extracted_document_data = extracted_data[:metadata]
       llm_confidence = extracted_data[:llm_confidence]
@@ -97,6 +99,7 @@ module DocumentProcessing
     attr_reader :data_item_repository, :notifier, :file_storage, :ocr_service, :data_extractor, :recipient_resolver,
       :confidence_calculator_factory, :extracted_metadata_builder_factory
 
+    # Recupera il documento estratto usando id esplicito o associato all'item.
     def resolve_extracted_document(extracted_document_id, item) #cerca prima su extraced_document_id, poi su item.associated extracted_document, nil se non trova nulla
       return data_item_repository.find_extracted_document(extracted_document_id) if extracted_document_id.present?
       return nil unless item&.respond_to?(:extracted_document)
@@ -104,6 +107,7 @@ module DocumentProcessing
       item.extracted_document
     end
 
+    # Aggiorna i dati in base ai parametri ricevuti.
     def update_extracted_document_success(extracted_document, resolution, metadata, recipient, global_confidence, process_duration_seconds)
       return unless extracted_document
 
@@ -120,6 +124,7 @@ module DocumentProcessing
       )
     end
 
+    # Aggiorna il progresso del run e notifica la fine quando tutti gli item sono conclusi.
     def increment_progress(run, job_id)
       result = data_item_repository.update_progress!(run)
       return unless result[:completed]
@@ -131,6 +136,7 @@ module DocumentProcessing
       )
     end
 
+    # Serializza i dati essenziali del dipendente per il payload realtime.
     def format_employee(employee)
       return nil unless employee.is_a?(Employee)
 
@@ -142,6 +148,7 @@ module DocumentProcessing
       }
     end
 
+    # Costruisce i dati di output per il flusso corrente.
     def build_success_payload(filename:, ocr_text:, recipient:, extracted_document_data:, extracted_confidence:, matched_recipient:, extracted_document_id:, document_index:, total_documents:)
       {
         event: "document_processed",
@@ -159,6 +166,7 @@ module DocumentProcessing
       }
     end
 
+    # Costruisce i dati di output per il flusso corrente.
     def build_error_payload(message:, filename:, extracted_document_id:, document_index:, total_documents:)
       {
         event: "document_processed",

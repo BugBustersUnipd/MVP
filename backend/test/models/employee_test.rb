@@ -1,6 +1,7 @@
 require "test_helper"
 
 class EmployeeTest < ActiveSupport::TestCase
+  # Costruisce i dati di output per il flusso corrente.
   def build_employee(overrides = {})
     company = Company.first || Company.create!(name: "TestCo")
     user = User.create!(
@@ -68,11 +69,11 @@ class EmployeeTest < ActiveSupport::TestCase
   end
 
   test "same user cannot be employee of two companies" do
-    # Not enforced by model, but test that creating two employees for same user works
+    
     company2 = Company.create!(name: "Second Co")
     emp = employees(:one)
     emp2 = Employee.new(user: emp.user, company: company2)
-    # The model does not prevent this, so it should be valid
+    
     assert emp2.valid?
   end
 end

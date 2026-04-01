@@ -3,6 +3,7 @@ module DocumentProcessing
     class CreateSending
       attr_reader :result
 
+      # Inizializza le dipendenze del componente.
       def initialize(extracted_document_id:, recipient_id:, sent_at:, subject: nil, body: nil, template_id: nil)
         @extracted_document_id = extracted_document_id
         @recipient_id = recipient_id
@@ -13,6 +14,7 @@ module DocumentProcessing
         @result = {}
       end
 
+      # Esegue il flusso principale del servizio.
       def call
         validate_inputs
         return self if @result[:error]
@@ -24,17 +26,20 @@ module DocumentProcessing
         self
       end
 
+      # Verifica le condizioni richieste prima di procedere.
       def success?
         @result[:success] == true
       end
 
       private
 
+      # Verifica le condizioni richieste prima di procedere.
       def validate_inputs
         return unless @extracted_document_id.blank? || @recipient_id.blank? || @sent_at.blank?
         @result = { error: "extracted_document_id, recipient_id, sent_at sono obbligatori", status: :bad_request }
       end
 
+      # Costruisce i dati di output per il flusso corrente.
       def build_sending
         sending = Sending.new(
           extracted_document_id: @extracted_document_id,
@@ -45,7 +50,7 @@ module DocumentProcessing
           template_id: @template_id
         )
 
-        # If a template is selected and explicit values are missing, inherit them.
+        # Se e' selezionato un template, eredita i campi mancanti.
         if sending.template_id.present? && sending.subject.blank?
           template = Template.find_by(id: sending.template_id)
           sending.subject = template.subject if template
@@ -55,6 +60,7 @@ module DocumentProcessing
         sending
       end
 
+      # Salva l'invio e aggiorna lo stato del documento estratto a sent in transazione.
       def save_sending(sending)
         ActiveRecord::Base.transaction do
           unless sending.save

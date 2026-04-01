@@ -35,7 +35,7 @@ class ExtractedMetadataBuilderTest < ActiveSupport::TestCase
   end
 
   test "build falls back to metadata when uploaded_document overrides are blank" do
-    # override_company and override_department are blank → fall back to metadata
+    # override_company e override_department are blank → fall back to metadati
     uploaded = UploadedDocument.new(
       override_company: "",
       override_department: nil,

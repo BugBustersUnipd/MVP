@@ -1,4 +1,5 @@
 class PostSerializer
+  # Serializza il payload nel formato atteso dal client.
   def self.serialize_collection(posts)
     {
       posts: posts.map do |post|

@@ -7,6 +7,7 @@ class ProcessingItem < ApplicationRecord
   validates :sequence, presence: true
   validates :status, inclusion: { in: STATUSES }, allow_nil: true
 
+  # Verifica le condizioni richieste prima di procedere.
   def done? = status == "done"
   def failed? = status == "failed"
   def in_progress? = status == "in_progress"

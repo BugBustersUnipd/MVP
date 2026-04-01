@@ -1,10 +1,13 @@
 module DocumentProcessing
   class DataExtractor
+    # Inietta il servizio LLM usato per l'estrazione.
     def initialize(llm_service:)
       @llm_service = llm_service
     end
 
+    # Estrae destinatari, metadati e confidenza dal testo del documento.
     def extract(text)
+      # Se non c'e' testo utile, restituiamo payload coerente senza chiamare LLM.
       return empty_document_data if text.to_s.strip.blank?
 
       parsed = llm_service.extract_document_data(text)
@@ -31,6 +34,7 @@ module DocumentProcessing
 
     attr_reader :llm_service
 
+    # Normalizza un nome ed elimina valori troppo corti o vuoti.
     def normalize_name(name)
       cleaned = name.to_s.gsub(/\s+/, " ").strip
       return nil if cleaned.blank? || cleaned.length < 3
@@ -38,7 +42,9 @@ module DocumentProcessing
       cleaned
     end
 
+    # Costruisce i metadati con ripiego tra chiavi annidate e root.
     def extract_metadata(parsed)
+      # Alcuni prompt ritornano i campi annidati in document, altri al livello root.
       document_data = parsed["document"] || parsed[:document] || {}
 
       {
@@ -67,6 +73,7 @@ module DocumentProcessing
           parsed[:type]
         ),
         reason: normalize_field(
+          # Compatibilita': reason (EN) e causale (IT).
           document_data["reason"] ||
           document_data[:reason] ||
           parsed["reason"] ||
@@ -77,6 +84,7 @@ module DocumentProcessing
           parsed[:causale]
         ),
         competence: normalize_field(
+          # Compatibilita': competence (EN) e competenza (IT).
           document_data["competence"] ||
           document_data[:competence] ||
           parsed["competence"] ||
@@ -89,6 +97,7 @@ module DocumentProcessing
       }
     end
 
+    # Estrae e normalizza il confidenza campo per campo.
     def extract_llm_confidence(parsed)
       confidence = parsed["confidence"] || parsed[:confidence] || {}
 
@@ -103,20 +112,24 @@ module DocumentProcessing
       }
     end
 
+    # Pulisce un valore testuale e restituisce nil se vuoto.
     def normalize_field(value)
       cleaned = value.to_s.gsub(/\s+/, " ").strip
       cleaned.presence
     end
 
+    # Converte il confidenza in float nel intervallo 0..1.
     def normalize_confidence(value)
       return 0.0 if value.nil?
 
       numeric = value.to_f
       return 0.0 if numeric.nan?
 
+      # Clamp difensivo: il modello puo' uscire da intervallo o dare stringhe non pulite.
       [[numeric, 0.0].max, 1.0].min.round(3)
     end
 
+    # payload di ripiego quando l'estrazione non va a buon fine.
     def empty_document_data
       {
         recipients: [],
@@ -140,6 +153,7 @@ module DocumentProcessing
       }
     end
 
+    # Riconosce errore token AWS scaduto nel messaggio eccezione.
     def expired_credentials_error?(error)
       message = error.message.to_s.downcase
       message.include?("security token") && message.include?("expired")

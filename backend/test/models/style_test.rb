@@ -1,6 +1,7 @@
 require "test_helper"
 
 class StyleTest < ActiveSupport::TestCase
+  # Costruisce i dati di output per il flusso corrente.
   def build_style(overrides = {})
     Style.new({ company: companies(:one), name: "Formal", description: "Formal writing style" }.merge(overrides))
   end

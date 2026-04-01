@@ -40,7 +40,7 @@ class CompanyTest < ActiveSupport::TestCase
     Employee.create!(user: u1, company: company)
     Employee.create!(user: u2, company: company)
 
-    # Both employees reference the same company
+    
     assert_equal 2, Employee.where(company: company).count
   end
 end

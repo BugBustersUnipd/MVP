@@ -2,6 +2,7 @@ module DocumentProcessing
   module Commands
     class InitializeProcessing
       require "digest"
+      # Inizializza le dipendenze del componente.
       def initialize(
         upload_manager:,
         pdf_split_job_class:,
@@ -14,6 +15,7 @@ module DocumentProcessing
         @file_storage = file_storage
       end
 
+      # Esegue il flusso principale del servizio.
       def call(file:, category: nil, company: nil, department: nil, competence_period: nil, employee: nil)
         source_path = nil
         begin
@@ -78,6 +80,7 @@ module DocumentProcessing
 
       private
 
+      # Calcola l'hash SHA256 del file per deduplicare i caricamenti.
       def compute_checksum(file)
         io = file.respond_to?(:tempfile) ? file.tempfile : file
         io.rewind if io.respond_to?(:rewind)
@@ -90,6 +93,7 @@ module DocumentProcessing
 
       attr_reader :upload_manager, :pdf_split_job_class, :pdf_loader, :file_storage
 
+      # Normalizza il dato per mantenere il formato atteso.
       def cleanup_failed_source_file(path)
         return unless path.present? && file_storage.exist?(path)
 

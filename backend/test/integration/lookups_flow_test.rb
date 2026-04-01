@@ -56,7 +56,7 @@ class LookupsFlowTest < ActionDispatch::IntegrationTest
     emp_a = create_employee(company: company_a, email_suffix: "alpha_#{SecureRandom.hex(3)}")
     emp_b = create_employee(company: company_b, email_suffix: "beta_#{SecureRandom.hex(3)}")
 
-    # Upload + extracted document linking emp_a.user via metadata["company"]
+    # Upload + estratto document linking emp_a.user via metadati["company"]
     uploaded = UploadedDocument.create!(
       original_filename: "x.pdf", storage_path: "/tmp/x.pdf",
       page_count: 1, checksum: SecureRandom.hex, file_kind: "pdf", employee: emp_a

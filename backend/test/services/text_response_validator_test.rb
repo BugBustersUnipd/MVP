@@ -2,6 +2,7 @@ require "test_helper"
 require_relative "../../app/services/ai_generator/text_response_validator"
 
 class TextResponseValidatorTest < ActiveSupport::TestCase
+  # Preparazione dati di test.
   def setup
     @validator = AiGenerator::TextResponseValidator.new
   end

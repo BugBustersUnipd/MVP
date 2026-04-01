@@ -1,4 +1,5 @@
 class PostsController < ApplicationController
+  # Costruisce i dati di output per il flusso corrente.
   def create
     safe_params = post_params
     post = AiGenerator::PostCreatorService.create_post(safe_params)
@@ -10,11 +11,13 @@ class PostsController < ApplicationController
     end
   end
 
+  # Recupera i dati necessari per l'operazione.
   def index
     posts = Post.includes(:generated_datum).all.order(date_time: :desc)
     render json: PostSerializer.serialize_collection(posts), status: :ok
   end
 
+  # Rimuove i dati previsti dal flusso corrente.
   def destroy
     post = Post.find_by(id: params[:id])
     
@@ -27,6 +30,7 @@ class PostsController < ApplicationController
 
   private
 
+  # Applica strong parameters accettando payload annidato o flat.
   def post_params
     if params[:post].present?
       params.require(:post).permit(:title, :body_text, :date_time, :generated_datum_id)

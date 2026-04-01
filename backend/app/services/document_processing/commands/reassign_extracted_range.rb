@@ -3,6 +3,7 @@ module DocumentProcessing
     class ReassignExtractedRange
       class ValidationError < StandardError; end
 
+      # Inizializza le dipendenze del componente.
       def initialize(
         page_range_pdf_service_class:,
         data_extraction_job_class:,
@@ -13,6 +14,7 @@ module DocumentProcessing
         @file_storage = file_storage
       end
 
+      # Esegue il flusso principale del servizio.
       def call(extracted_document_id:, page_start:, page_end:)
         begin
           extracted_document = ExtractedDocument.find(extracted_document_id)
@@ -72,11 +74,13 @@ module DocumentProcessing
 
       attr_reader :page_range_pdf_service_class, :data_extraction_job_class, :file_storage
 
+      # Verifica le condizioni richieste prima di procedere.
       def validate_range_values!(page_start:, page_end:)
         raise ValidationError, "Range pagine non valido" unless page_start.is_a?(Integer) && page_end.is_a?(Integer)
         raise ValidationError, "Range pagine non valido" if page_start <= 0 || page_end <= 0 || page_end < page_start
       end
 
+      # Verifica le condizioni richieste prima di procedere.
       def validate_range_within_document!(page_end:, uploaded_document:)
         return unless page_end > uploaded_document.page_count
 

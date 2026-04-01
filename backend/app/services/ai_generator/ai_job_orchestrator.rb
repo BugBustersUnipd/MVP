@@ -2,6 +2,7 @@ module AiGenerator
 class AiJobOrchestrator
   InactiveConfigurationError = Class.new(StandardError)
   
+  # Valida la configurazione, crea la generazione e avvia il job asincrono.
   def self.orchestrate(params)
     ensure_active_configuration!(params)
 
@@ -12,6 +13,7 @@ class AiJobOrchestrator
     generation
   end
 
+  
   def self.signal_process_start(generationId)
     generation = GeneratedDatum.find_by(id: generationId)
     return unless generation
@@ -23,6 +25,7 @@ class AiJobOrchestrator
     })
   end
 
+  # Notifica il completamento della generazione inviando i dati al canale realtime.
   def self.complete(generationId)
     generation = GeneratedDatum.find_by(id: generationId)
     return unless generation
@@ -40,6 +43,7 @@ class AiJobOrchestrator
     })
   end
 
+  # Gestione errore del flusso.
   def self.signal_failure(generationId, error_message = "Errore generico durante la generazione")
     generation = GeneratedDatum.find_by(id: generationId)
     return unless generation
@@ -56,6 +60,7 @@ class AiJobOrchestrator
     })
   end
 
+  # Verifica che tone e style selezionati siano attivi.
   def self.ensure_active_configuration!(params)
     errors = []
 

@@ -8,7 +8,7 @@ class UserTest < ActiveSupport::TestCase
 
   test "employee_code returns username via employee when employee has no employee_code method" do
     user = users(:one)
-    # Employee model has no employee_code column so it delegates back to the user
+    
     assert_equal user.username, user.employee_code
   end
 

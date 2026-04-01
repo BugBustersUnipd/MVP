@@ -10,12 +10,13 @@ class ExtractedDocument < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }, allow_nil: true
   validate :end_page_must_be_after_start
 
+  # Verifica le condizioni richieste prima di procedere.
   def done?     = status == "done"
   def failed?   = status == "failed"
   def validated? = status == "validated"
 
   private
-
+  
   def end_page_must_be_after_start
     return if page_start.blank? || page_end.blank?
     return if page_end >= page_start

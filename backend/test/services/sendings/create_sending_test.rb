@@ -117,7 +117,7 @@ class DocumentProcessing::Sendings::CreateSendingTest < ActiveSupport::TestCase
     ).call
 
     assert result.success?
-    # Subject inherited from template (not passed), body kept from params
+    # Subject inherited da template (not passed), body kept da params
     assert_equal "Tpl Subject", result.result[:sending].subject
     assert_equal "Corpo esplicito", result.result[:sending].body
   end

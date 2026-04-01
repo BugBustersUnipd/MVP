@@ -1,12 +1,13 @@
 module DocumentProcessing
   class ImageProcessor
+    # Inizializza le dipendenze del componente.
     def initialize(ocr_service:, data_extractor:, recipient_resolver:)
       @ocr_service = ocr_service
       @data_extractor = data_extractor
       @recipient_resolver = recipient_resolver
     end
 
-    # Pure extraction for images: no DB writes, no broadcast.
+    
     def call(file_path)
       ocr_result = ocr_service.full_ocr(file_path)
       full_text = ocr_result[:text]

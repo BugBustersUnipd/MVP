@@ -1,6 +1,7 @@
 require "test_helper"
 
 class PostsFlowTest < ActionDispatch::IntegrationTest
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Post Flow Company", description: "Flow company")
     @tone = Tone.create!(company: @company, name: "Post Tone", description: "Tone desc", is_active: true)

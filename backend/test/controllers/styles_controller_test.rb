@@ -1,6 +1,7 @@
 require "test_helper"
 
 class StylesControllerTest < ActionDispatch::IntegrationTest
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Styles Corp", description: "Azienda di test")
     @other   = Company.create!(name: "Other Corp",  description: "Altra azienda")
@@ -126,7 +127,7 @@ class StylesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # DELETE /styles/:id
+  # elimina /styles/:id
   # ---------------------------------------------------------------------------
 
   test "destroy disattiva uno stile attivo" do

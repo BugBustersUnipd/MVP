@@ -1,6 +1,7 @@
 require "test_helper"
 
 class UploadedDocumentTest < ActiveSupport::TestCase
+  # Verifica le condizioni richieste prima di procedere.
   def valid_doc(overrides = {})
     company = Company.first || Company.create!(name: "TestCo")
     user    = User.create!(email: "ud#{SecureRandom.hex(4)}@test.com",

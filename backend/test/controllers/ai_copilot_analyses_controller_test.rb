@@ -2,7 +2,7 @@ require "test_helper"
 
 class AiCopilotAnalysesControllerTest < ActionDispatch::IntegrationTest
   test "risponde con successo e restituisce il JSON con i dati richiesti del copilot" do
-    # 1. SETUP: Creiamo le dipendenze base
+    # Preparazione dati di test.
     user = User.create!(
       cf: "RSSMRA80A01H501U", username: "mario.rossi", 
       email: "test@test.com", password: "pwd", 
@@ -11,7 +11,7 @@ class AiCopilotAnalysesControllerTest < ActionDispatch::IntegrationTest
     company = Company.create!(name: "Test Corp")
     employee = Employee.create!(department: "IT", user: user, company: company)
 
-    # Creiamo il file caricato (con un finto intervento umano per coprire tutte le metriche)
+    
     uploaded_doc = UploadedDocument.create!(
       original_filename: "test.pdf", 
       employee: employee,

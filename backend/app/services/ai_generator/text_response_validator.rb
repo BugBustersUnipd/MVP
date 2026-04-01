@@ -8,6 +8,7 @@ class TextResponseValidator
     "Domanda non chiara o non pertinente"
   ].freeze
 
+  # Estrae e prepara i dati utili al processamento.
   def parse!(text_result, generation_id)
     blocked_message = blocked_response_message(text_result)
     raise BlockedResponseError, blocked_message if blocked_message
@@ -17,6 +18,7 @@ class TextResponseValidator
 
   private
 
+  
   def blocked_response_message(text_result)
     return nil if text_result.blank?
 
@@ -25,6 +27,7 @@ class TextResponseValidator
 
   TITLE_PREFIXES = /\A\s*(titolo|oggetto|subject|title)\s*:\s*/i
 
+  
   def split_title_and_content(text_result, generation_id)
     match_data = text_result.match(/^\|\s*(.*?)\s*\|\s*(.*)/m)
 
@@ -51,6 +54,7 @@ class TextResponseValidator
     }
   end
 
+  # Normalizza il dato per mantenere il formato atteso.
   def sanitize_title(raw)
     raw.strip
        .gsub(TITLE_PREFIXES, '')       # rimuove "Titolo:", "Oggetto:", ecc.

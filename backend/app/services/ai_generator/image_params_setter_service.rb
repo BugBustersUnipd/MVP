@@ -1,6 +1,7 @@
 module AiGenerator
 class ImageParamsSetterService
 
+  # Inizializza le dipendenze del componente.
   def initialize(paramsData)
     prompt = paramsData[:prompt]
     @prompt = prompt.to_s.strip if prompt
@@ -20,6 +21,7 @@ class ImageParamsSetterService
     { w: 720, h: 1280 }
   ].freeze
 
+  # Verifica le condizioni richieste prima di procedere.
   def valid?
     @errors = []
     @errors << "prompt e company_id sono obbligatori" if @prompt.blank?
@@ -34,6 +36,7 @@ class ImageParamsSetterService
     @errors.empty?
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def buildImagePrompt(aiTextGeneratorResponse)
     promptWithAITextGeneratorResponse = @prompt + ". Risposta alla domanda che può servire alla creazione dell'immagine: " + aiTextGeneratorResponse
     cutResponse = promptWithAITextGeneratorResponse.truncate(1000)
@@ -53,6 +56,7 @@ class ImageParamsSetterService
     }.to_json
   end
 
+  # Espone i parametri immagine normalizzati e gli eventuali errori.
   def getData
     {
       #prompt: @prompt,

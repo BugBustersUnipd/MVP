@@ -2,10 +2,12 @@ module DocumentProcessing
   class RecipientResolver
     DEFAULT_THRESHOLD = 0.72
 
+    # Inizializza le dipendenze del componente.
     def initialize(threshold: DEFAULT_THRESHOLD)
       @threshold = threshold
     end
 
+    # Risolve il destinatario migliore partendo dai nomi estratti o dal testo grezzo.
     def resolve(recipient_names:, raw_text: nil)
       names = Array(recipient_names).reject(&:blank?)
       fallback_text = names.first.presence || raw_text
@@ -27,12 +29,14 @@ module DocumentProcessing
 
     private
 
+    # Calcola i candidati con punteggio per un termine normalizzato.
     def best_matches_for_term(normalized_term)
       candidate_employees(normalized_term)
         .map { |employee| score_candidate(employee, normalized_term) }
         .compact
     end
 
+    # Costruisce il risultato quando il destinatario viene trovato.
     def matched_result(best_match)
       DocumentProcessing::RecipientResolutionResult.new(
         status: :matched,
@@ -42,6 +46,7 @@ module DocumentProcessing
       )
     end
 
+    # Costruisce il risultato quando non c'e' un match sopra soglia.
     def unmatched_result(fallback_text:, best_match:)
       DocumentProcessing::RecipientResolutionResult.new(
         status: :unmatched,
@@ -51,15 +56,16 @@ module DocumentProcessing
       )
     end
 
+    # Restituisce un risultato vuoto quando mancano termini utili.
     def empty_result
       DocumentProcessing::RecipientResolutionResult.new(status: :empty)
     end
 
+    # Recupera utenti candidati collegati a un record Employee.
     def candidate_employees(normalized_term)
       tokens = normalized_term.split.uniq.select { |token| token.length >= 3 }.first(8)
 
-      # Search users that are associated to an Employee record (company employees)
-      # We return User records so downstream code which expects a `User` works correctly.
+      # Restituisce User per mantenere compatibilita' con il codice chiamante.
       scope = User.joins("INNER JOIN employees ON employees.user_id = users.id").select('users.*').where.not(email: [nil, ""])
 
       if tokens.any?
@@ -72,6 +78,7 @@ module DocumentProcessing
       scope.limit(500).to_a
     end
 
+    # Assegna un punteggio al candidato combinando match esatto e fuzzy match.
     def score_candidate(employee, normalized_term)
       normalized_name = normalize(employee.name)
       return nil if normalized_name.blank?
@@ -106,6 +113,7 @@ module DocumentProcessing
       { employee: employee, score: final_score, term: normalized_term }
     end
 
+    # Normalizza il dato per mantenere il formato atteso.
     def normalize(value)
       value.to_s
         .unicode_normalize(:nfd)
@@ -116,6 +124,7 @@ module DocumentProcessing
         .strip
     end
 
+    # Calcola uno score medio fuzzy tra i token del termine e del nome.
     def fuzzy_token_score(term_tokens, name_tokens)
       return 0.0 if term_tokens.empty? || name_tokens.empty?
 
@@ -123,6 +132,7 @@ module DocumentProcessing
       total / term_tokens.size
     end
 
+    # Calcola la similarita' Jaro-Winkler tra due stringhe.
     def jaro_winkler(s1, s2)
       return 1.0 if s1 == s2
       return 0.0 if s1.empty? || s2.empty?
@@ -168,6 +178,7 @@ module DocumentProcessing
       jaro + prefix * 0.1 * (1.0 - jaro)
     end
 
+    # Calcola la similarita' Dice sui bigrammi.
     def dice_coefficient(a, b)
       left = bigrams(a)
       right = bigrams(b)
@@ -180,6 +191,7 @@ module DocumentProcessing
       (2.0 * overlap) / (left.size + right.size)
     end
 
+    # Genera i bigrammi di una stringa.
     def bigrams(text)
       return [] if text.length < 2
 

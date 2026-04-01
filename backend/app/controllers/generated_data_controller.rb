@@ -1,6 +1,7 @@
 class GeneratedDataController < ApplicationController
+  # Costruisce i dati di output per il flusso corrente.
   def create
-    # L'Orchestrator si occupa di tutto: salvataggio record e lancio Job
+    # L'Orchestrator si occupa di tutto: salvataggio record e lancio job
     generation = AiGenerator::AiJobOrchestrator.orchestrate(generation_params)
 
     if generation.persisted? # Verifichiamo se l'Orchestrator è riuscito a salvare
@@ -16,6 +17,7 @@ class GeneratedDataController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
+  # Recupera i dati necessari per l'operazione.
   def show
     generation = GeneratedDatum.find_by(id: params[:id])
     if generation && generation.status == 'completed'
@@ -25,6 +27,7 @@ class GeneratedDataController < ApplicationController
     end
   end
 
+  # Aggiorna il rating della generazione validando il range 1..5.
   def rating
     generation = GeneratedDatum.find_by(id: params[:id])
     rating_value = params[:rating].to_i
@@ -37,6 +40,7 @@ class GeneratedDataController < ApplicationController
     end
   end
 
+  # Avvia una nuova generazione clonando i parametri della precedente.
   def regenerate
     parent = GeneratedDatum.find_by(id: params[:id])
     
@@ -63,6 +67,7 @@ class GeneratedDataController < ApplicationController
     render json: { error: "Generazione non trovata." }, status: :not_found
   end
 
+  # Rimuove i dati previsti dal flusso corrente.
   def destroy
     generation = GeneratedDatum.find_by(id: params[:id])
     if generation && generation.destroy

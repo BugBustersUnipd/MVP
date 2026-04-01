@@ -1,6 +1,7 @@
 require "test_helper"
 
 class TextGeneratorServiceTest < ActiveSupport::TestCase
+  # Oggetto fittizio usato nel test.
   def mock_bedrock_success(response_text)
     content_item = Struct.new(:text).new(response_text)
     message = Struct.new(:content).new([content_item])
@@ -12,6 +13,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
     client
   end
 
+  # Oggetto fittizio usato nel test.
   def mock_bedrock_guardrail_blocked
     content_item = Struct.new(:text).new("Contenuto bloccato")
     message = Struct.new(:content).new([content_item])
@@ -23,6 +25,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
     client
   end
 
+  # Crea un client Bedrock fittizio che solleva un errore.
   def failing_bedrock(error)
     client = Object.new
     client.define_singleton_method(:converse) { |_args| raise error }
@@ -116,7 +119,7 @@ class TextGeneratorServiceTest < ActiveSupport::TestCase
   test "accetta system_prompt e user_prompt come parametri" do
     service = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     
-    # Mock che cattura i parametri ricevuti
+    # Oggetto fittizio usato nel test.
     params_captured = {}
     client = Object.new
     client.define_singleton_method(:converse) do |args|

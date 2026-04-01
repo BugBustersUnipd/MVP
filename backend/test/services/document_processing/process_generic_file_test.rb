@@ -4,20 +4,24 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
   class FakeNotifier
     attr_reader :events
 
+    # Inizializza le dipendenze del componente.
     def initialize
       @events = []
     end
 
+    # Invia l'output verso il canale previsto.
     def broadcast(job_id, payload)
       @events << [job_id, payload]
     end
   end
 
   class FakeResolution
+    # Inizializza le dipendenze del componente.
     def initialize(employee)
       @employee = employee
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def matched?
       @employee.present?
     end
@@ -26,6 +30,7 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
   end
 
   class FakeRecipientResolver
+    # Chiama resolve e restituisce una risoluzione fittizio.
     def resolve(recipient_names:, raw_text:)
       user = User.new(id: 10, name: recipient_names.first, email: "person@example.com", username: "person10")
       FakeResolution.new(user)
@@ -35,14 +40,17 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
   class FakeContainer
     attr_reader :notifier
 
+    # Inizializza le dipendenze del componente.
     def initialize
       @notifier = FakeNotifier.new
     end
 
+    # Restituisce il resolver fittizio per i destinatari.
     def recipient_resolver
       FakeRecipientResolver.new
     end
 
+    # Restituisce l'estrattore dati fittizio.
     def data_extractor
       Object.new.tap do |extractor|
         extractor.define_singleton_method(:extract) do |text|
@@ -56,6 +64,7 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
       end
     end
 
+    
     def file_storage
       Object.new.tap do |storage|
         storage.define_singleton_method(:exist?) { |_path| false }

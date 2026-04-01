@@ -37,7 +37,7 @@ class SendingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index includes fixture sendings" do
-    # Fixtures 'one' and 'two' should be loaded from sendings.yml
+    
     get sendings_path
 
     assert_response :success
@@ -188,7 +188,7 @@ class SendingsControllerTest < ActionDispatch::IntegrationTest
       sent_at:               Time.current.iso8601
     }
 
-    # Returns an error (unprocessable_entity or bad_request) because the FK constraint fails
+    # Gestione errore del flusso.
     assert_not_equal "201", response.status.to_s
     body = JSON.parse(response.body)
     assert_equal "error", body["status"]

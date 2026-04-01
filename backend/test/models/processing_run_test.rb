@@ -1,6 +1,7 @@
 require "test_helper"
 
 class ProcessingRunTest < ActiveSupport::TestCase
+  # Verifica le condizioni richieste prima di procedere.
   def valid_run(overrides = {})
     ProcessingRun.new({ job_id: SecureRandom.uuid }.merge(overrides))
   end

@@ -1,4 +1,5 @@
 class GeneratedDatumSerializer
+  # Serializza il payload nel formato atteso dal client.
   def self.serialize(generation)
     {
       id: generation.id,

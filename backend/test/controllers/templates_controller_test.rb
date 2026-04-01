@@ -32,7 +32,7 @@ class TemplatesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index response is an array" do
-    # Fixtures load templates; just verify we get an array back
+    
     get templates_path
 
     assert_response :success
@@ -62,8 +62,8 @@ class TemplatesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body_resp = JSON.parse(response.body)
-    # The controller serializes with as_json(only: [:id, :subject, :body])
-    # body is an alias for body_text; check that body_text is accessible
+    
+    # body is an alias per body_text; check quello body_text is accessible
     assert_not_nil template.reload.body_text
     assert_equal "Corpo visibile", template.body_text
   end
@@ -127,7 +127,7 @@ class TemplatesControllerTest < ActionDispatch::IntegrationTest
   test "create with no params still succeeds (both fields optional)" do
     post create_template_path
 
-    # Both subject and body_text are optional, so this should succeed
+    
     assert_response :created
     body = JSON.parse(response.body)
     assert_equal "ok", body["status"]

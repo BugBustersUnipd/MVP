@@ -4,6 +4,7 @@ require_relative "../../app/services/ai_generator/ai_generator_data_manager"
 require_relative "../../app/services/ai_generator/setter_factory"
 
 class AIGeneratorServiceTest < ActiveSupport::TestCase
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Test Corp", description: "Azienda di test")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
@@ -18,6 +19,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     )
   end
 
+  # Oggetto fittizio usato nel test.
   def mock_bedrock_text(response_text)
     content_item = Struct.new(:text).new(response_text)
     message = Struct.new(:content).new([content_item])
@@ -29,6 +31,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     client
   end
 
+  # Oggetto fittizio usato nel test.
   def mock_bedrock_image(base64_image)
     response_body = StringIO.new({ images: [base64_image] }.to_json)
     response = Struct.new(:body).new(response_body)
@@ -38,6 +41,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     client
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create_service(text_gen_client = nil, img_gen_client = nil)
     text_gen = AiGenerator::TextGeneratorService.new(region: "us-east-1")
     text_gen_client && text_gen.instance_variable_set(:@client, text_gen_client)
@@ -137,7 +141,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     
     @generation_datum.reload
     
-    # Dovrebbe usare un titolo default
+    
     assert_not_nil @generation_datum.title
   end
 
@@ -175,7 +179,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     
     @generation_datum.reload
     
-    # AiGenerator::ImageParamsSetterService usa default 1024x1024
+    # Nota operativa del servizio.
     assert_equal 1024, @generation_datum.width
     assert_equal 1024, @generation_datum.height
     assert_not_nil @generation_datum.seed
@@ -312,7 +316,7 @@ class AIGeneratorServiceTest < ActiveSupport::TestCase
     
     @generation_datum.reload
     
-    # Dovrebbe split su pipe
+    # Dovrebbe suddivisione su pipe
     assert @generation_datum.title.present?
     assert @generation_datum.text_result.present?
   end

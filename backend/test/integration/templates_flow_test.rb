@@ -60,12 +60,12 @@ class TemplatesFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "create with empty params returns unprocessable_entity" do
-    # body_text has a DB NOT NULL constraint — saving with nils should fail
-    # (validation depends on schema constraints; if Rails save fails we get 422)
+    
+    # (validation depends on schema constraints; se Rails save fails we get 422)
     post create_template_path, params: {}, as: :json
 
-    # Rails may return 201 with nulls or 422; we just assert the response is parseable
-    # and either ok or error
+    
+    # e either ok or errore
     assert_includes [201, 422], response.status
     body = JSON.parse(response.body)
     assert body.key?("status")

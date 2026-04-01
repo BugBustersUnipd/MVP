@@ -343,11 +343,15 @@ export class AnteprimaDocumento {
     }
 
     if (rangeUpdates && this.result.id) {
-      this.aiService.modifyDocumentRange(this.result.id, rangeUpdates.page_start, rangeUpdates.page_end);
+      this.aiService.modifyDocumentRange$(this.result.id, rangeUpdates.page_start, rangeUpdates.page_end).subscribe({
+        error: (err) => console.error('Errore nella modifica del range:', err),
+      });
     }
 
     if (Object.keys(metadataUpdates).length > 0 && this.result.id) {
-      this.aiService.updateDocumentMetadata(this.result.id, metadataUpdates);
+      this.aiService.updateDocumentMetadata$(this.result.id, metadataUpdates).subscribe({
+        error: (err) => console.error('Errore nell\'aggiornamento dei metadati:', err),
+      });
     }
 
     Object.assign(this.result, this.pendingModifications);

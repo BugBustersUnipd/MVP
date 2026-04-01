@@ -1,5 +1,6 @@
 module DocumentProcessing
   class ConfidenceCalculator
+    # Inizializza le dipendenze del componente.
     def initialize(ocr_lines:, recipient_names:, metadata:, llm_confidence:, uploaded_document: nil)
       @ocr_lines = ocr_lines
       @recipient_names = recipient_names
@@ -8,6 +9,7 @@ module DocumentProcessing
       @uploaded_document = uploaded_document
     end
 
+    # Calcola la confidenza finale combinando LLM, OCR e override manuali.
     def global_confidence
       textract = textract_confidence
       global = {
@@ -27,6 +29,7 @@ module DocumentProcessing
 
     attr_reader :ocr_lines, :recipient_names, :metadata, :llm_confidence, :uploaded_document
 
+    # Normalizza il valore LLM nel range 0..1.
     def llm_confidence_value(key)
       value = llm_confidence[key]
       return 0.0 if value.nil?
@@ -34,6 +37,7 @@ module DocumentProcessing
       [[value.to_f, 0.0].max, 1.0].min.round(3)
     end
 
+    # Calcola la confidenza OCR per ciascun campo rilevante.
     def textract_confidence
       {
         recipient: confidence_for_values(ocr_lines, recipient_names),
@@ -45,6 +49,7 @@ module DocumentProcessing
       }
     end
 
+    # Forza la confidenza a 1.0 sui campi impostati manualmente.
     def apply_override_confidence(global)
       return global if uploaded_document.nil?
 
@@ -55,6 +60,7 @@ module DocumentProcessing
       global
     end
 
+    # Fonde confidenza LLM e OCR facendo la media.
     def merge_confidence(llm_value, textract_value)
       llm = llm_value.nil? ? 0.0 : llm_value.to_f
       textract = textract_value.nil? ? 0.0 : textract_value.to_f
@@ -62,6 +68,7 @@ module DocumentProcessing
       ((llm + textract) / 2.0).round(3)
     end
 
+    # Calcola la confidenza OCR per una lista di valori attesi.
     def confidence_for_values(lines, values)
       normalized_values = Array(values).filter_map { |value| normalize_match_key(value) }.uniq
       return 0.0 if normalized_values.empty?
@@ -84,6 +91,7 @@ module DocumentProcessing
       (matches.sum / matches.size.to_f).round(3)
     end
 
+    # Normalizza il dato per mantenere il formato atteso.
     def normalize_match_key(value)
       value.to_s
         .unicode_normalize(:nfd)
@@ -93,6 +101,7 @@ module DocumentProcessing
         .presence
     end
 
+    # Genera varianti della data per aumentare le possibilita' di match OCR.
     def date_candidates(value)
       raw = value.to_s.strip
       return [] if raw.blank?

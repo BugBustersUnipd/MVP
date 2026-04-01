@@ -1,6 +1,7 @@
 module AiGenerator
 class TextParamsSetterService
 
+  # Inizializza le dipendenze del componente.
   def initialize(paramsData)
     @prompt = paramsData[:prompt]
     @toneDescription = paramsData[:toneDescription]
@@ -10,6 +11,7 @@ class TextParamsSetterService
     @errors = []
   end
 
+  # Verifica le condizioni richieste prima di procedere.
   def valid?
     @errors = []
     @errors << "prompt è obbligatorio" if @prompt.blank?
@@ -20,6 +22,7 @@ class TextParamsSetterService
     @errors.empty?
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def buildSystemPrompt
     <<~PROMPT.strip
       RUOLO: Sei l'IA ufficiale di "#{@companyName}".
@@ -42,6 +45,7 @@ class TextParamsSetterService
     PROMPT
   end
 
+  # Espone i parametri validati e gli eventuali errori raccolti.
   def getData
     {
       prompt: @prompt,

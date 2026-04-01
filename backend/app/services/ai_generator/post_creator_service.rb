@@ -1,5 +1,6 @@
 module AiGenerator
 class PostCreatorService
+  # Costruisce i dati di output per il flusso corrente.
   def self.create_post(safe_params)
     return invalid_post("ID mancante") if safe_params[:generated_datum_id].blank?
 
@@ -26,6 +27,7 @@ class PostCreatorService
     post
   end
 
+  # Costruisce un oggetto Post non valido con il messaggio di errore.
   def self.invalid_post(message)
     Post.new.tap { |post| post.errors.add(:base, message) }
   end

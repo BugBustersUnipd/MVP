@@ -1,6 +1,7 @@
 class GenericFileProcessingJob < ApplicationJob
   queue_as :data
 
+  # Esegue la logica applicativa del metodo.
   def perform(file_path, job_context)
     context = normalize_context(job_context)
     container = DocumentProcessing::Container.new
@@ -14,6 +15,7 @@ class GenericFileProcessingJob < ApplicationJob
 
   private
 
+  # Normalizza il dato per mantenere il formato atteso.
   def normalize_context(job_context)
     {
       job_id: job_context[:job_id] || job_context["job_id"],

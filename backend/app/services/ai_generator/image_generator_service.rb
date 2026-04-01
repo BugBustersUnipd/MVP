@@ -4,6 +4,7 @@ require "json"
 module AiGenerator
 class ImageGeneratorService
 
+  # Inizializza le dipendenze del componente.
   def initialize(region:)
     @region = region
     @client = Aws::BedrockRuntime::Client.new(
@@ -14,6 +15,7 @@ class ImageGeneratorService
     )
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def generate_image(image_prompt_json)
     model_id = ::BEDROCK_CONFIG_IMAGE_GENERATION["model_id"]
     
@@ -24,6 +26,7 @@ class ImageGeneratorService
 
   private
   
+  # Invoca Nova Canvas su Bedrock e restituisce la risposta raw del modello.
   def invokeNovaCanvas(model_id, image_prompt_json)
     @client.invoke_model(
       model_id: model_id,
@@ -44,6 +47,7 @@ class ImageGeneratorService
     raise
   end
 
+  # Estrae e prepara i dati utili al processamento.
   def extract_image_data(response)
     payload = JSON.parse(response.body.read)
 
@@ -63,11 +67,13 @@ class ImageGeneratorService
     end
   end
 
+  # Verifica le condizioni richieste prima di procedere.
   def expired_credentials_error?(error)
     message = error.message.to_s.downcase
     message.include?("security token") && message.include?("expired")
   end
 
+  # Costruisce un errore esplicito quando le credenziali AWS risultano scadute.
   def expired_credentials_error(service, error)
     RuntimeError.new("Credenziali AWS scadute (#{service}): aggiorna AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN nel backend e riavvia il container. Dettaglio: #{error.message}")
   end

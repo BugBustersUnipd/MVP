@@ -86,7 +86,7 @@ class ConfidenceCalculatorTest < ActiveSupport::TestCase
 
     result = calculator.global_confidence
 
-    # Only the line with confidence 80 counts => 0.80 / 2 (avg with llm 0)
+    
     assert_in_delta 0.4, result[:recipient], 0.01
   end
 
@@ -100,7 +100,7 @@ class ConfidenceCalculatorTest < ActiveSupport::TestCase
 
     result = calculator.global_confidence
 
-    # The OCR line "15/03/2026" matches date candidate derived from "2026-03-15"
+    
     assert result[:date] > 0
   end
 
@@ -167,7 +167,7 @@ class ConfidenceCalculatorTest < ActiveSupport::TestCase
 
     result = calculator.global_confidence
 
-    # Only "Mario Rossi" line counts (blank lines skipped)
+    # solo "Mario Rossi" line counts (blank lines skipped)
     assert result[:recipient] > 0
   end
 
@@ -181,7 +181,7 @@ class ConfidenceCalculatorTest < ActiveSupport::TestCase
 
     result = calculator.global_confidence
 
-    # Non-ISO date: only the raw string is used as candidate (no ISO decomposition)
+    
     assert_includes [0.0, 0.4, 0.8], result[:date].round(1)
   end
 end
