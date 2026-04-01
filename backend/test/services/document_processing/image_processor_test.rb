@@ -2,12 +2,14 @@ require "test_helper"
 
 class ImageProcessorTest < ActiveSupport::TestCase
   class FakeOcrService
+    # Esegue OCR fittizio e restituisce il testo.
     def full_ocr(_file_path)
       { text: "Mario Rossi fattura 123" }
     end
   end
 
   class FakeDataExtractor
+    # Estrae e prepara i dati utili al processamento.
     def extract(_text)
       {
         recipients: ["Mario Rossi"],
@@ -18,10 +20,12 @@ class ImageProcessorTest < ActiveSupport::TestCase
   end
 
   class FakeResolution
+    # Inizializza le dipendenze del componente.
     def initialize(employee)
       @employee = employee
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def matched?
       @employee.present?
     end
@@ -30,6 +34,7 @@ class ImageProcessorTest < ActiveSupport::TestCase
   end
 
   class FakeRecipientResolver
+    # Chiama resolve e restituisce una risoluzione fittizio.
     def resolve(recipient_names:, raw_text:)
       employee = User.new(id: 1, name: recipient_names.first, email: "mario@example.com", username: "mario")
       FakeResolution.new(employee)
@@ -37,14 +42,17 @@ class ImageProcessorTest < ActiveSupport::TestCase
   end
 
   class FakeContainer
+    # Restituisce il servizio OCR fittizio.
     def ocr_service
       FakeOcrService.new
     end
 
+    # Restituisce l'estrattore dati fittizio.
     def data_extractor
       FakeDataExtractor.new
     end
 
+    # Restituisce il resolver fittizio per i destinatari.
     def recipient_resolver
       FakeRecipientResolver.new
     end

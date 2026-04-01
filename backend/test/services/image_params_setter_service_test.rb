@@ -152,7 +152,7 @@ class ImageParamsSetterServiceTest < ActiveSupport::TestCase
     assert_not setter.valid?
   end
 
-  # === DEFAULT VALUES ===
+  # === VALORI PREDEFINITI ===
   test "usa default width 1024 se non fornito" do
     params = {
       prompt: "Test",

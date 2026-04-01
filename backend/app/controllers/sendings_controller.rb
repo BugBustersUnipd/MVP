@@ -29,10 +29,12 @@ class SendingsController < ApplicationController
 
   private
 
+  # Invia la comunicazione verso il canale previsto.
   def sending_params
     params.permit(:extracted_document_id, :recipient_id, :sent_at, :subject, :body, :template_id)
   end
 
+  # Invia la comunicazione verso il canale previsto.
   def sending_representation(s)
     {
       id: s.id,

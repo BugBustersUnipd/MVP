@@ -2,8 +2,9 @@ module AiAnalyst
   module Managers
     class AiCopilotAnalysesDataManager < AnalysesDataManager
 
+      # Calcola la confidenza media aggregando i valori salvati nei documenti estratti.
       def retrieve_average_confidence_value_query
-        # Prendiamo i documenti che hanno il campo confidence compilato
+        # Prendiamo i documenti che hanno il campo confidenza compilato
         documents = ExtractedDocument.where(created_at: start_date..end_date)
                                      .where.not(confidence: nil)
 
@@ -32,6 +33,7 @@ module AiAnalyst
         ((all_confidence_values.sum / all_confidence_values.size) * 100).round(2)
       end
 
+      # Conta quante volte sono stati applicati override manuali su azienda o reparto.
       def retrieve_human_intervention_value_query
         # Poiché non abbiamo una tabella messaggi, l'intervento umano si misura
         # contando quante volte un operatore ha sovrascritto manualmente l'azienda o il dipartimento
@@ -42,6 +44,7 @@ module AiAnalyst
                   .count
       end
 
+      # Calcola la percentuale di documenti mappati a un dipendente.
       def retrieve_mapping_accuracy_query
         # Percentuale di Documenti Estratti che sono stati abbinati con successo a un Employee
         total_docs = ExtractedDocument.where(created_at: start_date..end_date).count
@@ -54,6 +57,7 @@ module AiAnalyst
         ((mapped_docs.to_f / total_docs) * 100).round(2)
       end
 
+      # Calcola il tempo medio di analisi dei documenti estratti.
       def retrieve_average_time_analyses_query
         # Media del tempo impiegato in secondi per analizzare ed estrarre i dati
         ExtractedDocument.where(created_at: start_date..end_date)

@@ -1,9 +1,9 @@
 require "test_helper"
 require "base64"
 
-# Unit/integration tests for DocumentsController.
-# Tests that require the container stubbed use a FakeContainer instead of the real one,
-# to avoid AWS dependencies. Tests that only need DB access use the real container.
+
+
+
 class DocumentsControllerTest < ActionDispatch::IntegrationTest
   ONE_PAGE_PDF_BASE64 = "JVBERi0xLjQKJcTl8uXrCjEgMCBvYmoKPDwvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcyAvQ291bnQgMSAvS2lkcyBbMyAwIFJdPj4KZW5kb2JqCjMgMCBvYmoKPDwvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDIwMCAyMDBdIC9Db250ZW50cyA0IDAgUiAvUmVzb3VyY2VzIDw8Pj4+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggMTI+PgpzdHJlYW0KQlQKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyMzAgMDAwMDAgbiAKdHJhaWxlcgo8PC9TaXplIDUgL1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKMjkxCiUlRU9G"
 
@@ -26,21 +26,22 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create_extracted_document(uploaded_document:, **attrs)
     uploaded_document.extracted_documents.create!(
       { sequence: 1, page_start: 1, page_end: 1, status: "queued" }.merge(attrs)
     )
   end
 
-  # Builds a command stub that returns the given result hash on `.call(**)`
+  
   def fake_command(result)
     Object.new.tap do |cmd|
       cmd.define_singleton_method(:call) { |**_kwargs| result }
     end
   end
 
-  # Builds a minimal fake Container enough for the actions under test.
-  # Accepts optional overrides for each sub-service.
+  
+  # Accepts optional overrides per each sub-servizio.
   def fake_container(overrides = {})
     real_repo      = DocumentProcessing::Persistence::DataItemRepository.new
     real_resolver  = DocumentProcessing::RecipientResolver.new
@@ -90,7 +91,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # POST /documents/split
+  # POST /documents/suddivisione
   # ---------------------------------------------------------------------------
 
   test "split with no file triggers rescue and returns bad_request" do
@@ -332,7 +333,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
 
 
   # ---------------------------------------------------------------------------
-  # GET /documents/uploads/:id/extracted
+  # GET /documents/uploads/:id/estratto
   # ---------------------------------------------------------------------------
 
   test "extracted_index returns documents for given upload" do
@@ -353,7 +354,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # GET /documents/extracted/:id
+  # GET /documents/estratto/:id
   # ---------------------------------------------------------------------------
 
   test "extracted_show returns the extracted document" do
@@ -374,7 +375,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # GET /documents/extracted/:id/pdf
+  # GET /documents/estratto/:id/pdf
   # ---------------------------------------------------------------------------
 
   test "extracted_pdf returns not_found for missing extracted document" do
@@ -394,7 +395,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # PATCH /documents/extracted/:id/reassign_range
+  # PATCH /documents/estratto/:id/reassign_range
   # ---------------------------------------------------------------------------
 
   test "reassign_range with no params returns bad_request" do
@@ -484,7 +485,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # PATCH /documents/extracted/:id/metadata
+  # PATCH /documents/estratto/:id/metadati
   # ---------------------------------------------------------------------------
 
   test "update_metadata with valid hash updates extracted document" do
@@ -542,7 +543,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # PATCH /documents/extracted/:id/validate
+  # PATCH /documents/estratto/:id/validate
   # ---------------------------------------------------------------------------
 
   test "validate_extracted marks done document as validated" do
@@ -654,7 +655,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # POST /documents/extracted/:id/retry
+  # POST /documents/estratto/:id/retry
   # ---------------------------------------------------------------------------
 
   test "retry_extracted resets statuses and returns queued for a failed extracted document" do
@@ -700,7 +701,7 @@ class DocumentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # DELETE /documents/uploads/:id
+  # elimina /documents/uploads/:id
   # ---------------------------------------------------------------------------
 
   test "destroy_upload deletes the uploaded document and returns ok" do

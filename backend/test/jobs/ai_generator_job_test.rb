@@ -5,6 +5,7 @@ require_relative "../../app/services/ai_generator/ai_job_orchestrator"
 class AiGeneratorJobTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Test Company")
     @tone = Tone.create!(company: @company, name: "Professional", description: "Be professional")
@@ -19,7 +20,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     )
   end
 
-  # === JOB CONFIGURATION ===
+  # === job CONFIGURATION ===
   test "job è enqueued nella coda default" do
     assert_equal "default", AiGeneratorJob.new.class.queue_name
   end
@@ -30,11 +31,11 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     end
   end
 
-  # === PERFORM FLOW ===
+  # === PERFORM flusso ===
   test "perform chiama signal_process_start" do
     AiGenerator::AiJobOrchestrator.expects(:signal_process_start).with(@generation_datum.id)
     
-    # Mock gli altri metodi per evitare errori
+    # Oggetto fittizio usato nel test.
     AiGenerator::AiGeneratorContainer.any_instance.stubs(:aiGeneratorService)
     AiGenerator::AiJobOrchestrator.stubs(:complete) {}
     AiGenerator::AiJobOrchestrator.stubs(:signal_failure) {}
@@ -46,7 +47,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     mock_service = Object.new
     mock_service.expects(:create_content).with(@generation_datum.id)
     
-    # Mock il container
+    # Oggetto fittizio usato nel test.
     mock_container = Object.new
     mock_container.define_singleton_method(:aiGeneratorService) { mock_service }
     
@@ -73,7 +74,7 @@ class AiGeneratorJobTest < ActiveSupport::TestCase
     AiGeneratorJob.new.perform(@generation_datum.id)
   end
 
-  # === ERROR HANDLING ===
+  # === errore HANDLING ===
   test "perform chiama signal_failure se AIGeneratorService solleva errore" do
     mock_service = Object.new
     mock_service.define_singleton_method(:create_content) do |_gen_id|

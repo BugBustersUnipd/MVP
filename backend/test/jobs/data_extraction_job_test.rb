@@ -4,10 +4,12 @@ class DataExtractionJobTest < ActiveSupport::TestCase
   class FakeProcessDataItemService
     attr_reader :calls
 
+    # Inizializza le dipendenze del componente.
     def initialize
       @calls = []
     end
 
+    # Esegue il flusso principale del servizio.
     def call(file_path:, job_id:, processing_item_id:, extracted_document_id:)
       @calls << {
         file_path: file_path,
@@ -19,16 +21,18 @@ class DataExtractionJobTest < ActiveSupport::TestCase
   end
 
   class FakeContainer
+    # Inizializza le dipendenze del componente.
     def initialize(service)
       @service = service
     end
 
+    
     def process_data_item_service
       @service
     end
   end
 
-  # Helper to run the job with a stubbed container
+  # Metodo di supporto per i test.
   def run_job(file_path, job_context, processing_item_id = nil, extracted_document_id = nil, service: FakeProcessDataItemService.new)
     container = FakeContainer.new(service)
     stub_new(DocumentProcessing::Container, container) do

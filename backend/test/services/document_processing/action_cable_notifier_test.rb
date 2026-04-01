@@ -4,10 +4,12 @@ class ActionCableNotifierTest < ActiveSupport::TestCase
   class FakeBroadcaster
     attr_reader :calls
 
+    # Inizializza le dipendenze del componente.
     def initialize
       @calls = []
     end
 
+    # Invia l'output verso il canale previsto.
     def broadcast(channel, payload)
       @calls << [channel, payload]
     end

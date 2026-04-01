@@ -2,12 +2,14 @@ module DocumentProcessing
   class PdfSplitter
     PREVIEW_LINES = 8
 
+    # Inizializza le dipendenze del componente.
     def initialize(pdf:, ocr_service:, llm_service:)
       @pdf = pdf
       @ocr_service = ocr_service
       @llm_service = llm_service
     end
 
+    # Suddivide il PDF in mini documenti in base ai range identificati.
     def split
       ranges = identify_ranges
 
@@ -23,6 +25,7 @@ module DocumentProcessing
 
     attr_reader :pdf, :ocr_service, :llm_service
 
+    # Determina i range pagine da usare per la suddivisione.
     def identify_ranges
       page_texts = ocr_service.page_texts_with_layout(pdf)
       return [{ start: 0, end: pdf.pages.size - 1 }] if page_texts.blank?
@@ -34,6 +37,7 @@ module DocumentProcessing
       breakpoints_to_ranges(breakpoints)
     end
 
+    # Converte la lista di pagine iniziali in intervalli start/end.
     def breakpoints_to_ranges(breakpoints)
       breakpoints.each_with_index.map do |start_index, idx|
         end_index = if idx == breakpoints.length - 1
@@ -45,6 +49,7 @@ module DocumentProcessing
       end
     end
 
+    # Chiede al modello le pagine di inizio documento e valida il risultato.
     def detect_breakpoints_via_llm(page_texts)
       summary = build_page_summary(page_texts)
       json = llm_service.detect_split_breakpoints(summary)
@@ -55,6 +60,7 @@ module DocumentProcessing
       raise
     end
 
+    # Costruisce i dati di output per il flusso corrente.
     def build_page_summary(page_texts)
       page_texts.each_with_index.map do |text, index|
         lines = text.to_s.lines.map(&:strip).reject(&:blank?).first(PREVIEW_LINES)
@@ -63,6 +69,7 @@ module DocumentProcessing
       end.join("\n")
     end
 
+    # Costruisce i dati di output per il flusso corrente.
     def create_mini_pdf(range:, index:)
       new_pdf = CombinePDF.new
       (range[:start]..range[:end]).each { |page_index| new_pdf << pdf.pages[page_index] }

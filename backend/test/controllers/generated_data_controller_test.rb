@@ -1,6 +1,7 @@
 require "test_helper"
 
 class GeneratedDataControllerTest < ActionDispatch::IntegrationTest
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Test Corp", description: "Azienda di test")
     @tone    = Tone.create!(company: @company, name: "Professional", description: "Be professional")
@@ -16,7 +17,7 @@ class GeneratedDataControllerTest < ActionDispatch::IntegrationTest
       text_result: "Testo originale"
     )
 
-    # Blocca il job reale durante i test
+    
     AiGeneratorJob.stubs(:perform_later)
   end
 
@@ -206,7 +207,7 @@ class GeneratedDataControllerTest < ActionDispatch::IntegrationTest
     assert_response :bad_request
   end
 
-  # === DELETE /generated_data/:id ===
+  # === elimina /generated_data/:id ===
 
   test "destroy elimina la generazione e risponde con 200" do
     gen = GeneratedDatum.create!(

@@ -2,10 +2,12 @@ require "fileutils"
 
 module DocumentProcessing
   class PageRangePdf
+    # Inizializza le dipendenze del componente.
     def initialize(source_pdf_path:)
       @source_pdf_path = source_pdf_path
     end
 
+    # Costruisce i dati di output per il flusso corrente.
     def build_temp_pdf(page_start:, page_end:)
       pdf = CombinePDF.load(source_pdf_path)
       validate_range!(pdf: pdf, page_start: page_start, page_end: page_end)
@@ -27,6 +29,7 @@ module DocumentProcessing
 
     attr_reader :source_pdf_path
 
+    # Verifica le condizioni richieste prima di procedere.
     def validate_range!(pdf:, page_start:, page_end:)
       raise ArgumentError, "Range pagine non valido" unless page_start.is_a?(Integer) && page_end.is_a?(Integer)
       raise ArgumentError, "Range pagine non valido" if page_start <= 0 || page_end <= 0

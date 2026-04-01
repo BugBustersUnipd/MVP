@@ -4,6 +4,7 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
   class FakeSplitRunRepository
     attr_reader :failed_error_message, :post_split_count
 
+    # Inizializza le dipendenze del componente.
     def initialize(run:, created_artifacts: [])
       @run = run
       @created_artifacts = created_artifacts
@@ -11,26 +12,32 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
       @post_split_count = nil
     end
 
+    # Recupera i dati necessari per l'operazione.
     def find_run_by_job_id!(_job_id)
       @run
     end
 
+    # Contrassegna il run come in splitting state.
     def mark_splitting!(_run)
     end
 
+    # Crea gli artifact da split results e registra il conteggio.
     def create_split_artifacts!(run:, split_results:)
       @post_split_count = split_results.size
       @created_artifacts
     end
 
+    # Aggiorna lo stato del run dopo lo split con il conteggio.
     def mark_post_split_state!(run:, split_count:)
       @post_split_count = split_count
     end
 
+    # Gestione errore del flusso.
     def mark_failed(run:, error_message:)
       @failed_error_message = error_message
     end
 
+    
     def uploaded_source_path_for(_run)
       nil
     end
@@ -39,23 +46,28 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
   class FakeNotifier
     attr_reader :events
 
+    # Inizializza le dipendenze del componente.
     def initialize
       @events = []
     end
 
+    # Invia l'output verso il canale previsto.
     def broadcast(job_id, payload)
       @events << [job_id, payload]
     end
   end
 
   class FakeFileStorage
+    # Verifica le condizioni richieste prima di procedere.
     def exist?(_path)
       false
     end
 
+    # Rimuove i dati previsti dal flusso corrente.
     def delete(_path)
     end
 
+    # Restituisce il percorso del file (passthrough per test).
     def expanded(path)
       path
     end
@@ -64,6 +76,7 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
   class FakeContainer
     attr_reader :split_run_repository, :notifier
 
+    # Inizializza le dipendenze del componente.
     def initialize(split_run_repository:, notifier:, split_results:, file_storage: FakeFileStorage.new)
       @split_run_repository = split_run_repository
       @notifier = notifier
@@ -71,6 +84,7 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
       @file_storage = file_storage
     end
 
+    # Instanzia e restituisce lo splitter con risultati predefiniti.
     def pdf_splitter(pdf:)
       splitter = Object.new
       split_results = @split_results
@@ -78,6 +92,7 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
       splitter
     end
 
+    
     def file_storage
       @file_storage
     end

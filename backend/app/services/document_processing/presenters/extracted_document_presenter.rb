@@ -1,11 +1,13 @@
 module DocumentProcessing
   module Presenters
     class ExtractedDocumentPresenter
+      # Inizializza le dipendenze del componente.
       def initialize(document, url_helpers: Rails.application.routes.url_helpers)
         @document = document
         @url_helpers = url_helpers
       end
 
+      # Serializza il payload nel formato atteso dal client.
       def as_json(*)
         {
           id: document.id,
@@ -31,7 +33,7 @@ module DocumentProcessing
 
       attr_reader :document, :url_helpers
 
-      # `document_type` removed: rely on `metadata['type']` only
+      
 
       def format_employee(employee)
         return nil unless employee

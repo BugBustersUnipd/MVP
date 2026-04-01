@@ -1,5 +1,6 @@
 class StylesController < ApplicationController
 
+  # Recupera i dati necessari per l'operazione.
   def index
     company_id = params[:company_id]
     return render json: { error: "company_id mancante" }, status: :bad_request if company_id.blank?
@@ -15,6 +16,7 @@ class StylesController < ApplicationController
     render json: StyleSerializer.serialize_collection(styles), status: :ok
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create
     style = Style.new(style_params)
     if style.save
@@ -24,6 +26,7 @@ class StylesController < ApplicationController
     end
   end
 
+  # Rimuove i dati previsti dal flusso corrente.
   def destroy
     style = Style.find_by(id: params[:id])
 
@@ -37,6 +40,7 @@ class StylesController < ApplicationController
 
   private
 
+  # Applica strong parameters per la creazione/aggiornamento degli style.
   def style_params
     params.require(:style).permit(:name, :description, :company_id, :is_active)
   end

@@ -2,19 +2,19 @@ require "csv"
 
 module DocumentProcessing
   class CsvProcessor
-    # Pure parser: no DB writes, no broadcast.
+    
     def initialize(data_extractor:, recipient_resolver:)
       @data_extractor = data_extractor
       @recipient_resolver = recipient_resolver
     end
 
+    # Estrae e prepara i dati utili al processamento.
     def parse(file_path)
       text = File.read(file_path)
       CSV.parse(text, headers: true).map(&:to_h)
     end
 
-    # Extract a single payload from the whole CSV content.
-    # This enforces one logical document and one recipient for a CSV upload.
+    # Processa il csv e restituisce un hash con i dati estratti, la confidenza, il destinatario risolto e l'eventuale employee associato
     def call(file_path)
       rows = parse(file_path)
       non_empty_rows = rows.reject { |row| row.values.all? { |v| v.nil? || v.to_s.strip.empty? } }

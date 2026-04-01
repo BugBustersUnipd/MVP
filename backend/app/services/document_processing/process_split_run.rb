@@ -1,5 +1,6 @@
 module DocumentProcessing
   class ProcessSplitRun
+    # Inizializza le dipendenze del componente.
     def initialize(
       split_run_repository:,
       notifier:,
@@ -14,6 +15,7 @@ module DocumentProcessing
       @data_extraction_job_class = data_extraction_job_class
     end
 
+    # Esegue il flusso principale del servizio.
     def call(file_path:, job_id:)
       run = split_run_repository.find_run_by_job_id!(job_id)
       split_run_repository.mark_splitting!(run)
@@ -52,6 +54,7 @@ module DocumentProcessing
 
     attr_reader :split_run_repository, :notifier, :file_storage, :pdf_splitter_factory, :data_extraction_job_class
 
+    # Costruisce i dati di output per il flusso corrente.
     def create_processing_items_and_enqueue(split_results, run)
       created_artifacts = split_run_repository.create_split_artifacts!(run:, split_results:)
 
@@ -67,6 +70,7 @@ module DocumentProcessing
       end
     end
 
+    # Normalizza il dato per mantenere il formato atteso.
     def cleanup_source_pdf(file_path, run)
       return unless file_path.present? && file_storage.exist?(file_path)
 

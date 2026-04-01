@@ -1,6 +1,7 @@
 require "test_helper"
 
 class SendingTest < ActiveSupport::TestCase
+  # Preparazione dati di test.
   def setup_deps
     company = Company.first || Company.create!(name: "TestCo")
     @user   = User.create!(email: "snd#{SecureRandom.hex(4)}@test.com",
@@ -16,6 +17,7 @@ class SendingTest < ActiveSupport::TestCase
     @ed = ud.extracted_documents.create!(sequence: 1, page_start: 1, page_end: 1)
   end
 
+  # Verifica le condizioni richieste prima di procedere.
   def valid_sending(overrides = {})
     setup_deps unless @user
     Sending.new(

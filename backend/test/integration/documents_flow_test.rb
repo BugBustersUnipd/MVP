@@ -1,8 +1,8 @@
 require "test_helper"
 
-# Integration tests for DocumentsController.
-# Tests that require AWS (split, process_file full pipeline) use DB-only paths
-# (dedup, list, show, validate) to avoid external dependencies.
+
+
+# (dedup, lista, show, validate) to avoid external dependencies.
 class DocumentsFlowTest < ActionDispatch::IntegrationTest
   # ---------------------------------------------------------------------------
   # Helpers
@@ -23,6 +23,7 @@ class DocumentsFlowTest < ActionDispatch::IntegrationTest
     )
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create_extracted_document(uploaded_document:, **attrs)
     uploaded_document.extracted_documents.create!(
       { sequence: 1, page_start: 1, page_end: 1, status: "queued" }.merge(attrs)
@@ -45,7 +46,7 @@ class DocumentsFlowTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # GET /documents/uploads/:id/file  — download of existing CSV
+  # GET /documents/uploads/:id/file  — download di un CSV esistente
   # ---------------------------------------------------------------------------
 
   test "uploaded_file downloads original csv source" do
@@ -71,7 +72,7 @@ class DocumentsFlowTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # GET /documents/extracted/:id/pdf  — bad request when source PDF missing
+  # GET /documents/estratto/:id/pdf  — richiesta non valida quando il PDF sorgente manca
   # ---------------------------------------------------------------------------
 
   test "extracted_pdf returns bad_request when source pdf does not exist" do
@@ -88,7 +89,7 @@ class DocumentsFlowTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # GET /documents/uploads/:uploaded_document_id/extracted
+  # GET /documents/uploads/:uploaded_document_id/estratto
   # ---------------------------------------------------------------------------
 
   test "extracted_index returns extracted documents for an upload" do
@@ -104,7 +105,7 @@ class DocumentsFlowTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # GET /documents/extracted/:id
+  # GET /documents/estratto/:id
   # ---------------------------------------------------------------------------
 
   test "extracted_show returns a single extracted document" do
@@ -125,7 +126,7 @@ class DocumentsFlowTest < ActionDispatch::IntegrationTest
   end
 
   # ---------------------------------------------------------------------------
-  # PATCH /documents/extracted/:id/validate
+  # PATCH /documents/estratto/:id/validate
   # ---------------------------------------------------------------------------
 
   test "validate_extracted marks document as validated" do

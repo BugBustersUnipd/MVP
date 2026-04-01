@@ -1,6 +1,7 @@
 require "test_helper"
 
 class DocumentProcessingDataExtractorTest < ActiveSupport::TestCase
+  # Oggetto fittizio usato nel test.
   def mock_bedrock(response_text)
     content_item = Struct.new(:text).new(response_text)
     message = Struct.new(:content).new([content_item])
@@ -11,12 +12,14 @@ class DocumentProcessingDataExtractorTest < ActiveSupport::TestCase
     client
   end
 
+  # Crea un client Bedrock fittizio che solleva un errore.
   def failing_bedrock(error)
     client = Object.new
     client.define_singleton_method(:converse) { |_args| raise error }
     client
   end
 
+  # Crea un client Bedrock che lancia se chiamato (per verificare non veniva usato).
   def uncalled_bedrock
     client = Object.new
     client.define_singleton_method(:converse) { |_args| raise "converse non doveva essere chiamato!" }

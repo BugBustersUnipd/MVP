@@ -1,14 +1,17 @@
 module DocumentProcessing
   module Persistence
     class SplitRunRepository
+      # Recupera i dati necessari per l'operazione.
       def find_run_by_job_id!(job_id)
         ProcessingRun.find_by!(job_id: job_id)
       end
 
+      # Porta il run nello stato splitting e salva il timestamp di avvio.
       def mark_splitting!(run)
         run.update!(status: "splitting", started_at: Time.current)
       end
 
+      # Costruisce i dati di output per il flusso corrente.
       def create_split_artifacts!(run:, split_results:)
         created = []
 
@@ -21,6 +24,7 @@ module DocumentProcessing
         created
       end
 
+      # Aggiorna lo stato del run dopo lo split e imposta i contatori.
       def mark_post_split_state!(run:, split_count:)
         run.update!(
           status: split_count.zero? ? "completed" : "processing",
@@ -30,16 +34,19 @@ module DocumentProcessing
         )
       end
 
+      # Gestione errore del flusso.
       def mark_failed(run:, error_message:)
         run&.update(status: "failed", error_message: error_message, completed_at: Time.current)
       end
 
+      
       def uploaded_source_path_for(run)
         run&.uploaded_document&.storage_path
       end
 
       private
 
+      # Costruisce i dati di output per il flusso corrente.
       def create_item_for_result!(run:, result:, sequence:)
         range = result[:range]
         mini_pdf_path = result[:path]

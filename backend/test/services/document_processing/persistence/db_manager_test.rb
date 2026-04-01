@@ -4,20 +4,24 @@ class DocumentProcessing::Persistence::DbManagerTest < ActiveSupport::TestCase
   class FakeResolution
     attr_reader :employee
 
+    # Inizializza le dipendenze del componente.
     def initialize(employee)
       @employee = employee
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def matched?
       true
     end
   end
 
   class FakeRecipientResolver
+    # Inizializza le dipendenze del componente.
     def initialize(employee)
       @employee = employee
     end
 
+    # Chiama resolve e restituisce una risoluzione fittizia.
     def resolve(recipient_names:, raw_text:)
       FakeResolution.new(@employee)
     end
@@ -47,6 +51,7 @@ class DocumentProcessing::Persistence::DbManagerTest < ActiveSupport::TestCase
     assert list.first.key?(:file_kind)
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def build_manager(user)
     DocumentProcessing::Persistence::DbManager.new(
       data_item_repository: DocumentProcessing::Persistence::DataItemRepository.new,
@@ -54,6 +59,7 @@ class DocumentProcessing::Persistence::DbManagerTest < ActiveSupport::TestCase
     )
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def build_extracted(employee, checksum:, metadata: {})
     ud = UploadedDocument.create!(original_filename: "u.pdf", storage_path: "/tmp/u",
                                    page_count: 1, checksum: checksum, file_kind: "pdf", employee: employee)

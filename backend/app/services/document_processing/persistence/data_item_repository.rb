@@ -1,18 +1,22 @@
 module DocumentProcessing
   module Persistence
     class DataItemRepository
+      # Recupera i dati necessari per l'operazione.
       def find_run_by_job_id(job_id)
         ProcessingRun.find_by(job_id: job_id)
       end
 
+      # Recupera i dati necessari per l'operazione.
       def find_processing_item(id)
         ProcessingItem.find_by(id: id)
       end
 
+      # Recupera i dati necessari per l'operazione.
       def find_extracted_document(id)
         ExtractedDocument.find_by(id: id)
       end
 
+      # Verifica le condizioni richieste prima di procedere.
       def terminal_item?(item)
         return false unless item
 
@@ -22,6 +26,7 @@ module DocumentProcessing
         end
       end
 
+      # Porta l'item in stato in_progress evitando aggiornamenti su item terminali.
       def mark_item_in_progress!(item)
         return unless item
 
@@ -31,6 +36,7 @@ module DocumentProcessing
         end
       end
 
+      # Marca l'item come completato e salva il matched employee se presente.
       def mark_item_done!(item:, resolution:)
         return unless item
 
@@ -48,10 +54,12 @@ module DocumentProcessing
         end
       end
 
+      # Gestione errore del flusso.
       def mark_item_failed(item:, error_message:)
         item&.update(status: "failed", error_message: error_message)
       end
 
+      # Porta il documento estratto in stato in_progress in modo concorrente-safe.
       def mark_extracted_document_in_progress!(extracted_document)
         return unless extracted_document
 
@@ -61,6 +69,7 @@ module DocumentProcessing
         end
       end
 
+      # Salva il risultato finale del documento estratto e lo marca come done.
       def mark_extracted_document_done!(
         extracted_document:,
         resolution:,
@@ -86,10 +95,12 @@ module DocumentProcessing
         end
       end
 
+      # Gestione errore del flusso.
       def mark_extracted_document_failed(extracted_document:, error_message:)
         extracted_document&.update(status: "failed", error_message: error_message)
       end
 
+      # Aggiorna i dati in base ai parametri ricevuti.
       def update_progress!(run)
         return { completed: false } if run.nil?
 
@@ -106,11 +117,12 @@ module DocumentProcessing
           { completed: completed }
         end
       end
-      # Generic file repository compatibility methods used by ProcessGenericFile
+      
       def find_uploaded_document(id)
         UploadedDocument.find_by(id: id)
       end
 
+      # Imposta il run in processing valorizzando il timestamp di avvio.
       def mark_run_processing!(run)
         return unless run
 
@@ -120,6 +132,7 @@ module DocumentProcessing
         end
       end
 
+      # Salva il numero totale di documenti previsti nel run.
       def set_run_total!(run, total)
         return unless run
 
@@ -129,6 +142,7 @@ module DocumentProcessing
         end
       end
 
+      # Costruisce i dati di output per il flusso corrente.
       def create_csv_item!(uploaded_document:, run:, sequence:, metadata:, confidence:, recipient:, employee:)
         extracted = uploaded_document.extracted_documents.create!(
           sequence: sequence,
@@ -152,6 +166,7 @@ module DocumentProcessing
         [extracted, item]
       end
 
+      # Costruisce i dati di output per il flusso corrente.
       def create_image_item!(uploaded_document:, run:, metadata:, confidence:, recipient:, employee:)
         extracted = uploaded_document.extracted_documents.create!(
           sequence: 1,
@@ -175,6 +190,7 @@ module DocumentProcessing
         [extracted, item]
       end
 
+      # Chiude il run come completato con il conteggio processato.
       def mark_run_completed!(run, processed_documents:)
         return unless run
 
@@ -184,14 +200,17 @@ module DocumentProcessing
         end
       end
 
+      # Gestione errore del flusso.
       def mark_run_failed!(run, error_message:)
         run&.update(status: "failed", error_message: error_message, completed_at: Time.current)
       end
 
+      # Ricarica il run dal database per ottenere lo stato aggiornato.
       def reload_run(run)
         run.reload
       end
 
+      # Esegue un blocco dentro una transazione sul contesto ProcessingRun.
       def transaction(&block)
         ProcessingRun.transaction(&block)
       end

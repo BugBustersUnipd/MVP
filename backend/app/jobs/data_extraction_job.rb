@@ -1,6 +1,7 @@
 class DataExtractionJob < ApplicationJob
   queue_as :data
 
+  # Esegue la logica applicativa del metodo.
   def perform(file_path, job_context = nil, processing_item_id = nil, extracted_document_id = nil)
     options = normalize_options(job_context, processing_item_id, extracted_document_id)
 
@@ -15,6 +16,7 @@ class DataExtractionJob < ApplicationJob
 
   private
 
+  # Normalizza il dato per mantenere il formato atteso.
   def normalize_options(job_context, processing_item_id, extracted_document_id)
     if job_context.is_a?(Hash)
       {

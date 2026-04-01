@@ -4,6 +4,7 @@ class ContainerTest < ActiveSupport::TestCase
   class FakeOcr
     attr_reader :client
 
+    # Inizializza le dipendenze del componente.
     def initialize(textract_client:)
       @client = textract_client
     end
@@ -12,6 +13,7 @@ class ContainerTest < ActiveSupport::TestCase
   class FakeExtractor
     attr_reader :llm
 
+    # Inizializza le dipendenze del componente.
     def initialize(llm_service:)
       @llm = llm_service
     end
@@ -20,6 +22,7 @@ class ContainerTest < ActiveSupport::TestCase
   class FakeLlm
     attr_reader :client
 
+    # Inizializza le dipendenze del componente.
     def initialize(bedrock_client:)
       @client = bedrock_client
     end
@@ -28,17 +31,20 @@ class ContainerTest < ActiveSupport::TestCase
   class FakeNotifier
     attr_reader :calls
 
+    # Inizializza le dipendenze del componente.
     def initialize(broadcaster:)
       @broadcaster = broadcaster
       @calls = []
     end
 
+    # Invia l'output verso il canale previsto.
     def broadcast(job_id, payload)
       @calls << [job_id, payload]
     end
   end
 
   class FakeFileStorage
+    # Verifica le condizioni richieste prima di procedere.
     def exist?(_path)
       false
     end
@@ -73,7 +79,7 @@ class ContainerTest < ActiveSupport::TestCase
   end
 
   # ---------------------------------------------------------------------------
-  # Persistence services
+  # Nota operativa del servizio.
   # ---------------------------------------------------------------------------
 
   test "file_storage is memoized" do

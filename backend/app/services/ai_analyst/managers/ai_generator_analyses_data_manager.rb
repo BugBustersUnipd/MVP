@@ -2,6 +2,7 @@ module AiAnalyst
   module Managers
     class AiGeneratorAnalysesDataManager < AnalysesDataManager
 
+      # Conta i prompt validi usati nelle generazioni del periodo.
       def retrieve_prompt_amount_query
         # Conta il numero di prompt utilizzati (escludendo eventuali record con prompt vuoto o nullo)
         GeneratedDatum.where(created_at: start_date..end_date)
@@ -9,6 +10,7 @@ module AiAnalyst
                       .count
       end
 
+      # Calcola il rating medio dei contenuti generati nel periodo.
       def retrieve_average_rate_prompt_query
         # Media della valutazione (rating) assegnata ai contenuti generati
         GeneratedDatum.where(created_at: start_date..end_date)
@@ -16,6 +18,7 @@ module AiAnalyst
                       .to_f.round(2)
       end
 
+      # Calcola il rapporto medio tra versioni rigenerate e contenuti originali.
       def retrieve_average_regeneration_amount_query
         # Calcola in media quante versioni (rigenerazioni) vengono fatte per un contenuto originale
         base_query = GeneratedDatum.where(created_at: start_date..end_date)
@@ -30,6 +33,7 @@ module AiAnalyst
         (versions_count.to_f / originals_count).round(2)
       end
 
+      # Restituisce la distribuzione di utilizzo dei tone.
       def retrieve_tone_usage_query
         # Restituisce un hash formattato così: { "Professionale" => 15, "Amichevole" => 4 }
         GeneratedDatum.where(created_at: start_date..end_date)
@@ -38,6 +42,7 @@ module AiAnalyst
                       .count
       end
 
+      # Restituisce la distribuzione di utilizzo degli style.
       def retrieve_style_usage_query
         # Restituisce un hash formattato così: { "Conciso" => 10, "Dettagliato" => 9 }
         GeneratedDatum.where(created_at: start_date..end_date)

@@ -2,6 +2,7 @@ require "test_helper"
 
 class ExtractedDocumentPresenterTest < ActiveSupport::TestCase
   class FakeUrlHelpers
+    # Estrae e prepara i dati utili al processamento.
     def extracted_pdf_document_path(id:)
       "/documents/extracted/#{id}/pdf"
     end

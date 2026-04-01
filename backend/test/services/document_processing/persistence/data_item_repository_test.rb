@@ -12,6 +12,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
     [company, u, emp]
   end
 
+  # Crea un oggetto Resolution fittizio per il test.
   def fake_resolution(user)
     Struct.new(:matched?, :employee, keyword_init: false).new.tap do |r|
       r.define_singleton_method(:matched?) { true }
@@ -103,7 +104,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
     assert_equal "Company A", ed.metadata["company"]
     assert_equal "User 1",    ed.recipient
 
-    # Simulate a concurrent metadata PATCH
+    # Simulate a concurrent metadati PATCH
     ed.with_lock do
       ed.reload
       ed.update!(metadata: { "company" => "Company B" })
@@ -156,7 +157,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
   end
 
   # ---------------------------------------------------------------------------
-  # mark_item_in_progress! and mark_extracted_document_in_progress!
+  # mark_item_in_progress! e mark_extracted_document_in_progress!
   # ---------------------------------------------------------------------------
 
   test "mark_item_in_progress! transitions queued item to in_progress" do
@@ -202,7 +203,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
   end
 
   # ---------------------------------------------------------------------------
-  # mark_item_done! and mark_item_failed
+  # mark_item_done! e mark_item_failed
   # ---------------------------------------------------------------------------
 
   test "mark_item_done! updates item status to done" do
@@ -264,7 +265,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
   end
 
   # ---------------------------------------------------------------------------
-  # update_progress! with nil run
+  # update_progress! con nil run
   # ---------------------------------------------------------------------------
 
   test "update_progress! with nil run returns not completed" do
@@ -304,7 +305,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
   end
 
   # ---------------------------------------------------------------------------
-  # mark_extracted_document_done! with unmatched resolution
+  # mark_extracted_document_done! con unmatched resolution
   # ---------------------------------------------------------------------------
 
   test "mark_extracted_document_done! with unmatched resolution sets matched_employee to nil" do
@@ -339,7 +340,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
     repo = DocumentProcessing::Persistence::DataItemRepository.new
     unmatched = Object.new.tap { |r| r.define_singleton_method(:matched?) { false } }
 
-    # Should not raise and should not flip status
+    
     repo.mark_item_done!(item: item, resolution: unmatched)
     assert_equal "done", item.reload.status
   end
@@ -376,7 +377,7 @@ class DocumentProcessing::Persistence::DataItemRepositoryTest < ActiveSupport::T
   end
 
   # ---------------------------------------------------------------------------
-  # mark_run_* with nil run
+  # mark_run_* con nil run
   # ---------------------------------------------------------------------------
 
   test "mark_run_processing! with nil run does not raise" do

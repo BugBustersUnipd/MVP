@@ -3,21 +3,25 @@ require "digest"
 
 class InitializeProcessingTest < ActiveSupport::TestCase
   class FakeUploadManager
+    # Inizializza le dipendenze del componente.
     def initialize(path: "/tmp/source.pdf", checksum: "init-checksum")
       @path = path
       @checksum = checksum
     end
 
+    # Ritorna il percorso temporaneo del file salvato.
     def persist_source_pdf(_file)
       @path
     end
 
+    # Restituisce il checksum predefinito per il test.
     def compute_checksum(_file)
       @checksum
     end
   end
 
   class FakePdfLoader
+    # Recupera i dati necessari per l'operazione.
     def self.load(_path)
       Struct.new(:pages).new([:a, :b, :c])
     end
@@ -26,6 +30,7 @@ class InitializeProcessingTest < ActiveSupport::TestCase
   class FakePdfSplitJob
     cattr_accessor :calls, default: []
 
+    # Registra la chiamata al job nel log per verifica nel test.
     def self.perform_later(*args)
       self.calls << args
     end
@@ -34,20 +39,24 @@ class InitializeProcessingTest < ActiveSupport::TestCase
   class FakeFile
     attr_reader :original_filename
 
+    # Inizializza le dipendenze del componente.
     def initialize(filename = "source.pdf", content = "fake-pdf-content")
       @original_filename = filename
       @content = content
       @position = 0
     end
 
+    # Ritorna self come oggetto file intelligibile ai caller.
     def tempfile
       self
     end
 
+    # Ritorna il contenuto fittizio del file.
     def read
       @content
     end
 
+    # Resetta la posizione di lettura del file.
     def rewind
       @position = 0
     end
@@ -63,7 +72,7 @@ class InitializeProcessingTest < ActiveSupport::TestCase
       file_storage: DocumentProcessing::Persistence::FileStorage.new
     )
 
-    # ensure we have an employee to attach to uploaded documents
+    # ensure we have an employee to attach to caricato documents
     company = Company.first || Company.create!(name: "TestCo")
     u = User.create!(email: "init@test", name: "Init", username: "init")
     emp = Employee.create!(user: u, company: company)
@@ -81,14 +90,14 @@ class InitializeProcessingTest < ActiveSupport::TestCase
   end
 
   test "returns existing uploaded document when checksum already exists" do
-    # Clear any residual data from previous tests - delete in correct FK order
+    
     Sending.delete_all
     ProcessingItem.delete_all
     ExtractedDocument.delete_all
     ProcessingRun.delete_all
     UploadedDocument.delete_all
 
-    # Create a file with specific content so we can compute the same checksum
+    
     file_content = "fake-pdf-content"
     expected_checksum = Digest::SHA256.hexdigest(file_content)
 

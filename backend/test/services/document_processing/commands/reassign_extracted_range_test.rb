@@ -2,10 +2,12 @@ require "test_helper"
 
 class ReassignExtractedRangeTest < ActiveSupport::TestCase
   class FakePageRangePdf
+    # Inizializza le dipendenze del componente.
     def initialize(source_pdf_path:)
       @source_pdf_path = source_pdf_path
     end
 
+    # Costruisce i dati di output per il flusso corrente.
     def build_temp_pdf(page_start:, page_end:)
       "/tmp/reassigned_#{page_start}_#{page_end}.pdf"
     end
@@ -14,18 +16,21 @@ class ReassignExtractedRangeTest < ActiveSupport::TestCase
   class FakeDataExtractionJob
     cattr_accessor :calls, default: []
 
+    # Registra la chiamata al job nel log per verifica nel test.
     def self.perform_later(*args)
       self.calls << args
     end
   end
 
   class FakeFileStorage
+    # Verifica le condizioni richieste prima di procedere.
     def exist?(_path)
       true
     end
   end
 
   class FakeFileStorageMissing
+    # Verifica le condizioni richieste prima di procedere.
     def exist?(_path)
       false
     end

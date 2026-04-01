@@ -1,18 +1,22 @@
 module DocumentProcessing
   class Ocr
+    # Inizializza le dipendenze del componente.
     def initialize(textract_client:)
       @textract = textract_client
     end
 
+    # Restituisce il testo pagina per pagina preservando il layout.
     def page_texts_with_layout(pdf)
       pdf.pages.map { |page| layout_text(page) }
     end
 
+    # Esegue OCR rapido su una singola pagina PDF.
     def quick_ocr(page)
       tmp_pdf = CombinePDF.new << page
       extract_line_blocks(document_bytes: tmp_pdf.to_pdf).map(&:text).join("\n")
     end
 
+    # Esegue OCR completo su file PDF o immagine e restituisce testo e linee.
     def full_ocr(file_path)
       line_items = if pdf_file?(file_path)
         begin
@@ -34,6 +38,7 @@ module DocumentProcessing
 
     private
 
+    # Tenta analisi layout con Textract e degrada su OCR rapido in caso di errore.
     def layout_text(page)
       tmp_pdf = CombinePDF.new << page
       response = @textract.analyze_document(
@@ -47,6 +52,7 @@ module DocumentProcessing
       quick_ocr(page)
     end
 
+    # Estrae e prepara i dati utili al processamento.
     def extract_line_items(page)
       tmp_pdf = CombinePDF.new << page
 
@@ -58,6 +64,7 @@ module DocumentProcessing
       end
     end
 
+    # Estrae e prepara i dati utili al processamento.
     def extract_line_blocks(document_bytes:)
       begin
         response = @textract.detect_document_text(document: { bytes: document_bytes })
@@ -70,6 +77,7 @@ module DocumentProcessing
       end
     end
 
+    # Esegue OCR leggendo direttamente i byte del file.
     def direct_line_items(file_path)
       blocks = extract_line_blocks(document_bytes: File.binread(file_path))
       blocks.map do |block|
@@ -83,12 +91,14 @@ module DocumentProcessing
       []
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def pdf_file?(file_path)
       File.binread(file_path, 5) == "%PDF-"
     rescue StandardError
       false
     end
 
+    # Estrae e prepara i dati utili al processamento.
     def extract_layout_blocks(blocks)
       return "" if blocks.blank?
 
@@ -99,11 +109,13 @@ module DocumentProcessing
         .join("\n")
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def expired_credentials_error?(error)
       message = error.message.to_s.downcase
       message.include?("security token") && message.include?("expired")
     end
 
+    # Costruisce un errore esplicito quando le credenziali AWS risultano scadute.
     def expired_credentials_error(service, error)
       RuntimeError.new("Credenziali AWS scadute (#{service}): aggiorna AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN nel backend e riavvia il container. Dettaglio: #{error.message}")
     end

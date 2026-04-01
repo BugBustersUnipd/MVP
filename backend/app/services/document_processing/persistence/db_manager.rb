@@ -1,6 +1,7 @@
 module DocumentProcessing
   module Persistence
     class DbManager
+      # Inizializza le dipendenze del componente.
       def initialize(data_item_repository:, recipient_resolver:)
         @repo = data_item_repository
         @recipient_resolver = recipient_resolver
@@ -14,9 +15,9 @@ module DocumentProcessing
         end
       end
 
-      # Aggiorna campi selettivi dentro extracted_document.metadata
+      # Aggiorna campi selettivi dentro extracted_document.metadati
       # metadata_updates: hash di chiavi => valori (shallow)
-      # Imposta confidence[key] = 1.0 per ogni chiave aggiornata (scala 0-1)
+      # Imposta confidenza[key] = 1.0 per ogni chiave aggiornata (scala 0-1)
       # Ritorna l'oggetto ExtractedDocument aggiornato
       def update_extracted_metadata(extracted_document_id:, metadata_updates: {})
         raise ArgumentError, "metadata_updates must be a Hash" unless metadata_updates.is_a?(Hash)
@@ -33,8 +34,6 @@ module DocumentProcessing
             current_conf[k.to_s] = 1.0
           end
 
-          # Re-resolve recipient if the metadata update contains recipient-related fields
-          # Decide single recipient: prefer explicit `raw_recipient` or `recipient` in metadata, otherwise first element of `recipients`
           recipient = if new_meta.key?("raw_recipient") && new_meta["raw_recipient"].present?
             new_meta["raw_recipient"].to_s
           elsif new_meta.key?("recipient") && new_meta["recipient"].present?

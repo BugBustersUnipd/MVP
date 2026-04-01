@@ -4,6 +4,7 @@ class InitializeFileProcessingTest < ActiveSupport::TestCase
   class FakeUploadManager
     attr_reader :saved
 
+    # Inizializza le dipendenze del componente.
     def initialize(kind: :csv, checksum: "chk-1", path: "/tmp/f.csv")
       @kind = kind
       @checksum = checksum
@@ -11,14 +12,17 @@ class InitializeFileProcessingTest < ActiveSupport::TestCase
       @saved = false
     end
 
+    # Riconosce il tipo di file dalla diagnosi caricata.
     def detect_upload_kind(_file)
       @kind
     end
 
+    # Restituisce il checksum predefinito per il test.
     def compute_checksum(_file)
       @checksum
     end
 
+    
     def persist_supported_source_file(_file)
       @saved = true
       @path
@@ -28,6 +32,7 @@ class InitializeFileProcessingTest < ActiveSupport::TestCase
   class FakeJob
     cattr_accessor :calls, default: []
 
+    # Registra la chiamata al job nel log per verifica nel test.
     def self.perform_later(*args)
       self.calls << args
     end

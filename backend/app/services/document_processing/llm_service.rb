@@ -1,12 +1,12 @@
 module DocumentProcessing
   class LlmService
-    DEFAULT_MODEL_ID = "amazon.nova-lite-v1:0".freeze
-
-    def initialize(bedrock_client:, model_id: ENV.fetch("BEDROCK_MODEL_ID", DEFAULT_MODEL_ID))
+    # Inizializza le dipendenze del componente.
+    def initialize(bedrock_client:, model_id: ::BEDROCK_CONFIG_EXTRACTION["model_id"])
       @bedrock_client = bedrock_client
       @model_id = model_id
     end
 
+    # Estrae e prepara i dati utili al processamento.
     def extract_document_data(text)
       converse_json(
         system_prompt: document_data_extraction_system_prompt,
@@ -16,6 +16,7 @@ module DocumentProcessing
       )
     end
 
+    # Chiede al modello i punti di inizio documento per lo split del PDF.
     def detect_split_breakpoints(summary)
       converse_json(
         system_prompt: split_breakpoints_system_prompt,
@@ -29,6 +30,7 @@ module DocumentProcessing
 
     attr_reader :bedrock_client, :model_id
 
+    # Esegue una conversazione Bedrock e converte la risposta in JSON.
     def converse_json(system_prompt:, user_prompt:, max_tokens:, temperature: 0.0)
       response = bedrock_client.converse(
         model_id: model_id,
@@ -48,6 +50,7 @@ module DocumentProcessing
       extract_json_from_text(response_text(response))
     end
 
+    
     def response_text(response)
       content_items = if response.respond_to?(:output) && response.output.respond_to?(:message)
         response.output.message.content
@@ -58,6 +61,7 @@ module DocumentProcessing
       Array(content_items).map { |item| content_text(item) }.join("\n").strip
     end
 
+    
     def content_text(item)
       return item.text.to_s if item.respond_to?(:text)
       return item[:text].to_s if item.is_a?(Hash) && item.key?(:text)
@@ -66,6 +70,7 @@ module DocumentProcessing
       item.to_s
     end
 
+    # Estrae e prepara i dati utili al processamento.
     def extract_json_from_text(text)
       json_match = text.match(/\{.*\}/m)
       raise "Nessun JSON trovato nella risposta LLM" unless json_match
@@ -73,6 +78,7 @@ module DocumentProcessing
       JSON.parse(json_match[0])
     end
 
+    # Prompt di sistema per l'estrazione strutturata dei dati documento.
     def document_data_extraction_system_prompt
       <<~PROMPT
         Sei un sistema di estrazione strutturata.
@@ -84,6 +90,7 @@ module DocumentProcessing
       PROMPT
     end
 
+    # Prompt utente con schema JSON obbligatorio per i dati estratti.
     def document_data_extraction_user_prompt(text)
       <<~PROMPT
         Estrai i destinatari principali e i metadati principali del documento.
@@ -108,6 +115,7 @@ module DocumentProcessing
       PROMPT
     end
 
+    # Prompt di sistema per individuare i breakpoint di split.
     def split_breakpoints_system_prompt
       <<~PROMPT
         Sei un sistema di segmentazione documentale.
@@ -116,6 +124,7 @@ module DocumentProcessing
       PROMPT
     end
 
+    # Prompt utente con regole ed esempi per trovare start_pages.
     def split_breakpoints_user_prompt(summary)
       <<~PROMPT
         Identifica le pagine che iniziano un nuovo documento.

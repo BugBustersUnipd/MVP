@@ -1,6 +1,7 @@
 require "test_helper"
 
 class PostTest < ActiveSupport::TestCase
+  # Costruisce i dati di output per il flusso corrente.
   def build_post(overrides = {})
     datum = generated_data(:one)
     Post.new({ generated_datum: datum, title: "Test Post", body_text: "Content" }.merge(overrides))

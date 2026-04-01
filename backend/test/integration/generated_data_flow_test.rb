@@ -1,6 +1,7 @@
 require "test_helper"
 
 class GeneratedDataFlowTest < ActionDispatch::IntegrationTest
+  # Preparazione dati di test.
   def setup
     @company = Company.create!(name: "Flow Company", description: "Flow description")
     @tone = Tone.create!(company: @company, name: "Flow Tone", description: "Tone desc", is_active: true)

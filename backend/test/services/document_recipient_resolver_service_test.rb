@@ -5,6 +5,7 @@ class DocumentProcessingRecipientResolverTest < ActiveSupport::TestCase
     @service = DocumentProcessing::RecipientResolver.new
   end
 
+  # Chiama resolve con i parametri forniti e ritorna il risultato.
   def resolve_result(recipient_names:, raw_text: nil, service: @service)
     service.resolve(recipient_names:, raw_text:)
   end
@@ -103,7 +104,7 @@ class DocumentProcessingRecipientResolverTest < ActiveSupport::TestCase
   end
 
   # ---------------------------------------------------------------------------
-  # raw_text come fallback di ricerca
+  # raw_text come ripiego di ricerca
   # ---------------------------------------------------------------------------
 
   test "usa raw_text se recipient_names e' vuoto" do

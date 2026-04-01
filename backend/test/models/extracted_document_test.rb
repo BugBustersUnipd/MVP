@@ -1,10 +1,12 @@
 require "test_helper"
 
 class ExtractedDocumentTest < ActiveSupport::TestCase
+  # Restituisce un documento uploaded memoizzato per il test.
   def uploaded_doc
     @uploaded_doc ||= uploaded_documents(:one)
   end
 
+  # Verifica le condizioni richieste prima di procedere.
   def valid_ed(overrides = {})
     ExtractedDocument.new(
       {

@@ -1,4 +1,5 @@
 class TonesController < ApplicationController
+  # Recupera i dati necessari per l'operazione.
   def index
     company_id = params[:company_id]
     return render json: { error: "company_id mancante" }, status: :bad_request if company_id.blank?
@@ -14,6 +15,7 @@ class TonesController < ApplicationController
     render json: ToneSerializer.serialize_collection(tones), status: :ok
   end
 
+  # Costruisce i dati di output per il flusso corrente.
   def create
     tone = Tone.new(tone_params)
     if tone.save
@@ -25,6 +27,7 @@ class TonesController < ApplicationController
     end
   end
 
+  # Rimuove i dati previsti dal flusso corrente.
   def destroy
     tone = Tone.find_by(id: params[:id])
 
@@ -38,6 +41,7 @@ class TonesController < ApplicationController
 
   private
 
+  # Applica strong parameters per la creazione/aggiornamento dei tone.
   def tone_params
     params.require(:tone).permit(:name, :description, :company_id, :is_active)
   end

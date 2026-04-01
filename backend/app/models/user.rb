@@ -1,7 +1,7 @@
 class User < ApplicationRecord
 	has_one :employee
 
-	# compat helper used by presenters/controllers expecting an `employee_code`
+	# Metodo di supporto per i test.
 	# Employee has no code field, so fall back to username
 	def employee_code
 		username

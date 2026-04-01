@@ -1,7 +1,7 @@
 class DocumentsController < ActionController::Base
-  # CSRF protection is disabled because the app runs in api_only mode (no session
-  # middleware in the stack). The test view is served from the same origin so
-  # there is no practical security concern here.
+  # La protezione CSRF e' disabilitata perche' l'app gira in modalita' api_only (no session
+  
+  # non ci sono criticita' pratiche di sicurezza.
   skip_before_action :verify_authenticity_token
 
   # GET /documents/test
@@ -9,7 +9,7 @@ class DocumentsController < ActionController::Base
     render template: "documents/test"
   end
 
-  # POST /documents/split
+  # POST /documents/suddivisione
   def split
     result = initialize_processing_command.call(
       file: params[:pdf],
@@ -40,9 +40,9 @@ class DocumentsController < ActionController::Base
     render_error("Errore: #{e.message}")
   end
 
-  # POST /documents/test_data (removed)
+  # POST /documents/test_data (rimosso)
 
-  # GET /documents/uploads/:uploaded_document_id/extracted
+  # GET /documents/uploads/:uploaded_document_id/estratto
   def extracted_index
     uploaded_document = UploadedDocument.includes(extracted_documents: :matched_employee).find(params[:uploaded_document_id])
 
@@ -61,7 +61,7 @@ class DocumentsController < ActionController::Base
   end
 
   # GET /documents/uploads
-  # Restituisce la lista minimale degli uploaded document (id, original_filename, page_count, created_at)
+  # Restituisce la lista minimale degli caricato document (id, original_filename, page_count, created_at)
   def uploads
     list = db_manager.uploaded_documents_list
     render json: { uploaded_documents: list }
@@ -82,7 +82,7 @@ class DocumentsController < ActionController::Base
   end
 
   
-  # GET /documents/extracted/:id
+  # GET /documents/estratto/:id
   def extracted_show
     extracted_document = ExtractedDocument.includes(:matched_employee).find(params[:id])
     render json: { extracted_document: extracted_document_presenter(extracted_document).as_json }
@@ -90,7 +90,7 @@ class DocumentsController < ActionController::Base
     render json: { status: "error", message: "Documento estratto non trovato" }, status: :not_found
   end
 
-  # GET /documents/extracted/:id/pdf
+  # GET /documents/estratto/:id/pdf
   def extracted_pdf
     extracted_document = ExtractedDocument.find(params[:id])
     source_path = extracted_document.uploaded_document.storage_path
@@ -111,7 +111,7 @@ class DocumentsController < ActionController::Base
     file_storage.delete(temp_pdf_path) if defined?(temp_pdf_path) && temp_pdf_path && file_storage.exist?(temp_pdf_path)
   end
 
-  # PATCH /documents/extracted/:id/reassign_range
+  # PATCH /documents/estratto/:id/reassign_range
   def reassign_range
     page_start, page_end = parse_range_params
     return render_error("Range pagine non valido") if page_start.nil? || page_end.nil?
@@ -137,10 +137,10 @@ class DocumentsController < ActionController::Base
     render json: { status: "error", message: "Documento estratto non trovato" }, status: :not_found
   end
 
-  # PATCH /documents/extracted/:id/metadata
+  # PATCH /documents/estratto/:id/metadati
   # Body: { "metadata_updates": { "field1": "value", ... } }
   def update_metadata
-    # Support several payload shapes (plain Hash, Parameters, nested document, or JSON string)
+    # Supporta tanti tipi di payload (plain Hash, Parameters, nested document, or JSON string)
     raw = params[:metadata_updates] || params[:metadata] || params.dig(:document, :metadata_updates) || {}
     metadata_updates = if raw.respond_to?(:to_unsafe_h)
       raw.to_unsafe_h
@@ -170,7 +170,7 @@ class DocumentsController < ActionController::Base
     render_error("Errore: #{e.message}")
   end
 
-  # PATCH /documents/extracted/:id/validate
+  # PATCH /documents/estratto/:id/validate
   def validate_extracted
     extracted_document = ExtractedDocument.find(params[:id])
 
@@ -188,7 +188,7 @@ class DocumentsController < ActionController::Base
   end
 
   # POST /documents/uploads/:id/retry
-  # Riaccoda il processing per un UploadedDocument (qualunque stato).
+  # Riaccoda il processamento per un UploadedDocument (qualunque stato).
   def retry_processing
     uploaded = UploadedDocument.find(params[:id])
     run = ProcessingRun.where(uploaded_document: uploaded).order(:created_at).last
@@ -213,8 +213,8 @@ class DocumentsController < ActionController::Base
     render json: { status: "error", message: "Documento sorgente non trovato" }, status: :not_found
   end
 
-  # POST /documents/extracted/:id/retry
-  # Riaccoda la data extraction per un singolo ExtractedDocument (qualunque stato).
+  # POST /documents/estratto/:id/retry
+  # Rifà il processamento per un singolo ExtractedDocument (qualunque stato).
   def retry_extracted
     extracted = ExtractedDocument.find(params[:id])
 
@@ -246,22 +246,17 @@ class DocumentsController < ActionController::Base
     render_error(e.message)
   end
 
-  # DELETE /documents/uploads/:id
-  # Elimina l'uploaded document (e in cascata tutti gli extracted documents collegati).
-  # Rimuove anche il file fisico dallo storage se presente.
+  # elimina /documents/uploads/:id
+  # Elimina il documento caricato (e in cascata tutti gli estratto documents collegati).
+  
   def destroy_upload
     uploaded = UploadedDocument.find(params[:id])
     storage_path = uploaded.storage_path
 
     ActiveRecord::Base.transaction do
       extracted_ids = uploaded.extracted_documents.pluck(:id)
-
-      # Sendings references extracted_documents with NOT NULL FK, so remove them first.
       Sending.where(extracted_document_id: extracted_ids).delete_all if extracted_ids.any?
-
-      # Processing runs own processing_items, which can reference extracted_documents.
       ProcessingRun.where(uploaded_document_id: uploaded.id).destroy_all
-
       uploaded.destroy!
     end
 
@@ -272,8 +267,8 @@ class DocumentsController < ActionController::Base
   end
 
   # POST /documents/process_file
-  # Receives a single file (csv, jpeg, png) and processes it without performing split.
-  # Returns: { status: 'ok', job_id: '<uuid>' }
+  
+  # Ritorna: { status: 'ok', job_id: '<uuid>' }
   def process_file
     result = initialize_file_processing_command.call(
       file: params[:file],
@@ -305,6 +300,7 @@ class DocumentsController < ActionController::Base
 
   private
 
+  # Estrae e prepara i dati utili al processamento.
   def parse_range_params
     if params[:page_range].present?
       match = params[:page_range].to_s.strip.match(/\A(\d+)\s*[-:]\s*(\d+)\z/)
@@ -320,58 +316,71 @@ class DocumentsController < ActionController::Base
     [start_page, end_page]
   end
 
+  # Converte un valore in intero e restituisce nil se non valido.
   def integer_or_nil(value)
     Integer(value)
   rescue ArgumentError, TypeError
     nil
   end
 
+  # Restituisce una risposta JSON standard di errore bad_request.
   def render_error(message)
     render json: { status: "error", message: }, status: :bad_request
   end
 
+  # Istanzia il servizio che estrae un range di pagine dal PDF sorgente.
   def page_range_pdf_service(source_pdf_path)
     page_range_pdf_service_class.new(source_pdf_path: source_pdf_path)
   end
 
+  # Espone la classe del servizio page-range dal container document processing.
   def page_range_pdf_service_class
     document_processing_container.page_range_pdf_service_class
   end
 
+  # Restituisce il comando che inizializza la pipeline di processing PDF.
   def initialize_processing_command
     document_processing_container.initialize_processing_command
   end
 
+  
   def initialize_file_processing_command
     document_processing_container.initialize_file_processing_command
   end
 
 
 
+  # Restituisce il comando che riassegna range e rilancia l'estrazione.
   def reassign_extracted_range_command
     document_processing_container.reassign_extracted_range_command
   end
 
+  # Estrae e prepara i dati utili al processamento.
   def extracted_document_presenter(document)
     extracted_document_presenter_class.new(document)
   end
 
+  # Estrae e prepara i dati utili al processamento.
   def extracted_document_presenter_class
     DocumentProcessing::Presenters::ExtractedDocumentPresenter
   end
 
+  
   def file_storage
     document_processing_container.file_storage
   end
 
+  # Espone il manager per operazioni DB legate al documento processato.
   def db_manager
     document_processing_container.db_manager
   end
 
+  # Crea e memoizza il container con i servizi document processing.
   def document_processing_container
     @document_processing_container ||= DocumentProcessing::Container.new
   end
 
+  
   def content_type_for_uploaded(uploaded_document)
     case uploaded_document.file_kind
     when "pdf"

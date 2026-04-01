@@ -1,6 +1,7 @@
 require "test_helper"
 
 class ImageGeneratorServiceTest < ActiveSupport::TestCase
+  # Oggetto fittizio usato nel test.
   def mock_bedrock_success(image_base64)
     response_body = StringIO.new({
       images: [image_base64]
@@ -13,6 +14,7 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
     client
   end
 
+  # Oggetto fittizio usato nel test.
   def mock_bedrock_alternative_format(image_base64, format_key = "image")
     response_body = StringIO.new({
       format_key => image_base64
@@ -25,12 +27,14 @@ class ImageGeneratorServiceTest < ActiveSupport::TestCase
     client
   end
 
+  # Crea un client Bedrock fittizio che solleva un errore.
   def failing_bedrock(error)
     client = Object.new
     client.define_singleton_method(:invoke_model) { |_args| raise error }
     client
   end
 
+  
   def bedrock_invalid_response
     response_body = StringIO.new({ somekey: "no_image_here" }.to_json)
     response = Struct.new(:body).new(response_body)

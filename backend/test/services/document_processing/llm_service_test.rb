@@ -4,10 +4,12 @@ class LlmServiceTest < ActiveSupport::TestCase
   class FakeBedrock
     attr_reader :last_args
 
+    # Inizializza le dipendenze del componente.
     def initialize(text)
       @text = text
     end
 
+    # Simula la conversazione Bedrock e ritorna il mock.
     def converse(args)
       @last_args = args
       content_item = Struct.new(:text).new(@text)
@@ -25,7 +27,7 @@ class LlmServiceTest < ActiveSupport::TestCase
 
     assert_equal "Mario Rossi", result["recipients"][0]["name"]
     assert result.key?("document")
-    assert_equal "amazon.nova-lite-v1:0", client.last_args[:model_id]
+    assert_equal ::BEDROCK_CONFIG_EXTRACTION["model_id"], client.last_args[:model_id]
   end
 
   test "detect_split_breakpoints raises when no json is present" do

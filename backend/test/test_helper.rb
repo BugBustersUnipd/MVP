@@ -11,7 +11,7 @@ end
 
 ENV["RAILS_ENV"] ||= "test"
 
-# Prevent AWS SDK from querying EC2 instance metadata credentials in local tests.
+
 ENV["AWS_EC2_METADATA_DISABLED"] = "true"
 ENV["AWS_ACCESS_KEY_ID"] ||= "test"
 ENV["AWS_SECRET_ACCESS_KEY"] ||= "test"
@@ -23,10 +23,10 @@ require 'mocha/minitest'
 
 module ActiveSupport
   class TestCase
-    # Run tests in parallel with specified workers
+    
     parallelize(workers: :number_of_processors)
 
-    # Merge SimpleCov results from each parallel worker
+    # Merge SimpleCov results da each parallel worker
     parallelize_setup do |worker|
       SimpleCov.command_name "#{SimpleCov.command_name}-#{worker}"
     end
@@ -35,13 +35,13 @@ module ActiveSupport
       SimpleCov.result
     end
 
-    # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
+    # Preparazione dati di test.
     fixtures :all
 
-    # Add more helper methods to be used by all tests here...
+    # Metodo di supporto per i test.
 
-    # Temporarily replaces klass.new with a proc returning instance for the
-    # duration of the block. Thread-safe enough for serial test runs.
+    
+    
     def stub_new(klass, instance)
       original = klass.method(:new)
       klass.define_singleton_method(:new) { |*_args, **_kwargs| instance }

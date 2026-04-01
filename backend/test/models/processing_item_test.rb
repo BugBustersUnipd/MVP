@@ -1,10 +1,12 @@
 require "test_helper"
 
 class ProcessingItemTest < ActiveSupport::TestCase
+  # Crea e memoizza un processing run per il test.
   def parent_run
     @parent_run ||= ProcessingRun.create!(job_id: "pi-run-#{SecureRandom.hex(4)}")
   end
 
+  # Verifica le condizioni richieste prima di procedere.
   def valid_item(overrides = {})
     ProcessingItem.new(
       { processing_run: parent_run, sequence: 1, filename: "doc.pdf" }.merge(overrides)

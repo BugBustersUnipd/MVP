@@ -30,11 +30,13 @@ module DocumentProcessing
     class ValidationError < StandardError; end
     class PersistenceError < StandardError; end
 
+    # Salva un PDF temporaneo dopo la validazione.
     def persist_temp_pdf(file)
       validate_pdf_upload!(file)
       save_file(file:, base_dir: Rails.root.join("tmp", "uploads"), random_bytes: 6)
     end
 
+    # Salva il PDF sorgente nello storage definitivo.
     def persist_source_pdf(file)
       validate_pdf_upload!(file)
       save_file(file:, base_dir: Rails.root.join("storage", "uploads", "source_documents"), random_bytes: 8)
@@ -46,6 +48,7 @@ module DocumentProcessing
       save_file(file:, base_dir: Rails.root.join("storage", "uploads", "source_documents"), random_bytes: 8)
     end
 
+    # Riconosce il tipo di file in base a nome e MIME type.
     def detect_upload_kind(file)
       return :unknown unless file.present?
 
@@ -59,6 +62,7 @@ module DocumentProcessing
       :unknown
     end
 
+    # Calcola l'hash SHA256 del contenuto caricato.
     def compute_checksum(file)
       io = file.respond_to?(:tempfile) ? file.tempfile : file
       io.rewind if io.respond_to?(:rewind)
@@ -82,6 +86,7 @@ module DocumentProcessing
       raise PersistenceError, e.message
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def validate_pdf_upload!(file)
       raise ValidationError, "Nessun file selezionato" unless file.present?
       raise ValidationError, "Il file deve avere estensione .pdf" unless file.original_filename.to_s.downcase.end_with?(".pdf")
@@ -92,6 +97,7 @@ module DocumentProcessing
       raise ValidationError, "Contenuto file non valido: il file non sembra un PDF" unless pdf_signature_valid?(file)
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def validate_supported_upload!(file, kind)
       raise ValidationError, "Nessun file selezionato" unless file.present?
       raise ValidationError, "Formato non supportato" if kind == :unknown
@@ -115,6 +121,7 @@ module DocumentProcessing
       end
     end
 
+    
     def file_size(file)
       return file.size.to_i if file.respond_to?(:size)
       return file.tempfile.size.to_i if file.respond_to?(:tempfile) && file.tempfile.respond_to?(:size)
@@ -122,6 +129,7 @@ module DocumentProcessing
       0
     end
 
+    # Verifica le condizioni richieste prima di procedere.
     def pdf_signature_valid?(file)
       io = file.respond_to?(:tempfile) ? file.tempfile : file
       return false unless io.respond_to?(:read)
@@ -134,11 +142,13 @@ module DocumentProcessing
       false
     end
 
+    # Riporta il puntatore all'inizio se il file lo supporta.
     def rewind_if_possible(file)
       file.tempfile.rewind if file.respond_to?(:tempfile) && file.tempfile.respond_to?(:rewind)
       file.rewind if file.respond_to?(:rewind)
     end
 
+    # Normalizza il dato per mantenere il formato atteso.
     def sanitized_original_filename(name)
       basename = File.basename(name.to_s)
       sanitized = basename.gsub(/[^0-9A-Za-z.\-_]/, "_")
