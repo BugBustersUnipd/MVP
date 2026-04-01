@@ -22,7 +22,7 @@ export class ResultAiAssistantSerializer {
     };
   }
 
-  deserializeCreatePostResponseId(payload: unknown): number {
+  deserializeCreatePostResponseId(payload: any): number {
     const source = this.isRecord(payload) ? payload : {};
     return this.asNumber(source['id'], 0);
   }
@@ -40,7 +40,7 @@ export class ResultAiAssistantSerializer {
     };
   }
 
-  deserializeGenerationStartResponse(payload: unknown): number {
+  deserializeGenerationStartResponse(payload: any): number {
     const source = this.isRecord(payload) ? payload : {};
     const id = this.asNumber(source['id'], 0);
     if (id > 0) {
@@ -70,23 +70,23 @@ export class ResultAiAssistantSerializer {
     };
   }
 
-  deserializeTonesResponse(payload: unknown): Tone[] {
+  deserializeTonesResponse(payload: any): Tone[] {
     return this.deserializeNamedCollection(payload, 'tones');
   }
 
-  deserializeStylesResponse(payload: unknown): Style[] {
+  deserializeStylesResponse(payload: any): Style[] {
     return this.deserializeNamedCollection(payload, 'styles');
   }
 
-  deserializeToneItem(payload: unknown): Tone {
+  deserializeToneItem(payload: any): Tone {
     return this.deserializeNamedItem(payload);
   }
 
-  deserializeStyleItem(payload: unknown): Style {
+  deserializeStyleItem(payload: any): Style {
     return this.deserializeNamedItem(payload);
   }
 
-  deserializeCompaniesResponse(payload: unknown): Company[] {
+  deserializeCompaniesResponse(payload: any): Company[] {
     if (!this.isRecord(payload)) {
       return [];
     }
@@ -99,7 +99,7 @@ export class ResultAiAssistantSerializer {
     return companies.map((item) => this.deserializeCompanyItem(item));
   }
 
-  deserializeCompanyItem(payload: unknown): Company {
+  deserializeCompanyItem(payload: any): Company {
     const source = this.isRecord(payload) ? payload : {};
     return {
       id: this.asNumber(source['id'], 0),
@@ -107,7 +107,7 @@ export class ResultAiAssistantSerializer {
     };
   }
 
-  deserializePostsResponse(payload: unknown): ResultAiAssistant[] {
+  deserializePostsResponse(payload: any): ResultAiAssistant[] {
     if (this.isRecord(payload)) {
       const posts = payload['posts'];
       if (Array.isArray(posts)) {
@@ -118,7 +118,7 @@ export class ResultAiAssistantSerializer {
     return [];
   }
 
-  deserializePostItem(payload: unknown): ResultAiAssistant {
+  deserializePostItem(payload: any): ResultAiAssistant {
     const source = this.isRecord(payload) ? payload : {};
 
     const tone = this.deserializeToneItem({
@@ -153,22 +153,6 @@ export class ResultAiAssistantSerializer {
     };
   }
 
-// La logica di normalizzazione è un esempio e potrebbe essere adattata in base alla struttura effettiva del payload che riceverai dal backend. L'obiettivo è rendere il serializer flessibile per supportare sia formati legacy che nuovi formati basati su oggetti.
-  private normalizePayload(payload: unknown[]): Record<string, unknown> {
-    if (payload.length === 1 && this.isRecord(payload[0])) {
-      return payload[0];
-    }
-
-    // Fallback for legacy positional arrays while backend contract is not final.
-    const keys = ['id', 'title', 'content', 'imagePath', 'tone', 'style', 'data', 'prompt', 'evaluation'];
-    const normalized: Record<string, unknown> = {};
-
-    keys.forEach((key, index) => {
-      normalized[key] = payload[index];
-    });
-
-    return normalized;
-  }
   // Questi metodi aiutano a garantire che i dati siano del tipo corretto e forniscono valori di fallback in caso contrario. Possono essere estesi o modificati in base alle esigenze specifiche.
   private isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -182,6 +166,13 @@ export class ResultAiAssistantSerializer {
     return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
   }
 
+  private asBoolean(value: unknown, defaultValue: boolean): boolean {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    if (typeof value === 'number') return value !== 0;
+    return defaultValue;
+  }
+  
   private asDate(value: unknown): Date {
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
       return value;
@@ -214,7 +205,7 @@ export class ResultAiAssistantSerializer {
     return typeof value === 'string' ? value : null;
   }
 
-  private deserializeNamedCollection(payload: unknown, key: 'tones' | 'styles'): Array<Tone | Style> {
+  private deserializeNamedCollection(payload: any, key: 'tones' | 'styles'): Array<Tone | Style> {
     if (!this.isRecord(payload)) {
       return [];
     }
@@ -227,18 +218,12 @@ export class ResultAiAssistantSerializer {
     return items.map((item) => this.deserializeNamedItem(item));
   }
 
-  private deserializeNamedItem(payload: unknown): Tone | Style {
+  private deserializeNamedItem(payload: any): Tone | Style {
     const source = this.isRecord(payload) ? payload : {};
     return {
       id: this.asNumber(source['id'], 0),
       name: this.asString(source['name']),
       isActive: this.asBoolean(source['isActive'], true)
     };
-  }
-  asBoolean(value: unknown, defaultValue: boolean): boolean {
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') return value.toLowerCase() === 'true';
-    if (typeof value === 'number') return value !== 0;
-    return defaultValue;
   }
 }
