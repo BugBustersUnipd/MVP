@@ -9,7 +9,7 @@ import { Filters } from '../components/filters/filters';
 import { MenuItem} from 'primeng/api';
 import { ResultSplit, State } from '../shared/models/result-split.model';
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
-import { Menutendina } from '../components/menutendina/menutendina';
+
 
 
 @Component({

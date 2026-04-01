@@ -4,25 +4,10 @@ import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-a
 import { ResultSplit, State} from '../../app/shared/models/result-split.model';
 import { BehaviorSubject, map, Observable, switchMap, tap, forkJoin } from 'rxjs';
 import { Company } from '../../app/shared/models/result-ai-assistant.model';
-import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-ai-copilot.model';
+import { CreateSendingPayload, DocumentState, ResultAiCopilot, TemplateOption } from '../../app/shared/models/result-ai-copilot.model';
 
-const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
-const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
-
-export interface TemplateOption {
-  id: number;
-  name: string;
-  content: string;
-}
-
-export interface CreateSendingPayload {
-  extracted_document_id: number;
-  recipient_id: number;
-  sent_at: string;
-  subject?: string;
-  body?: string;
-  template_id?: number;
-}
+const API_BASE = 'http://localhost:3000'; 
+const WS_URL = 'ws://localhost:3000/cable'; 
 
 
 @Injectable({

@@ -9,7 +9,8 @@ import { Menutendina } from '../menutendina/menutendina';
 import { Prompt } from '../prompt/prompt';
 import { Observable } from 'rxjs';
 import { AddDialog,AddDialogType, AddDialogSaveData } from '../add-dialog/add-dialog';
-import { AiCoPilotService, TemplateOption } from '../../../services/ai-co-pilot-service/ai-co-pilot-service';
+import { AiCoPilotService } from '../../../services/ai-co-pilot-service/ai-co-pilot-service';
+import { TemplateOption } from '../../shared/models/result-ai-copilot.model';
 
 // Interface per i dati da inviare
 export interface SendDocumentData {
