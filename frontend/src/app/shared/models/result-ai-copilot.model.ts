@@ -1,6 +1,21 @@
 import { ResultSplit } from "./result-split.model";
 import { Result } from "./result.model";
 
+export interface TemplateOption {
+    id: number;
+    name: string;
+    content: string;
+}
+
+export interface CreateSendingPayload {
+    extracted_document_id: number;
+    recipient_id: number;
+    sent_at: string;
+    subject?: string;
+    body?: string;
+    template_id?: number;
+}
+
 export interface ResultAiCopilot extends Result {
     name: string;
     ResultSplit: ResultSplit[]; 

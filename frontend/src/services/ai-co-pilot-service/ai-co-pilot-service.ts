@@ -4,25 +4,10 @@ import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-a
 import { ResultSplit, State} from '../../app/shared/models/result-split.model';
 import { BehaviorSubject, map, Observable, switchMap, tap, forkJoin } from 'rxjs';
 import { Company } from '../../app/shared/models/result-ai-assistant.model';
-import { DocumentState, ResultAiCopilot } from '../../app/shared/models/result-ai-copilot.model';
+import { CreateSendingPayload, DocumentState, ResultAiCopilot, TemplateOption } from '../../app/shared/models/result-ai-copilot.model';
 
-const API_BASE = 'http://localhost:3000'; // Cambia con l'URL del tuo backend in produzione
-const WS_URL = 'ws://localhost:3000/cable'; // wss:// in produzione
-
-export interface TemplateOption {
-  id: number;
-  name: string;
-  content: string;
-}
-
-export interface CreateSendingPayload {
-  extracted_document_id: number;
-  recipient_id: number;
-  sent_at: string;
-  subject?: string;
-  body?: string;
-  template_id?: number;
-}
+const API_BASE = 'http://localhost:3000'; 
+const WS_URL = 'ws://localhost:3000/cable'; 
 
 
 @Injectable({
@@ -73,11 +58,11 @@ export class AiCoPilotService {
   private departmentSubject = new BehaviorSubject<string[]>([]);
   department$ = this.departmentSubject.asObservable();
 
-  private StateSubject = new BehaviorSubject<string[]>([]);
-  state$ = this.StateSubject.asObservable();
+  private stateSubject = new BehaviorSubject<string[]>([]);
+  state$ = this.stateSubject.asObservable();
   
-  private ConfidenceSubject = new BehaviorSubject<string[]>([]);
-  confidence$ = this.ConfidenceSubject.asObservable();
+  private confidenceSubject = new BehaviorSubject<string[]>([]);
+  confidence$ = this.confidenceSubject.asObservable();
 // aggiunto MA VEDIAMO SE VA BENE; SERVE PER ALTRI DOCUMENTI ESTRATTI
   private otherExtractedDocumentsSubject = new BehaviorSubject<ResultSplit[]>([]);
   otherExtractedDocuments$ = this.otherExtractedDocumentsSubject.asObservable();
@@ -552,10 +537,10 @@ export class AiCoPilotService {
     this.departmentSubject.next(unique);
   }
   public fetchState(): void {
-    this.StateSubject.next(Object.values(State));
+    this.stateSubject.next(Object.values(State));
   }
   public fetchConfidence(): void {
-    this.ConfidenceSubject.next(['0-20', '21-40', '41-60', '61-80', '81-100']);
+    this.confidenceSubject.next(['0-20', '21-40', '41-60', '61-80', '81-100']);
   }
   /** GET /lookups/companies */
   public fetchCompanies(): void {

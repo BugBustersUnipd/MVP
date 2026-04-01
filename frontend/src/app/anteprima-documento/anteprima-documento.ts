@@ -3,7 +3,6 @@ import { DocSummary } from '../components/doc-summary/doc-summary';
 import { ExtractedEmployeeInfo, ExtractedEmployeeInfoRow } from '../components/extracted-employee-info/extracted-employee-info';
 import { ResultSplit, State } from '../shared/models/result-split.model';
 import { Button } from '../components/button/button';
-// da togliere
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
 import { SendDocumentDialog,SendDocumentData } from '../components/send-document-dialog/send-document-dialog';
