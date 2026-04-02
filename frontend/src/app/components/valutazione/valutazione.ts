@@ -9,6 +9,6 @@ import { RatingModule } from 'primeng/rating';
   styleUrl: './valutazione.css',
 })
 export class Valutazione {
-  @Input() rating: number = 0;
+  @Input() rating: number = 1;
   @Output() ratingChange = new EventEmitter<number>();
 }

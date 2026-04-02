@@ -340,20 +340,18 @@ export class AiAssistantService {
     const current = this.resultSubject.value;
     if (!current) return;
 
-    const updated: ResultAiAssistant = {
-      ...current,
-      evaluation: evaluation
-    };
-    this.resultSubject.next(updated);
-
+    
     this.http.patch<any>(`${API_BASE}/generated_data/${id}/rating`, {
       rating: evaluation
     }).subscribe({
       next: (response) => {
-        console.log('[setEvaluation] Risposta PATCH /generated_data/:id/rating:', response);
+        const updated: ResultAiAssistant = {
+          ...current,
+          evaluation: evaluation
+        };
+        this.resultSubject.next(updated);
       },
       error: (err) => {
-        console.error('[setEvaluation] Errore nella PATCH /generated_data/:id/rating:', err);
         const errorMessage = this.extractErrorMessage(err);
         this.notifyGenerationError(errorMessage);
       }

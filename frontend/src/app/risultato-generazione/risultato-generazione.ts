@@ -62,12 +62,13 @@ export class RisultatoGenerazione {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((errorMessage) => {
         if (!errorMessage) return;
-        this.router.navigate(['/generatore']); //ritorna al generatore in caso di errore
+        if(!(errorMessage.toLowerCase().includes('1 e 5'))){
+          this.router.navigate(['/generatore']);
+        }
         window.alert(errorMessage);
         this.aiService.clearGenerationError();
       });
 
-    // all'avvio
     this.updateImageTitleLoading(this.result());
     this.updateContentLoading(this.result());
   }
@@ -77,7 +78,6 @@ export class RisultatoGenerazione {
       this.isImageTitleLoading = false;
       return;
     }
-
     const hasTitle = typeof result.title === 'string' && result.title.trim().length > 0;
     const hasImage = typeof result.imagePath === 'string' && result.imagePath.trim().length > 0;
     this.isImageTitleLoading = !hasTitle || !hasImage;
@@ -88,7 +88,6 @@ export class RisultatoGenerazione {
       this.isContentLoading = false;
       return;
     }
-
     const hasContent = typeof result.content === 'string' && result.content.trim().length > 0;
     this.isContentLoading = !hasContent;
   }
@@ -214,11 +213,6 @@ export class RisultatoGenerazione {
   onRatingChange(rating: number): void {
     const current = this.result();
     if (!current) return;
-
-    this.result.set({
-      ...current,
-      evaluation: rating,
-    });
     this.aiService.setEvaluation(current.generatedDatumId, rating);
   }
 
