@@ -60,7 +60,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="label">Competenza Mese/Anno</label>
+                    <label class="label">Competenza</label>
                     <div class="field-with-confidence">
                         <app-input [editable]="editable" [value]="getMonthYearValue()" (valueChange)="onFieldChange('month_year', $event)"></app-input>
                         @if (getFieldConfidence('competence', 'month_year'); as conf) {
