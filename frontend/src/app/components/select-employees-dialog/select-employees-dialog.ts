@@ -1,27 +1,20 @@
 import { AsyncPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Button } from '../button/button';
 import { Menutendina } from '../menutendina/menutendina';
+import { RecipientInfo } from '../../shared/models/result-split.model';
 
-export interface EmployeeOption {
+interface EmployeeMenuOption {
   id: number;
   name: string;
-  email?: string;
-  employeeCode?: string;
+  recipient: RecipientInfo;
 }
 
 export interface SelectEmployeeDialogData {
   extractedEmployeeName: string;
-  employees$: Observable<EmployeeOption[]>;
-}
-
-export interface SelectEmployeeDialogResult {
-  id: number;
-  name: string;
-  email?: string;
-  employeeCode?: string;
+  employees$: Observable<RecipientInfo[]>;
 }
 
 @Component({
@@ -34,14 +27,24 @@ export class SelectEmployeesDialog implements OnInit {
   public ref: DynamicDialogRef = inject(DynamicDialogRef);
   public config: DynamicDialogConfig = inject(DynamicDialogConfig);
 
-  employees$: Observable<EmployeeOption[]> | null = null;
+  employees$: Observable<RecipientInfo[]> | null = null;
+  menuEmployees$: Observable<EmployeeMenuOption[]> | null = null;
   extractedEmployeeName: string = '';
-  selectedEmployee: EmployeeOption | null = null;
+  selectedEmployee: EmployeeMenuOption | null = null;
 
   ngOnInit(): void {
     const data = (this.config.data || {}) as Partial<SelectEmployeeDialogData>;
     this.extractedEmployeeName = data.extractedEmployeeName || '';
     this.employees$ = data.employees$ || null;
+    this.menuEmployees$ = this.employees$?.pipe(
+      map((employees) =>
+        employees.map((employee) => ({
+          id: employee.recipientId,
+          name: employee.recipientName,
+          recipient: employee,
+        }))
+      )
+    ) ?? null;
   }
 
   closeDialog(): void {
@@ -53,12 +56,7 @@ export class SelectEmployeesDialog implements OnInit {
       return;
     }
 
-    const payload: SelectEmployeeDialogResult = {
-      id: this.selectedEmployee.id,
-      name: this.selectedEmployee.name,
-      email: this.selectedEmployee.email,
-      employeeCode: this.selectedEmployee.employeeCode,
-    };
+    const payload: RecipientInfo = this.selectedEmployee.recipient;
 
     this.ref.close(payload);
   }

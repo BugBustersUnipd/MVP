@@ -44,7 +44,7 @@ describe('ResultAiCopilotSerializer', () => {
 
     expect(split.state).toBe(State.Pronto);
     expect(split.confidence).toBe(84);
-    expect(split.recipientName).toBe('Mario');
+    expect(split.recipient.recipientName).toBe('Mario');
     expect(split.company).toBe('ACME');
     expect(split.parentId).toBe(91);
   });

@@ -49,7 +49,7 @@ export class StoricoAiCopilot {
           g.name.toLowerCase().includes(normalizedSearch) ||
           g.id!.toString().toLowerCase().includes(normalizedSearch) ||
           g.confidence.toString().toLowerCase().includes(normalizedSearch) ||
-          g.recipientName.toLowerCase().includes(normalizedSearch) ||
+          (g.recipient?.recipientName ?? '').toLowerCase().includes(normalizedSearch) ||
           g.state.toLowerCase().includes(normalizedSearch);
         const matchDocument = !selectedDocument || g.category === selectedDocument;
         const matchCompany = !selectedCompany || g.company === selectedCompany;
@@ -74,7 +74,7 @@ export class StoricoAiCopilot {
     { field: 'id', header: 'Id Documento Splittato', type: 'splitid' },
     { field: 'name', header: 'Nome Documento Originale' },
     { field: 'confidence', header: 'Confidenza' },
-    { field: 'recipientName', header: 'Destinatario' },
+    { field: 'recipient', header: 'Destinatario' },
     { field: 'state', header: 'Stato' },
     { field: 'data', header: 'Data analisi', type: 'date' },
   ];
@@ -176,14 +176,10 @@ export class StoricoAiCopilot {
       id: split.id,
       confidence: split.confidence,
       fieldConfidences: split.fieldConfidences,
-      recipientName: split.recipientName,
-      rawRecipientName: split.rawRecipientName,
+      recipient: split.recipient,
       state: split.state,
       data: split.data,
       data_interna: split.data_interna,
-      recipientId: split.recipientId,
-      recipientEmail: split.recipientEmail,
-      recipientCode: split.recipientCode,
       time_Analysis: split.time_Analysis,
       page_end: split.page_end,
       page_start: split.page_start,

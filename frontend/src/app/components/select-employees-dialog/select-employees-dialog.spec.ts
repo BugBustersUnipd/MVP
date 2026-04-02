@@ -63,17 +63,23 @@ describe('SelectEmployeesDialog', () => {
 		component.selectedEmployee = {
 			id: 7,
 			name: 'Luigi Bianchi',
-			email: 'luigi@example.com',
-			employeeCode: 'EMP-7',
+			recipient: {
+				recipientId: 7,
+				recipientName: 'Luigi Bianchi',
+				rawRecipientName: 'Luigi Bianchi',
+				recipientEmail: 'luigi@example.com',
+				recipientCode: 'EMP-7',
+			},
 		};
 
 		component.saveDialog();
 
 		expect(dialogRefMock.close).toHaveBeenCalledWith({
-			id: 7,
-			name: 'Luigi Bianchi',
-			email: 'luigi@example.com',
-			employeeCode: 'EMP-7',
+			recipientId: 7,
+			recipientName: 'Luigi Bianchi',
+			rawRecipientName: 'Luigi Bianchi',
+			recipientEmail: 'luigi@example.com',
+			recipientCode: 'EMP-7',
 		});
 	});
 
@@ -90,6 +96,13 @@ describe('SelectEmployeesDialog', () => {
 		component.selectedEmployee = {
 			id: 12,
 			name: 'Elena Neri',
+			recipient: {
+				recipientId: 12,
+				recipientName: 'Elena Neri',
+				rawRecipientName: 'Elena Neri',
+				recipientEmail: '',
+				recipientCode: '',
+			},
 		};
 		fixture.detectChanges();
 

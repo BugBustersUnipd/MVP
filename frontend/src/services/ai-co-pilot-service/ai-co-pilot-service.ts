@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ResultAiCopilotSerializer } from '../../app/shared/serializers/result-ai-copilot.serializer';
-import { ResultSplit, State} from '../../app/shared/models/result-split.model';
+import { RecipientInfo, ResultSplit, State} from '../../app/shared/models/result-split.model';
 import { BehaviorSubject, map, Observable, switchMap, tap, forkJoin } from 'rxjs';
 import { Company } from '../../app/shared/models/result-ai-assistant.model';
 import { CreateSendingPayload, DocumentState, ResultAiCopilot, TemplateOption } from '../../app/shared/models/result-ai-copilot.model';
@@ -49,7 +49,7 @@ export class AiCoPilotService {
   private categorySubject = new BehaviorSubject<string[]>([]);
   category$ = this.categorySubject.asObservable();
 
-  private employeesSubject = new BehaviorSubject<{ id: number; name: string; email?: string; employeeCode?: string }[]>([]);
+  private employeesSubject = new BehaviorSubject<RecipientInfo[]>([]);
   employees$ = this.employeesSubject.asObservable();
 
   private companiesSubject = new BehaviorSubject<Company[]>([]);
@@ -696,10 +696,11 @@ export class AiCoPilotService {
       next: ({ users }) =>
         this.employeesSubject.next(
           users.map((u: any) => ({
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            employeeCode: u.employee_code,
+            recipientId: u.id,
+            recipientName: u.name,
+            rawRecipientName: u.name,
+            recipientEmail: u.email,
+            recipientCode: u.employee_code,
           }))
         ),
       error: (err) => console.error('Errore nel recupero degli utenti:', err),

@@ -10,7 +10,7 @@
 
 		<div class="dialog-employee-select">
 			<menutendina
-				[options]="(employees$ | async) || []"
+				[options]="(menuEmployees$ | async) || []"
 				[(selected)]="selectedEmployee"
 				placeholder="Seleziona dipendente"
 				[showAddNew]="false"

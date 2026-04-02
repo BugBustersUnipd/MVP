@@ -6,13 +6,14 @@ import { Button } from '../components/button/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
 import { SendDocumentDialog,SendDocumentData } from '../components/send-document-dialog/send-document-dialog';
-import { SelectEmployeesDialog, SelectEmployeeDialogResult } from '../components/select-employees-dialog/select-employees-dialog';
+import { SelectEmployeesDialog } from '../components/select-employees-dialog/select-employees-dialog';
 import { OtherExtractDocuments, OtherExtractDocumentRow } from '../components/other-extraxt-documents/other-extract-documents';
 import { ToastModule } from 'primeng/toast';
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
 import { CommonModule } from '@angular/common';
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RecipientInfo } from '../shared/models/result-split.model';
 
 @Component({
   selector: 'app-anteprima-documento',
@@ -88,7 +89,15 @@ export class AnteprimaDocumento {
       this.aiService.otherExtractedDocuments$,
       this.removedOtherDocumentIds$,
     ]).pipe(
-      map(([rows, removedIds]) => rows.filter((row) => !removedIds.includes(row.id!) && row.id !== currentExtractedDocumentId)),
+      map(([rows, removedIds]) =>
+        rows
+          .filter((row) => !removedIds.includes(row.id!) && row.id !== currentExtractedDocumentId)
+          .map((row) => ({
+            id: row.id,
+            recipientName: row.recipient?.recipientName ?? '',
+            confidence: row.confidence,
+          }))
+      ),
       takeUntilDestroyed(this.destroyRef)
     );
 
@@ -129,13 +138,13 @@ export class AnteprimaDocumento {
       closable: true,
       autoZIndex: true,
       data: {
-        extractedEmployeeName: this.result.recipientName,
+        extractedEmployeeName: this.result.recipient?.recipientName,
         employees$: this.aiService.employees$,
       }
     });
 
     if (this.ref) {
-      this.ref.onClose.subscribe(async (selectedEmployee: SelectEmployeeDialogResult | undefined) => {
+      this.ref.onClose.subscribe(async (selectedEmployee: RecipientInfo | undefined) => {
         if (!selectedEmployee || !this.result) {
           return;
         }
@@ -148,8 +157,8 @@ export class AnteprimaDocumento {
         try {
           const updated = await firstValueFrom(
             this.aiService.updateDocumentMetadata$(this.result.id, {
-              recipient: selectedEmployee.name,
-              recipients: [selectedEmployee.name],
+              recipient: selectedEmployee.recipientName,
+              recipients: [selectedEmployee.recipientName],
             })
           );
 
@@ -181,13 +190,14 @@ export class AnteprimaDocumento {
     }
 
     const recipientConf = result.fieldConfidences?.['recipient'] ?? 0;
+    const recipient = result.recipient;
     const row: ExtractedEmployeeInfoRow = {
-      name: result.recipientName ?? '',
-      rawName: result.rawRecipientName ?? '',
-      hasMatch: (result.recipientId ?? 0) > 0,
+      name: recipient?.recipientName ?? '',
+      rawName: recipient?.rawRecipientName ?? '',
+      hasMatch: (recipient?.recipientId ?? 0) > 0,
       recipientConfidence: recipientConf > 0 ? recipientConf : null,
-      employeeCode: result.recipientCode ?? '',
-      email: result.recipientEmail ?? '',
+      employeeCode: recipient?.recipientCode ?? '',
+      email: recipient?.recipientEmail ?? '',
     };
 
     const isEmptyRow = !row.name && !row.rawName && !row.employeeCode && !row.email;
@@ -215,14 +225,14 @@ export class AnteprimaDocumento {
 
     if (this.ref) {
       this.ref.onClose.subscribe((result: SendDocumentData) => {
-        if (!result || !this.result?.id || !this.result?.recipientId) {
+        if (!result || !this.result?.id || !this.result?.recipient?.recipientId) {
           return;
         }
 
         this.aiService
           .createSending$({
             extracted_document_id: this.result.id,
-            recipient_id: this.result.recipientId,
+            recipient_id: this.result.recipient.recipientId,
             sent_at: this.resolveSentAt(result.orarioInvio.value).toISOString(),
             subject: result.templateName || `Invio documento ${this.result.name ?? ''}`.trim(),
             body: result.messaggio,
@@ -296,7 +306,7 @@ export class AnteprimaDocumento {
   }
 
   get hasRecipientMatch(): boolean {
-    return (this.result?.recipientId ?? 0) > 0;
+    return (this.result?.recipient?.recipientId ?? 0) > 0;
   }
 
   private normalizeValue(value: string | number | undefined | null): string {

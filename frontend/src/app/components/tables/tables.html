@@ -28,6 +28,10 @@
               {{ row[col.field] === -1 ? 'Non valutato' : row[col.field] }}
             } @else if (col.type === 'confidence' || col.field === 'confidence') {
               {{ formatConfidence(row[col.field]) }}%
+            } @else if (col.field === 'recipient') {
+              <span class="truncate-content" [title]="row[col.field]?.recipientName || ''">
+                {{ row[col.field]?.recipientName || '' }}
+              </span>
             } @else if (col.field === 'State' || col.field === 'state') {
               @if(row[col.field].toLowerCase() === 'pronto'){
                  <p-tag [value]="row[col.field]" class="p-tag-pronto"></p-tag>

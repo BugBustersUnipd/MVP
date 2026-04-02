@@ -23,7 +23,7 @@ describe('AnteprimaDocumento', () => {
     currentResultsHistory$: null as any,
     templates$: of([{ name: 'T', content: 'C' }]),
     otherExtractedDocuments$: new BehaviorSubject<any[]>([]),
-    employees$: of([{ id: 1, name: 'Mario' }]),
+    employees$: of([{ recipientId: 1, recipientName: 'Mario', rawRecipientName: 'Mario', recipientEmail: '', recipientCode: '' }]),
     fetchTemplates: vi.fn(),
     fetchExtractedDocument: vi.fn(),
     getDocumentsByParent: vi.fn(),
@@ -297,7 +297,7 @@ describe('AnteprimaDocumento', () => {
       name: 'Doc aggiornato',
     });
 
-    expect(component.result?.recipientName).toBe('Nuovo Destinatario');
+    expect(component.result?.recipient.recipientName).toBe('Nuovo Destinatario');
     expect(component.extractedEmployeeRows[0]?.name).toBe('Nuovo Destinatario');
   });
 });

@@ -33,6 +33,13 @@ export class ResultAiCopilotSerializer{
     const competence =  metadata['competence'] ?? metadata['month_year'] ?? '';
     const reason = metadata['reason'] ?? '';
     const recipientName = raw.matched_employee?.name ?? raw.recipient ?? '';
+    const recipient = {
+      recipientId: raw.matched_employee?.id ?? 0,
+      recipientName: recipientName,
+      rawRecipientName: raw.recipient ?? '',
+      recipientEmail: raw.matched_employee?.email ?? '',
+      recipientCode: raw.matched_employee?.employee_code ?? '',
+    };
     const documentName =
       [metadata['name'], raw.name, recipientName]
         .map((value) => (typeof value === 'string' ? value.trim() : ''))
@@ -44,11 +51,7 @@ export class ResultAiCopilotSerializer{
       state: this.mapStatus(raw.status),
       confidence: this.normalizeConfidence(raw.confidence),
       fieldConfidences: this.normalizeFieldConfidences(raw.confidence),
-      recipientId: raw.matched_employee?.id ?? 0,
-      recipientName: recipientName,
-      rawRecipientName: raw.recipient ?? '',
-      recipientEmail: raw.matched_employee?.email ?? '',
-      recipientCode: raw.matched_employee?.employee_code ?? '',
+      recipient,
       time_Analysis: raw.process_time_seconds ?? 0,
       page_start: raw.page_start,
       page_end: raw.page_end,

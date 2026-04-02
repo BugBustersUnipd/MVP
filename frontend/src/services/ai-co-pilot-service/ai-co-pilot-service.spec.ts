@@ -52,7 +52,7 @@ describe('AiCoPilotService', () => {
   });
 
   it('should set employees to empty when company is missing', () => {
-    let employees: any[] = [{ id: 1, name: 'Old' }];
+    let employees: any[] = [{ recipientId: 1, recipientName: 'Old', rawRecipientName: 'Old', recipientEmail: '', recipientCode: '' }];
     service.employees$.subscribe((value) => (employees = value));
 
     service.fetchEmployeesByCompany('');
@@ -78,7 +78,7 @@ describe('AiCoPilotService', () => {
     });
 
     expect(employees).toEqual([
-      { id: 10, name: 'Mario', email: 'mario@test.com', employeeCode: 'EMP-1' },
+      { recipientId: 10, recipientName: 'Mario', rawRecipientName: 'Mario', recipientEmail: 'mario@test.com', recipientCode: 'EMP-1' },
     ]);
   });
 
