@@ -225,7 +225,8 @@ describe('AiAssistantService', () => {
     let history: any = null;
     service.currentResultsHistory$.subscribe((value) => (history = value));
 
-    service.createPost(sampleResult);
+    service.setCurrentResult(sampleResult);
+    service.createCurrentPost();
 
     const req = httpMock.expectOne('http://localhost:3000/posts');
     expect(req.request.method).toBe('POST');

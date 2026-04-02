@@ -36,11 +36,11 @@ describe('RisultatoGenerazione', () => {
     currentResult$: new BehaviorSubject<ResultAiAssistant | null>(null),
     currentGenerationError$: new BehaviorSubject<string | null>(null),
     setCurrentResult: vi.fn(),
-    createPost: vi.fn(),
+    createCurrentPost: vi.fn(),
     deletePost: vi.fn(),
     setEvaluation: vi.fn(),
     reuse: vi.fn(),
-    regenerate: vi.fn(),
+    regenerateCurrent: vi.fn(),
     clearGenerationError: vi.fn(),
   };
 
@@ -53,11 +53,11 @@ describe('RisultatoGenerazione', () => {
     aiServiceMock.currentResult$ = currentResult$;
     aiServiceMock.currentGenerationError$ = new BehaviorSubject<string | null>(null);
     aiServiceMock.setCurrentResult.mockClear();
-    aiServiceMock.createPost.mockClear();
+    aiServiceMock.createCurrentPost.mockClear();
     aiServiceMock.deletePost.mockClear();
     aiServiceMock.setEvaluation.mockClear();
     aiServiceMock.reuse.mockClear();
-    aiServiceMock.regenerate.mockClear();
+    aiServiceMock.regenerateCurrent.mockClear();
     aiServiceMock.clearGenerationError.mockClear();
     routerMock.navigate.mockClear();
 
@@ -87,15 +87,15 @@ describe('RisultatoGenerazione', () => {
 
   it('should call createPost on save', () => {
     component.onSalva();
-    expect(aiServiceMock.createPost).toHaveBeenCalledTimes(1);
+    expect(aiServiceMock.createCurrentPost).toHaveBeenCalledTimes(1);
   });
 
-  it('should not call createPost when result is null', () => {
+  it('should not call createCurrentPost when result is null', () => {
     component.result.set(null);
 
     component.onSalva();
 
-    expect(aiServiceMock.createPost).not.toHaveBeenCalled();
+    expect(aiServiceMock.createCurrentPost).not.toHaveBeenCalled();
   });
 
   it('should remove generation and navigate on delete', () => {

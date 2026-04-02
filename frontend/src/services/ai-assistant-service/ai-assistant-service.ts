@@ -362,8 +362,11 @@ export class AiAssistantService {
     console.log(`Valutazione per generazione ${id} impostata a ${evaluation}`);
   }
   
-  createPost(result: ResultAiAssistant): void {
-    const payload = this.serializer.serializeCreatePostRequest(result);
+  createCurrentPost(): void {
+    const current = this.resultSubject.value;
+    if (!current) return;
+
+    const payload = this.serializer.serializeCreatePostRequest(current);
 
     console.log('[createPost] Invio POST /posts con payload:', payload);
 
@@ -373,8 +376,8 @@ export class AiAssistantService {
         const createdPostId = this.serializer.deserializeCreatePostResponseId(response);
 
         const postResult: ResultAiAssistant = {
-          ...result,
-          id: createdPostId > 0 ? createdPostId : result.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
+          ...current,
+          id: createdPostId > 0 ? createdPostId : current.id // Aggiorna l'id con quello del post se disponibile, altrimenti mantiene l'id del generated datum
         };
 
         this.resultSubject.next(postResult);
@@ -389,8 +392,8 @@ export class AiAssistantService {
     });
   }
 
-  regenerate(id: number|null): void {
-    const generationId = Number(id) || 0;
+  regenerateCurrent(): void {
+    const generationId = Number(this.resultSubject.value?.generatedDatumId) || 0;
     if (generationId <= 0) {
       this.notifyGenerationError('Id generazione non valido per la rigenerazione.');
       return;

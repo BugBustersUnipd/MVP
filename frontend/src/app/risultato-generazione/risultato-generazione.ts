@@ -31,30 +31,33 @@ export class RisultatoGenerazione {
 
   // Riferimento unico al result: non viene modificato finche' non si salva.
   result = signal<ResultAiAssistant | null>((history.state?.result as ResultAiAssistant | null) ?? null);
+  
+  // Partial permette di non specificare tutti i campi, ma solo quelli
   pendingModifications: Partial<ResultAiAssistant> = {};
   pendingImagePath = signal<string | null>(null);
-  imagePathForView = computed(() => this.pendingImagePath() ?? (this.result()?.imagePath || '/PlaceHolder-GufoBagnato.jpg'));
+  // Se c'è un'immagine in pending (in modifica), mostra quella, altrimenti quella del risultato
+  imagePathForView = computed(() => this.pendingImagePath() ?? this.result()?.imagePath ?? '');
 
   constructor() {
     if (this.result()) {
-      console.log('Generazione completata, navigazione al risultato con:', this.result());
-
+      // il result preso dallo stato di navigazione (da generatore) viene settato anche nel service, per avere coerenza tra i due
       this.aiService.setCurrentResult(this.result());
-      console.log('Generazione completata, navigazione al risultato con:', this.result());
-
     }
 
+    // attiva durante la permanenza nella pagina: riceve l'ultimo valore presente nel subject del service e mantiene sincronizzazione e aggiornamenti successivi (es websocket)
+    // utile anche da storico-ai-assistant viene fatto il set e qui si riceve il valore aggiornato
     this.aiService.currentResult$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((updated) => {
+        // quando arriva il risultato aggiornato viene impostato e i loading non vengono più mostrati
         this.result.set(updated);
         this.updateImageTitleLoading(updated);
         this.updateContentLoading(updated);
-        window.history.replaceState({ ...(history.state ?? {}), result: updated }, '');//questo serve per mantenere l'oggetto result in memoria anche se l'utente aggiorna la pagina
-        console.log('Generazione completata, navigazione al risultato con:', this.result());
 
+        window.history.replaceState({ ...(history.state ?? {}), result: updated }, '');//questo serve per mantenere l'oggetto result in memoria anche se l'utente aggiorna la pagina
       });
 
+    // come sopra, ma per gli errori
     this.aiService.currentGenerationError$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((errorMessage) => {
@@ -64,12 +67,12 @@ export class RisultatoGenerazione {
         this.aiService.clearGenerationError();
       });
 
+    // all'avvio
     this.updateImageTitleLoading(this.result());
     this.updateContentLoading(this.result());
   }
 
   private updateImageTitleLoading(result: ResultAiAssistant | null): void {
-    console.log('Aggiornamento loading image/title per result:', result);
     if (!result || result.id!== null) {
       this.isImageTitleLoading = false;
       return;
@@ -91,16 +94,13 @@ export class RisultatoGenerazione {
   }
 
   onRigenera(id: number|null): void {
-    this.aiService.regenerate(id);
-    // this.aiService.requireGeneration(this.result?.prompt ?? '', this.result?.tone ?? { id: 0, name: '' }, this.result?.style ?? { id: 0, name: '' }, this.result?.company ?? { id: 0, name: '' }, id);
+    this.aiService.regenerateCurrent();
   }
 
   onSalva(): void {
     const current = this.result();
     if (!current) return;
-
-    this.aiService.createPost(current);
-    // this.router.navigate(['/storico-ai-assistant']);
+    this.aiService.createCurrentPost();
   }
 
   deleteGeneration(): void {
