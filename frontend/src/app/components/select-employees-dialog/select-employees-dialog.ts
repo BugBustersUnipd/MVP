@@ -5,17 +5,7 @@ import { map, Observable } from 'rxjs';
 import { Button } from '../button/button';
 import { Menutendina } from '../menutendina/menutendina';
 import { RecipientInfo } from '../../shared/models/result-split.model';
-
-interface EmployeeMenuOption {
-  id: number;
-  name: string;
-  recipient: RecipientInfo;
-}
-
-export interface SelectEmployeeDialogData {
-  extractedEmployeeName: string;
-  employees$: Observable<RecipientInfo[]>;
-}
+import { EmployeeMenuOption, SelectEmployeeDialogData } from '../../shared/models/result-ai-copilot.model';
 
 @Component({
   selector: 'bb-select-employees-dialog',

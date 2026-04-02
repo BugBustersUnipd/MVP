@@ -35,15 +35,15 @@
 					<div class="matched-grid">
 						<div class="matched-field">
 							<span class="matched-field-label">Nominativo</span>
-							<span class="matched-field-value">{{ row.name || '-' }}</span>
+							<span class="matched-field-value">{{ row.recipient.recipientName || '-' }}</span>
 						</div>
 						<div class="matched-field">
 							<span class="matched-field-label">Username</span>
-							<span class="matched-field-value">{{ row.employeeCode || '-' }}</span>
+							<span class="matched-field-value">{{ row.recipient.recipientCode || '-' }}</span>
 						</div>
 						<div class="matched-field">
 							<span class="matched-field-label">Email</span>
-							<span class="matched-field-value">{{ row.email || '-' }}</span>
+							<span class="matched-field-value">{{ row.recipient.recipientEmail || '-' }}</span>
 						</div>
 					</div>
 				} @else {

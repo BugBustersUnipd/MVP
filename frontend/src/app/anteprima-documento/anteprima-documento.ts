@@ -1,11 +1,12 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { DocSummary } from '../components/doc-summary/doc-summary';
 import { ExtractedEmployeeInfo, ExtractedEmployeeInfoRow } from '../components/extracted-employee-info/extracted-employee-info';
+import { SendDocumentData } from '../shared/models/result-ai-copilot.model';
 import { ResultSplit, State } from '../shared/models/result-split.model';
 import { Button } from '../components/button/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
-import { SendDocumentDialog,SendDocumentData } from '../components/send-document-dialog/send-document-dialog';
+import { SendDocumentDialog} from '../components/send-document-dialog/send-document-dialog';
 import { SelectEmployeesDialog } from '../components/select-employees-dialog/select-employees-dialog';
 import { OtherExtractDocuments, OtherExtractDocumentRow } from '../components/other-extraxt-documents/other-extract-documents';
 import { ToastModule } from 'primeng/toast';
@@ -192,15 +193,19 @@ export class AnteprimaDocumento {
     const recipientConf = result.fieldConfidences?.['recipient'] ?? 0;
     const recipient = result.recipient;
     const row: ExtractedEmployeeInfoRow = {
-      name: recipient?.recipientName ?? '',
+      recipient: recipient || {
+        recipientId: 0,
+        recipientName: '',
+        rawRecipientName: '',
+        recipientEmail: '',
+        recipientCode: '',
+      },
       rawName: recipient?.rawRecipientName ?? '',
       hasMatch: (recipient?.recipientId ?? 0) > 0,
       recipientConfidence: recipientConf > 0 ? recipientConf : null,
-      employeeCode: recipient?.recipientCode ?? '',
-      email: recipient?.recipientEmail ?? '',
     };
 
-    const isEmptyRow = !row.name && !row.rawName && !row.employeeCode && !row.email;
+    const isEmptyRow = !row.recipient.recipientName && !row.rawName && !row.recipient.recipientCode && !row.recipient.recipientEmail;
     return isEmptyRow ? [] : [row];
   }
 

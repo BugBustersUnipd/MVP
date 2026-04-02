@@ -2,14 +2,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Button } from '../button/button';
+import { RecipientInfo } from '../../shared/models/result-split.model';
 
 export interface ExtractedEmployeeInfoRow {
-  name: string;
+  recipient: RecipientInfo;
   rawName: string;
   hasMatch: boolean;
   recipientConfidence: number | null;
-  employeeCode: string;
-  email: string;
 }
 
 @Component({

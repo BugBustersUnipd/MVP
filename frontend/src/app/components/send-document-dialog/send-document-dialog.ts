@@ -3,7 +3,7 @@ import {DynamicDialogRef} from 'primeng/dynamicdialog';
 import {DynamicDialogConfig} from 'primeng/dynamicdialog';
 import { TableModule } from 'primeng/table';
 import { AsyncPipe } from '@angular/common';
-
+import { SendDocumentData } from '../../shared/models/result-ai-copilot.model';
 import { Button} from '../button/button';  
 import { Menutendina } from '../menutendina/menutendina';
 import { Prompt } from '../prompt/prompt';
@@ -13,13 +13,7 @@ import { AiCoPilotService } from '../../../services/ai-co-pilot-service/ai-co-pi
 import { TemplateOption } from '../../shared/models/result-ai-copilot.model';
 
 // Interface per i dati da inviare
-export interface SendDocumentData {
-    messaggio: string;
-    orarioInvio: {  name: string; value: string};
-    fileAttachments: File[];
-    templateId?: number;
-    templateName?: string;
-}
+
 @Component({
     selector: 'app-send-document-dialog',
     templateUrl: './send-document-dialog.html',
