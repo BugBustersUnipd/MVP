@@ -173,7 +173,7 @@ describe('AnteprimaDocumento', () => {
     component.onFieldModified({ field: 'category' as any, value: 'Nuova Categoria' });
     component.saveChanges();
 
-    expect(aiServiceMock.updateDocumentMetadata$).toHaveBeenCalledWith(1, { recipientName: 'Nuovo Nome' });
+    expect(aiServiceMock.updateDocumentMetadata$).toHaveBeenCalledWith(1, { category: 'Nuova Categoria' });
     expect(aiServiceMock.modifyDocumentRange$).not.toHaveBeenCalled();
     expect(aiServiceMock.updateResult).toHaveBeenCalledTimes(1);
     expect(component.isEditable).toBe(false);

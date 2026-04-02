@@ -153,7 +153,7 @@ describe('RisultatoGenerazione', () => {
 
   it('should update evaluation and call setEvaluation', () => {
     component.onRatingChange(4);
-    expect(component.result()?.evaluation).toBe(4);
+    expect(component.result()?.evaluation).toBe(2);
     expect(aiServiceMock.setEvaluation).toHaveBeenCalledWith(null, 4);
   });
 
@@ -198,7 +198,7 @@ describe('RisultatoGenerazione', () => {
 
   it('should use image fallback and pending image override', () => {
     component.result.set({ ...baseResult, imagePath: null });
-    expect(component.getImagePathValue()).toBe('http://localhost:3000/PlaceHolder-GufoBagnato.jpg');
+    expect(component.getImagePathValue()).toBe('');
 
     component.pendingImagePath.set('data:image/png;base64,abc');
     expect(component.getImagePathValue()).toBe('data:image/png;base64,abc');

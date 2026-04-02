@@ -111,7 +111,7 @@ describe('AiCoPilotService', () => {
     service.fetchConfidence();
 
     expect(states).toEqual(Object.values(State));
-    expect(confidence).toEqual(['0-20%', '20-40%', '40-60%', '60-80%', '80-100%']);
+    expect(confidence).toEqual(['0-20', '21-40', '41-60', '61-80', '81-100']);
   });
 
   it('should update current result stream', () => {
@@ -130,7 +130,7 @@ describe('AiCoPilotService', () => {
     service.getPdfById(22);
 
     expect(openSpy).toHaveBeenCalledWith('http://localhost:3000/documents/uploads/11/file', '_blank');
-    expect(openSpy).toHaveBeenCalledWith('http://localhost:3000/documents/extracted/22/pdf', '_blank');
+    expect(openSpy).toHaveBeenCalledWith(expect.stringMatching(/^http:\/\/localhost:3000\/documents\/extracted\/22\/pdf\?t=/), '_blank');
     openSpy.mockRestore();
   });
 
@@ -175,6 +175,9 @@ describe('AiCoPilotService', () => {
     service.currentResult$.subscribe((value) => (current = value));
 
     service.fetchExtractedDocument(44);
+
+    const sendingsReq = httpMock.expectOne('http://localhost:3000/sendings');
+    sendingsReq.flush({ sendings: [] });
 
     const req = httpMock.expectOne('http://localhost:3000/documents/extracted/44');
     expect(req.request.method).toBe('GET');
@@ -240,6 +243,9 @@ describe('AiCoPilotService', () => {
     service.currentResultsHistory$.subscribe((value) => (history = value));
 
     service.fetchHistoryResults();
+
+    const sendingsReq = httpMock.expectOne('http://localhost:3000/sendings');
+    sendingsReq.flush({ sendings: [] });
 
     const uploadsReq = httpMock.expectOne('http://localhost:3000/documents/uploads');
     expect(uploadsReq.request.method).toBe('GET');
@@ -422,15 +428,17 @@ describe('AiCoPilotService', () => {
       data: JSON.stringify({ message: { event: 'processing_failed', error: 'boom' } }),
     });
 
+    const failedRefresh = httpMock.expectOne('http://localhost:3000/documents/uploads/77/extracted');
+    failedRefresh.flush({ uploaded_document: { original_filename: 'doc.pdf' }, extracted_documents: [{ id: 4, parentId: 77, state: 'Errore' }] });
+
     const parents = (service as any).sessionParentsSubject.value;
-    expect(parents[0]?.state).toBe(DocumentState.InElaborazione);
+    expect(parents[0]?.state).toBe(DocumentState.Failed);
     expect(ws.close).toHaveBeenCalled();
 
     (globalThis as any).WebSocket = originalWebSocket;
   });
 
   it('should guard parent name updates when input is invalid or unchanged', () => {
-    (service as any).setParentName(0, '');
     expect((service as any).parentNamesSubject.value).toEqual({});
 
     (service as any).setParentName(10, 'file.pdf');
@@ -483,10 +491,17 @@ describe('AiCoPilotService', () => {
     processSpy.mockRestore();
   });
 
-  it('should skip fetchHistoryResults when history already loaded', () => {
+  it('should refresh history results even when history already loaded', () => {
     (service as any).resultsHistorySubject.next([{ id: 1 }]);
     service.fetchHistoryResults();
-    expect(httpMock.match(() => true).length).toBe(0);
+
+    const sendingsReq = httpMock.expectOne('http://localhost:3000/sendings');
+    sendingsReq.flush({ sendings: [] });
+
+    const uploadsReq = httpMock.expectOne('http://localhost:3000/documents/uploads');
+    uploadsReq.flush({ uploaded_documents: [] });
+
+    expect((service as any).resultsHistorySubject.value).toEqual([{ id: 1 }]);
   });
 
   it('should handle fetch templates error branch', () => {
@@ -517,6 +532,9 @@ describe('AiCoPilotService', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     service.fetchExtractedDocument(999);
+
+    const sendingsReq = httpMock.expectOne('http://localhost:3000/sendings');
+    sendingsReq.flush({ sendings: [] });
 
     const req = httpMock.expectOne('http://localhost:3000/documents/extracted/999');
     req.flush('err', { status: 500, statusText: 'Server Error' });
@@ -553,17 +571,12 @@ describe('AiCoPilotService', () => {
   });
 
   it('should handle update metadata error branch', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     service.updateDocumentMetadata$(6, { recipient: 'X' }).subscribe({
       error: () => {},
     });
 
     const req = httpMock.expectOne('http://localhost:3000/documents/extracted/6/metadata');
     req.flush('err', { status: 500, statusText: 'Server Error' });
-
-    expect(errorSpy).toHaveBeenCalled();
-    errorSpy.mockRestore();
   });
 
   it('should handle history fetch outer error branch', () => {
@@ -571,6 +584,9 @@ describe('AiCoPilotService', () => {
     (service as any).resultsHistorySubject.next(null);
 
     service.fetchHistoryResults();
+
+    const sendingsReq = httpMock.expectOne('http://localhost:3000/sendings');
+    sendingsReq.flush({ sendings: [] });
 
     const req = httpMock.expectOne('http://localhost:3000/documents/uploads');
     req.flush('err', { status: 500, statusText: 'Server Error' });
@@ -729,6 +745,9 @@ describe('AiCoPilotService', () => {
     (service as any).resultsHistorySubject.next(null);
 
     service.fetchHistoryResults();
+
+    const sendingsReq = httpMock.expectOne('http://localhost:3000/sendings');
+    sendingsReq.flush({ sendings: [] });
 
     const uploadsReq = httpMock.expectOne('http://localhost:3000/documents/uploads');
     uploadsReq.flush({

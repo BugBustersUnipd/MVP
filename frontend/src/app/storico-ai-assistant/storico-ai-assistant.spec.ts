@@ -22,9 +22,11 @@ describe('StoricoAiAssistant', () => {
     tones$: null as any,
     styles$: null as any,
     companies$: null as any,
+    allTones$: null as any,
+    allStyles$: null as any,
     currentResultsHistory$: null as any,
-    fetchTonesByCompany: vi.fn(),
-    fetchStylesByCompany: vi.fn(),
+    fetchAllTones: vi.fn(),
+    fetchAllStyles: vi.fn(),
     fetchCompanies: vi.fn(),
     fetchResultsHistory: vi.fn(),
     setCurrentResult: vi.fn(),
@@ -40,12 +42,14 @@ describe('StoricoAiAssistant', () => {
     tones$ = new BehaviorSubject<any[]>([]);
     styles$ = new BehaviorSubject<any[]>([]);
     history$ = new BehaviorSubject<any[]>([]);
+    aiAssistantServiceMock.allTones$ = tones$;
+    aiAssistantServiceMock.allStyles$ = styles$;
     aiAssistantServiceMock.tones$ = tones$;
     aiAssistantServiceMock.styles$ = styles$;
     aiAssistantServiceMock.companies$ = new BehaviorSubject<any[]>([]);
     aiAssistantServiceMock.currentResultsHistory$ = history$;
-    aiAssistantServiceMock.fetchTonesByCompany.mockClear();
-    aiAssistantServiceMock.fetchStylesByCompany.mockClear();
+    aiAssistantServiceMock.fetchAllTones.mockClear();
+    aiAssistantServiceMock.fetchAllStyles.mockClear();
     aiAssistantServiceMock.fetchCompanies.mockClear();
     aiAssistantServiceMock.fetchResultsHistory.mockClear();
     aiAssistantServiceMock.setCurrentResult.mockClear();
@@ -92,8 +96,8 @@ describe('StoricoAiAssistant', () => {
       },
     ]);
 
-    expect(aiAssistantServiceMock.fetchTonesByCompany).toHaveBeenCalledWith(1);
-    expect(aiAssistantServiceMock.fetchStylesByCompany).toHaveBeenCalledWith(1);
+    expect(aiAssistantServiceMock.fetchAllTones).toHaveBeenCalled();
+    expect(aiAssistantServiceMock.fetchAllStyles).toHaveBeenCalled();
     expect(aiAssistantServiceMock.fetchResultsHistory).toHaveBeenCalled();
     expect(component.tonoOptions.length).toBe(1);
     expect(component.stileOptions.length).toBe(1);
@@ -158,7 +162,7 @@ describe('StoricoAiAssistant', () => {
 
     component.openGenerationResult(row);
     expect(aiAssistantServiceMock.setCurrentResult).toHaveBeenCalledWith(row);
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/risultato-generazione'], { state: { result: row } });
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/risultato-generazione']);
   });
 
   it('should handle template filter events and update local filter fields', () => {

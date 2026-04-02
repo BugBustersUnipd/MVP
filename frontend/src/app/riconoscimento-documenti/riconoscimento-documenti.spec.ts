@@ -74,7 +74,7 @@ describe('RiconoscimentoDocumenti', () => {
       id: 1,
       parentId: 10,
       name: 'Cedolino Mario',
-      confidence: '80-100%',
+      confidence: 90,
       category: 'Cedolini',
       state: State.DaValidare,
       company: 'ACME',
