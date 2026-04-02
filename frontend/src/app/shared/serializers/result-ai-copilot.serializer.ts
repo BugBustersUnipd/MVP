@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
 import { ResultAiCopilot, DocumentState } from '../models/result-ai-copilot.model';
-import { ResultSerializer } from './result.serializer';
 import { ResultSplit, State} from '../models/result-split.model';
 @Injectable({
   providedIn: 'root'
 })
-export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot> {
+export class ResultAiCopilotSerializer{
   creaStatoIniziale(file: File): ResultAiCopilot {
     return {
       id: 0, // non ancora assegnato dal backend
