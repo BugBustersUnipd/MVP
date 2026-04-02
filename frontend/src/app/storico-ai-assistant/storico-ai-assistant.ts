@@ -22,7 +22,6 @@ export class StoricoAiAssistant {
   private router = inject(Router);
   private aiService = inject(AiAssistantService);
   private destroyRef = inject(DestroyRef);
-  // selectedCompany: Con
 
   ButtonLabel: string ='Aggiungi';
   Generazioni: ResultAiAssistant[] = [];
