@@ -73,7 +73,7 @@ describe('ResultAiCopilotSerializer', () => {
       status: 'queued',
       confidence: { a: 0.6, b: 0.9 },
       recipient: 'Luca',
-      metadata: { date: '03/2025' },
+      metadata: { competence: '03/2025' },
       created_at: '2025-01-07T00:00:00.000Z',
       uploaded_document_id: 60,
     });

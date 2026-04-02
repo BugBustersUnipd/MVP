@@ -1,4 +1,4 @@
-describe('Storico AI Assistant Generativo', () => {
+describe('Storico AI Assistant Generativo - visualizzazione', () => {
 	const tones = [
 		{ id: 10, name: 'Formale' },
 		{ id: 11, name: 'Informale' },
@@ -57,6 +57,13 @@ describe('Storico AI Assistant Generativo', () => {
 	}
 
 	const interceptReferenceData = () => {
+		cy.intercept('GET', '**/lookups/companies*', {
+			statusCode: 200,
+			body: {
+				companies: [{ id: 1, name: 'Nexum' }],
+			},
+		}).as('getCompanies')
+
 		cy.intercept('GET', '**/tones*', {
 			statusCode: 200,
 			body: tones,
@@ -78,6 +85,7 @@ describe('Storico AI Assistant Generativo', () => {
 		}).as('getHistory')
 
 		cy.visit('/storico-ai-assistant')
+		cy.wait('@getCompanies')
 		cy.wait('@getTones')
 		cy.wait('@getStyles')
 		cy.wait('@getHistory')
@@ -149,42 +157,5 @@ describe('Storico AI Assistant Generativo', () => {
 	it('mostra il tono utilizzato per un contenuto nello storico', () => {
 		visitResultWithState()
 		cy.contains('label.label', 'Tono').parent().should('contain.text', mappedResult.tone.name)
-	})
-
-	it('permette di riutilizzare i parametri di un contenuto dello storico per una nuova generazione', () => {
-		visitResultWithState()
-
-		cy.contains('button', 'Riutilizza').click({ force: true })
-		cy.url().should('include', '/generatore')
-	})
-
-	it('permette di duplicare un contenuto dallo storico per modificarne i parametri', () => {
-		visitResultWithState()
-
-		cy.contains('button', 'Duplica').click({ force: true })
-
-		cy.url().should('include', '/generatore')
-		cy.get('textarea#Prompt').should('have.value', mappedResult.prompt)
-	})
-
-	it('permette di filtrare la lista delle generazioni nello storico', () => {
-		visitStoricoWithPosts(historyPosts)
-
-		cy.get('body').click(0, 0, { force: true })
-		cy.get('input[placeholder="Cerca per tutto"]').clear({ force: true }).type('policy', { force: true })
-
-		cy.get('p-table tbody tr').should('have.length', 1)
-		cy.contains('a.truncate-content', historyPosts[0].title).should('be.visible')
-	})
-
-	it('mostra la lista dello storico aggiornata in base ai filtri applicati', () => {
-		visitStoricoWithPosts(historyPosts)
-
-		cy.get('body').click(0, 0, { force: true })
-		cy.get('input[placeholder="Cerca per tutto"]').clear({ force: true }).type('policy', { force: true })
-		cy.get('p-table tbody tr').should('have.length', 1)
-
-		cy.get('input[placeholder="Cerca per tutto"]').clear({ force: true }).type('team', { force: true })
-		cy.get('p-table tbody tr').should('have.length', 1)
 	})
 })

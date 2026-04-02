@@ -8,6 +8,7 @@ import { Estrattore } from './estrattore/estrattore';
 import { AnteprimaDocumento } from './anteprima-documento/anteprima-documento';
 import { RiconoscimentoDocumenti } from './riconoscimento-documenti/riconoscimento-documenti';
 export const routes: Routes = [
+  { path: '', redirectTo: 'generatore', pathMatch: 'full' },
   { path: 'generatore', component: Generatore },
   { path: 'estrattore', component: Estrattore },
   { path: 'risultato-generazione', component: RisultatoGenerazione },
@@ -16,4 +17,5 @@ export const routes: Routes = [
   { path: 'analytics-dashboard', component: AnalyticsDashboard},
   { path: 'anteprima-documento', component: AnteprimaDocumento },
   { path: 'riconoscimento-documenti', component: RiconoscimentoDocumenti },
+  { path: '**', redirectTo: 'generatore' },
 ];

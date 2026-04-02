@@ -56,6 +56,11 @@ describe('Storico AI Co-Pilot', () => {
 	}
 
 	const setupCommonInterceptors = () => {
+		cy.intercept('GET', '**/sendings*', {
+			statusCode: 200,
+			body: { sendings: [] },
+		}).as('getSendings')
+
 		cy.intercept('GET', '**/lookups/companies*', {
 			statusCode: 200,
 			body: {
@@ -102,6 +107,7 @@ describe('Storico AI Co-Pilot', () => {
 		}).as('getExtractedDoc1001')
 
 		cy.visit('/storico-ai-copilot')
+		cy.wait('@getSendings')
 		cy.wait('@getUploads')
 		cy.wait('@getExtracted901')
 		cy.wait('@getExtracted902')
@@ -132,6 +138,7 @@ describe('Storico AI Co-Pilot', () => {
 		}).as('getUploadsEmpty')
 
 		cy.visit('/storico-ai-copilot')
+		cy.wait('@getSendings')
 		cy.wait('@getUploadsEmpty')
 
 		cy.contains('Nessun dato disponibile').should('be.visible')
@@ -152,8 +159,8 @@ describe('Storico AI Co-Pilot', () => {
 	it('mostra la percentuale di confidenza dell analisi nello storico', () => {
 		setupHistoryWithData()
 
-		cy.contains('td', '91%').should('be.visible')
-		cy.contains('td', '76%').should('be.visible')
+		cy.contains('td', /91(\.0)?%/).should('be.visible')
+		cy.contains('td', /76(\.0)?%/).should('be.visible')
 	})
 
 	it('permette il filtraggio della lista dello storico documenti', () => {

@@ -27,6 +27,7 @@
   "private": true,
   "packageManager": "npm@11.6.2",
   "dependencies": {
+    "@angular/animations": "^21.2.4",
     "@angular/common": "^21.0.0",
     "@angular/compiler": "^21.0.0",
     "@angular/core": "^21.0.0",
@@ -48,9 +49,9 @@
     "@angular/compiler-cli": "^21.0.0",
     "@cypress/schematic": "^5.0.0",
     "@vitest/coverage-v8": "^4.1.2",
+    "cypress": "15.13.0",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8",
-    "cypress": "15.13.0"
+    "vitest": "^4.0.8"
   }
 }

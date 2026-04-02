@@ -82,7 +82,12 @@ describe('RiconoscimentoDocumenti', () => {
       data: new Date('2025-01-10'),
       page_start: 1,
       page_end: 2,
-      recipientName: 'Mario',
+      recipient: {
+        recipientId: 1,
+        recipientName: 'Mario',
+        recipientEmail: 'mario@test.com',
+        recipientCode: 'EMP-1',
+      },
     };
 
     component.DocumentiSplittati = [doc as any];
@@ -149,7 +154,12 @@ describe('RiconoscimentoDocumenti', () => {
         data: new Date('2025-01-10'),
         page_start: 1,
         page_end: 2,
-        recipientName: 'Mario',
+        recipient: {
+          recipientId: 1,
+          recipientName: 'Mario',
+          recipientEmail: 'mario@test.com',
+          recipientCode: 'EMP-1',
+        },
       } as any,
     ];
 
