@@ -1,17 +1,15 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
-import { MenuItem, MessageService } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 
 @Component({
   selector: 'bb-menu',
   imports: [MenuModule],
-  providers: [MessageService],
   templateUrl: './menu.html',
   styleUrl: './menu.css',
 })
 export class Menu {
-  private messageService = inject(MessageService);
   private router = inject(Router);
   items: MenuItem[] | undefined;
   ngOnInit() {
