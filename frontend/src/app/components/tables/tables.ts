@@ -30,6 +30,19 @@ onTitleClick(row: any): void {
   this.titleClick.emit(row);
 }
 
+formatConfidence(value: unknown): string {
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) {
+    return '';
+  }
+
+  const truncated = Math.trunc(num * 10) / 10;
+  return truncated.toLocaleString('en-US', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
+
 openRowMenu(menu: { toggle: (event: Event) => void }, event: Event, row: any): void {
   this.rowMenuItems = this.items.map((item) => this.bindMenuItemToRow(item, row));
   menu.toggle(event);

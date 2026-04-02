@@ -16,9 +16,11 @@ export interface ResultSplit extends Result {
     page_start: number;
     company: string;
     department: string;
+    reason: string;
     month_year: string; // o forse number
     category: string;  // sicuramente altro tipo
     data: Date;
+    data_interna: Date;
     parentId: number;
 }
 

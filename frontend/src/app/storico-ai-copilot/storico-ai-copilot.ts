@@ -180,6 +180,7 @@ export class StoricoAiCopilot {
       rawRecipientName: split.rawRecipientName,
       state: split.state,
       data: split.data,
+      data_interna: split.data_interna,
       recipientId: split.recipientId,
       recipientEmail: split.recipientEmail,
       recipientCode: split.recipientCode,
@@ -187,6 +188,7 @@ export class StoricoAiCopilot {
       page_end: split.page_end,
       page_start: split.page_start,
       department: split.department,
+      reason: split.reason,
       month_year: split.month_year,
     };
   }

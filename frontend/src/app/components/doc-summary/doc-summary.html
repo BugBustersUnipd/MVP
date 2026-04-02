@@ -10,7 +10,7 @@
             <div class="col-md-6">
                 <label class="label">Confidenza media</label>
                 <div class="confidence-pill bg-success text-white rounded-pill text-center py-2">
-                    {{result?.confidence}}
+                    {{ formatConfidence(result?.confidence) }}
                 </div>
             </div>
         </div>
@@ -24,7 +24,17 @@
                     <div class="field-with-confidence">
                         <app-input [editable]="editable" [value]="getFieldValue('category')" (valueChange)="onFieldChange('category', $event)"></app-input>
                         @if (getFieldConfidence('type'); as conf) {
-                            <span class="field-confidence-pill">{{ conf }}%</span>
+                            <span class="field-confidence-pill">{{ formatConfidence(conf) }}%</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="label">Ragione</label>
+                    <div class="field-with-confidence">
+                        <app-input [editable]="editable" [value]="getFieldValue('reason')" (valueChange)="onFieldChange('reason', $event)"></app-input>
+                        @if (getFieldConfidence('reason'); as conf) {
+                            <span class="field-confidence-pill">{{ formatConfidence(conf) }}%</span>
                         }
                     </div>
                 </div>
@@ -34,7 +44,7 @@
                     <div class="field-with-confidence">
                         <app-input [editable]="editable" [value]="getFieldValue('company')" (valueChange)="onFieldChange('company', $event)"></app-input>
                         @if (getFieldConfidence('company'); as conf) {
-                            <span class="field-confidence-pill">{{ conf }}%</span>
+                            <span class="field-confidence-pill">{{ formatConfidence(conf) }}%</span>
                         }
                     </div>
                 </div>
@@ -44,17 +54,27 @@
                     <div class="field-with-confidence">
                         <app-input [editable]="editable" [value]="getFieldValue('department')" (valueChange)="onFieldChange('department', $event)"></app-input>
                         @if (getFieldConfidence('department'); as conf) {
-                            <span class="field-confidence-pill">{{ conf }}%</span>
+                            <span class="field-confidence-pill">{{ formatConfidence(conf) }}%</span>
                         }
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="label">Mese/Anno</label>
+                    <label class="label">Competenza Mese/Anno</label>
                     <div class="field-with-confidence">
                         <app-input [editable]="editable" [value]="getMonthYearValue()" (valueChange)="onFieldChange('month_year', $event)"></app-input>
-                        @if (getFieldConfidence('competence', 'date'); as conf) {
-                            <span class="field-confidence-pill">{{ conf }}%</span>
+                        @if (getFieldConfidence('competence', 'month_year'); as conf) {
+                            <span class="field-confidence-pill">{{ formatConfidence(conf) }}%</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="label">Data documento</label>
+                    <div class="field-with-confidence">
+                        <app-input [editable]="editable" [value]="getInternalDateValue()" (valueChange)="onFieldChange('data_interna', $event)"></app-input>
+                        @if (getFieldConfidence('data_interna', 'date'); as conf) {
+                            <span class="field-confidence-pill">{{ formatConfidence(conf) }}%</span>
                         }
                     </div>
                 </div>

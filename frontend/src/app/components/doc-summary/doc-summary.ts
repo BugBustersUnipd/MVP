@@ -29,6 +29,17 @@ export class DocSummary {
     return null;
   }
 
+  formatConfidence(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(value)) {
+      return '';
+    }
+    const truncated = Math.trunc(value * 10) / 10;
+    return truncated.toLocaleString('en-US', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+  }
+
   getFieldValue(field: keyof ResultSplit, fallback: string = 'Non trovato'): string | number {
     const modified = this.pendingModifications[field];
     if (modified !== undefined && modified !== null) {
@@ -48,10 +59,10 @@ export class DocSummary {
   }
 
   getMonthYearValue(): string {
-    const value = this.getFieldValue('data', '');
+    const value = this.getFieldValue('month_year', 'Non trovato');
     const raw = String(value ?? '').trim();
     if (!raw) {
-      return '';
+      return 'Non trovato';
     }
 
     const monthYearMatch = raw.match(/^(\d{1,2})[\/-](\d{4})$/);
@@ -73,6 +84,31 @@ export class DocSummary {
     }
 
     return raw;
+  }
+
+  getInternalDateValue(): string {
+    const modified = this.pendingModifications.data_interna;
+    const original = this.result?.data_interna;
+    const value = modified ?? original;
+
+    if (value === undefined || value === null) {
+      return 'Non trovato';
+    }
+
+    const raw = String(value).trim();
+    if (!raw) {
+      return 'Non trovato';
+    }
+
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) {
+      return raw;
+    }
+
+    const day = String(parsed.getDate()).padStart(2, '0');
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const year = parsed.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   getPageStartValue(): number | undefined {

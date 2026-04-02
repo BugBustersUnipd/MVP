@@ -175,10 +175,6 @@ export class AnteprimaDocumento {
     this.removedOtherDocumentIds$.next([...current, rowId]);
   }
 
-
-
-
-
   private buildExtractedEmployeeRows(result: ResultSplit | null): ExtractedEmployeeInfoRow[] {
     if (!result) {
       return [];
@@ -362,16 +358,28 @@ export class AnteprimaDocumento {
   }
 
   private buildMetadataUpdates(modifications: Partial<ResultSplit>): Record<string, unknown> {
-  // Solo i campi che il backend accetta in /metadata
-  const METADATA_FIELDS: (keyof ResultSplit)[] = [
-    'category', 'company', 'department', 'month_year', 'name'
-  ];
-  
-  return Object.fromEntries(
-    METADATA_FIELDS
-      .filter(key => key in modifications)
-      .map(key => [key, modifications[key]])
-  );
+  // Solo i campi che il backend accetta in /metadata.
+  // data_interna viene salvata come "date" per allineamento con il payload backend.
+  const METADATA_MAP: Partial<Record<keyof ResultSplit, string>> = {
+    category: 'category',
+    company: 'company',
+    department: 'department',
+    reason: 'reason',
+    month_year: 'competence',
+    name: 'name',
+    data_interna: 'date',
+  };
+
+  return Object.entries(METADATA_MAP).reduce<Record<string, unknown>>((acc, [field, metadataKey]) => {
+    const key = field as keyof ResultSplit;
+    const value = modifications[key];
+
+    if (value !== undefined && value !== null && metadataKey) {
+      acc[metadataKey] = value;
+    }
+
+    return acc;
+  }, {});
 }
 
   private buildRangeUpdates(

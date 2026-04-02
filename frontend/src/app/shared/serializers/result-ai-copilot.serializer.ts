@@ -30,8 +30,9 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
 
    deserializeExtractedDocument(raw: any): ResultSplit {
     const metadata = raw.metadata ?? {};
-    const category = metadata['category'] ?? metadata['type'] ?? '';
-    const competence = metadata['month_year'] ?? metadata['competence'] ?? metadata['date'] ?? '';
+    const category = metadata['type'] ?? '';
+    const competence =  metadata['competence'] ?? metadata['month_year'] ?? '';
+    const reason = metadata['reason'] ?? '';
     const recipientName = raw.matched_employee?.name ?? raw.recipient ?? '';
     const documentName =
       [metadata['name'], raw.name, recipientName]
@@ -54,22 +55,24 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
       page_end: raw.page_end,
       company: metadata['company'] ?? '',
       department: metadata['department'] ?? '',
+      reason: reason,
       month_year: competence,
       category: category,
       data: new Date(raw.created_at),
+      data_interna: metadata['data_interna'] ?? metadata['date'] ?? metadata['data'] ?? '',
       parentId: raw.uploaded_document_id,
     };
   }
 
   private normalizeConfidence(confidence: unknown): number {
     if (typeof confidence === 'number' && Number.isFinite(confidence)) {
-      return confidence <= 1 ? Math.round(confidence * 100) : Math.round(confidence);
+      return confidence <= 1 ? confidence * 100 : confidence;
     }
 
     if (typeof confidence === 'string') {
       const parsed = Number(confidence);
       if (Number.isFinite(parsed)) {
-        return parsed <= 1 ? Math.round(parsed * 100) : Math.round(parsed);
+        return parsed <= 1 ? parsed * 100 : parsed;
       }
       return 0;
     }
@@ -77,12 +80,12 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
     if (confidence && typeof confidence === 'object') {
       const values = Object.values(confidence as Record<string, unknown>)
         .map((v) => (typeof v === 'number' ? v : Number(v)))
-        .filter((v) => Number.isFinite(v) && v > 0);
+        .filter((v) => Number.isFinite(v) && v >= 0);
 
       if (values.length === 0) return 0;
 
       const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
-      return avg <= 1 ? Math.round(avg * 100) : Math.round(avg);
+      return avg <= 1 ? avg * 100 : avg;
     }
 
     return 0;
@@ -93,7 +96,7 @@ export class ResultAiCopilotSerializer extends ResultSerializer<ResultAiCopilot>
     return Object.fromEntries(
       Object.entries(confidence as Record<string, unknown>).map(([k, v]) => {
         const num = typeof v === 'number' ? v : Number(v);
-        const pct = Number.isFinite(num) ? (num <= 1 ? Math.round(num * 100) : Math.round(num)) : 0;
+        const pct = Number.isFinite(num) ? (num <= 1 ? num * 100 : num) : 0;
         return [k, pct];
       })
     );

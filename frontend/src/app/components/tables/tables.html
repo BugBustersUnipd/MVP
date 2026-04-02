@@ -27,7 +27,7 @@
             } @else if (col.type === 'rating' || col.field === 'evaluation' || col.field === 'rating') {
               {{ row[col.field] === -1 ? 'Non valutato' : row[col.field] }}
             } @else if (col.type === 'confidence' || col.field === 'confidence') {
-              {{ row[col.field] }}%
+              {{ formatConfidence(row[col.field]) }}%
             } @else if (col.field === 'State' || col.field === 'state') {
               @if(row[col.field].toLowerCase() === 'pronto'){
                  <p-tag [value]="row[col.field]" class="p-tag-pronto"></p-tag>

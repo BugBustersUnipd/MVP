@@ -84,6 +84,33 @@ describe('ResultAiCopilotSerializer', () => {
     expect(split.month_year).toBe('03/2025');
   });
 
+  it('should include zero confidence fields in object average', () => {
+    const split = serializer.deserializeExtractedDocument({
+      id: 11,
+      status: 'done',
+      confidence: { competence: 1.0, department: 0.0 },
+      metadata: { competence: '02/2025' },
+      created_at: '2025-01-08T00:00:00.000Z',
+      uploaded_document_id: 70,
+    });
+
+    expect(split.confidence).toBe(50);
+  });
+
+  it('should preserve confidence decimals without integer rounding', () => {
+    const split = serializer.deserializeExtractedDocument({
+      id: 12,
+      status: 'done',
+      confidence: { company: 0.996, department: 0.0 },
+      metadata: {},
+      created_at: '2025-01-08T00:00:00.000Z',
+      uploaded_document_id: 71,
+    });
+
+    expect(split.confidence).toBe(49.8);
+    expect(split.fieldConfidences['company']).toBe(99.6);
+  });
+
   it('should fallback confidence to zero on invalid payload', () => {
     const split = serializer.deserializeExtractedDocument({
       id: 10,
