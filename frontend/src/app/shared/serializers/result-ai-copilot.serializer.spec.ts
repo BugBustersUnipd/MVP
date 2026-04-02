@@ -11,10 +11,6 @@ describe('ResultAiCopilotSerializer', () => {
   it('should create initial state from file', () => {
     const result = serializer.creaStatoIniziale(
       new File(['x'], 'cedolino.pdf', { type: 'application/pdf' }),
-      'ACME',
-      'HR',
-      'Cedolini',
-      '01/2025',
     );
 
     expect(result.id).toBe(0);
