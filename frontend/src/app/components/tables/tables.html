@@ -62,9 +62,10 @@
                   Non trovato
                 </span>
             } @else if (col.type === 'splitid') {
-                <span class="truncate-content" [title]="(row.parentId?.Id ?? row.parentId)?.toString() + '.' + row.id.toString()">
+                <a href="#" class="truncate-content" [title]="(row.parentId?.Id ?? row.parentId)?.toString() + '.' + row.id.toString()" (click)="$event.preventDefault(); onTitleClick(row)">
                   {{ (row.parentId?.Id ?? row.parentId)?.toString() + '.' + row.id.toString() }}
-                </span>
+                </a>
+                <i class="pi pi-link"></i>
             } @else {
                 <span class="truncate-content" [title]="getPlainCellText(row, col)">
                   {{ getPlainCellText(row, col) }}
