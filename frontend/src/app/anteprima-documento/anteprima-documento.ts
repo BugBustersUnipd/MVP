@@ -27,7 +27,10 @@ export class AnteprimaDocumento {
   isEditable: boolean = false;
   result$ = new BehaviorSubject<ResultSplit | null>((history.state?.result as ResultSplit | null) ?? null);
   extractedEmployeeRows$ = new BehaviorSubject<ExtractedEmployeeInfoRow[]>([]);
-
+  dialogService = inject(DialogService);
+  messageService = inject(MessageService);
+  ref: DynamicDialogRef | null = null;
+  templates$ = this.aiService.templates$;
   get result(): ResultSplit | null {
     return this.result$.value;
   }
@@ -172,11 +175,9 @@ export class AnteprimaDocumento {
     this.removedOtherDocumentIds$.next([...current, rowId]);
   }
 
-  dialogService = inject(DialogService);
-  messageService = inject(MessageService);
-  ref: DynamicDialogRef | null = null;
 
-  templates$ = this.aiService.templates$;
+
+
 
   private buildExtractedEmployeeRows(result: ResultSplit | null): ExtractedEmployeeInfoRow[] {
     if (!result) {
@@ -353,7 +354,7 @@ export class AnteprimaDocumento {
       });
     }
 
-    Object.assign(this.result, this.pendingModifications);
+    this.result = { ...this.result!, ...this.pendingModifications };
     this.aiService.updateResult(this.result);
     this.pendingModifications = {};
     this.messageService.add({severity:'success', summary: 'Modifiche salvate'});

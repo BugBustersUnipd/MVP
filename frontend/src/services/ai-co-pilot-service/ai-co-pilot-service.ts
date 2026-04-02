@@ -80,7 +80,7 @@ export class AiCoPilotService {
   }
 
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
-      const reactiveResult  = this.serializer.creaStatoIniziale(file, company, department, category, competence_period); // Crea un ResultAiCopilot iniziale
+      const reactiveResult  = this.serializer.creaStatoIniziale(file); // Crea un ResultAiCopilot iniziale
       reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
       const endpoint = isPdf ? `${API_BASE}/documents/split` : `${API_BASE}/documents/process_file`; // Se è PDF uso endpoint split, altrimenti direttamente process_file che accetta anche altri tipi di file e faccio il processing senza passare dallo split. In questo modo supporto anche file di testo, excel, ecc. senza doverli splittare in pagine.
