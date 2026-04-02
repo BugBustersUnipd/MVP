@@ -3,12 +3,7 @@ import { Component } from '@angular/core';
 import { EventEmitter, Input, Output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
-
-export interface OtherExtractDocumentRow {
-	id: number | null;
-	recipientName: string;
-	confidence: number;
-}
+import { OtherExtractDocumentRow } from '../../shared/models/result-split.model';
 
 @Component({
 	selector: 'app-other-extract-documents',

@@ -16,6 +16,12 @@ export interface ExtractedEmployeeInfoRow {
     recipientConfidence: number | null;
 }
 
+export interface OtherExtractDocumentRow {
+    id: number | null;
+    recipientName: string;
+    confidence: number;
+}
+
 export interface ResultSplit extends Result {
     name: string;
     state: State;
