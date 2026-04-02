@@ -9,6 +9,13 @@ export interface RecipientInfo {
     recipientCode: string;
 }
 
+export interface ExtractedEmployeeInfoRow {
+    recipient: RecipientInfo;
+    rawName: string;
+    hasMatch: boolean;
+    recipientConfidence: number | null;
+}
+
 export interface ResultSplit extends Result {
     name: string;
     state: State;

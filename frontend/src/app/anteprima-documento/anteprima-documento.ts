@@ -1,8 +1,8 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { DocSummary } from '../components/doc-summary/doc-summary';
-import { ExtractedEmployeeInfo, ExtractedEmployeeInfoRow } from '../components/extracted-employee-info/extracted-employee-info';
+import { ExtractedEmployeeInfo } from '../components/extracted-employee-info/extracted-employee-info';
 import { SendDocumentData } from '../shared/models/result-ai-copilot.model';
-import { ResultSplit, State } from '../shared/models/result-split.model';
+import { ExtractedEmployeeInfoRow, RecipientInfo, ResultSplit, State } from '../shared/models/result-split.model';
 import { Button } from '../components/button/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageService } from 'primeng/api';
@@ -14,7 +14,6 @@ import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot
 import { CommonModule } from '@angular/common';
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RecipientInfo } from '../shared/models/result-split.model';
 
 @Component({
   selector: 'app-anteprima-documento',
