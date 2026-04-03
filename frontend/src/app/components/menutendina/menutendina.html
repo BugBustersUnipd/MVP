@@ -21,7 +21,7 @@
                 pButton
                 icon="pi pi-trash"
                 class="p-button-text p-button-danger p-button-sm ms-auto"
-                (click)="$event.stopPropagation();remove.emit(option.id)">
+                (click)="$event.stopPropagation(); emitRemove(option.id)">
             </button>
         </div>
     </ng-template>

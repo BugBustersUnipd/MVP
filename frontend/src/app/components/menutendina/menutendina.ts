@@ -25,18 +25,8 @@ export class SelectComponent {
   @Output() addNew = new EventEmitter<void>();
   @Output() remove = new EventEmitter<number>();
 
-  removeOption(option: { id: number; name: string }, event: Event) {
-     // evita selezione dell'item
-
-    if (!this.options) return;
-
-    this.options = this.options.filter(o => o !== option);
-
-    // Se l'opzione eliminata era selezionata, la deseleziono
-    if (this.selected === option) {
-      this.selected = null;
-      this.selectedChange.emit(null);
-    }
+  emitRemove(optionId: number): void {
+    this.remove.emit(optionId);
   }
 
   emitAddNew(): void {
