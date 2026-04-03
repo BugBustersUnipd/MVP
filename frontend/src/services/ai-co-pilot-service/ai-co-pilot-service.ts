@@ -145,97 +145,106 @@ export class AiCoPilotService {
    * @private
    */
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
-      const reactiveResult  = this.serializer.creaStatoIniziale(file); // Crea un ResultAiCopilot iniziale
-      reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-      const endpoint = isPdf ? `${API_BASE}/documents/split` : `${API_BASE}/documents/process_file`; // Se è PDF uso endpoint split, altrimenti direttamente process_file che accetta anche altri tipi di file e faccio il processing senza passare dallo split. In questo modo supporto anche file di testo, excel, ecc. senza doverli splittare in pagine.
-      const fileParam = isPdf ? 'pdf' : 'file';
+    const reactiveResult  = this.serializer.creaStatoIniziale(file); // Crea un ResultAiCopilot iniziale
+    reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
+    const { endpoint, formData } = this.buildUploadRequest(file, company, department, category, competence_period);
 
-      const formData = new FormData(); 
-      formData.append(fileParam, file); // Il backend si aspetta il file con chiave 'pdf' se è un PDF, altrimenti 'file' per altri tipi di documento.
-      formData.append('category', category);
-      formData.append('company', company);
-      formData.append('department', department);
-      formData.append('competence_period', competence_period); // e passo tutti gli altri metadati
-      
-      this.http.post<any>(endpoint, formData).subscribe({
-        next: (response) => {
-          const uploadedDocumentId = Number(response?.uploaded_document_id) || 0; // uploadedDocumentId è Id del doc padre
-          reactiveResult.id = uploadedDocumentId;
+    this.http.post<any>(endpoint, formData).subscribe({
+      next: (response) => this.handleProcessDocumentResponse(response, reactiveResult, temporaryParentId),
+      error: (error) => {
+        this.removeSessionParent(temporaryParentId);
+        throw new Error('Errore durante l\'upload del documento: ' + error.message);
+      }
+    });
 
-          // Se si passa un file duplicato ovvero già analizzato, il backend ritorna job_id vuoto, verrà dunque restituito lo stesso documento già analizzato. Senza far ripartire analisi.
-          if (!response.job_id) {
-            reactiveResult.state = DocumentState.Completato;
-            this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.Completato);
-            if (uploadedDocumentId > 0) {
-              this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
-              this.updateSessionParentState(uploadedDocumentId, DocumentState.Completato);
-            }
-            return;
-          }
+    return reactiveResult;
+  }
 
-          reactiveResult.state = DocumentState.InElaborazione; // Stato In Elaborazione del padre poichè il job_id è presente poichè il doc non è duplicato.
-          this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione); // Sostituisco l'id temporaneo del parent con quello reale arrivato dal backend in risposta, e imposto stato in elaborazione
-          // Faccio la subscribe al canale websocket passandogli il job_id.
-          this.subscribeToJobUpdates(
-            response.job_id,
-            (payload, socket) => {
-              const evt = payload.event;
+  private buildUploadRequest(file: File, company: string, department: string, category: string, competence_period: string): { endpoint: string; formData: FormData } {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const endpoint = isPdf ? `${API_BASE}/documents/split` : `${API_BASE}/documents/process_file`; // Se è PDF uso endpoint split, altrimenti direttamente process_file che accetta anche altri tipi di file e faccio il processing senza passare dallo split. In questo modo supporto anche file di testo, excel, ecc. senza doverli splittare in pagine.
+    const fileParam = isPdf ? 'pdf' : 'file';
 
-              if (evt === 'document_processed') {  //se viene tornato document processed, recupero l'id del documento estratto e recupero il documento ed aggiorno la history.
-                const extractedDocumentId = Number(payload.extracted_document_id) || 0;
-                if (extractedDocumentId > 0) {
-                  this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
-                }
-              }
-              if (evt === 'split_completed') { // se lo split è completato, aggiorno lo stato del documento padre
-                if (payload.status === 'error') { // se lo split da errore
-                  reactiveResult.state = DocumentState.Failed;
-                  if (uploadedDocumentId > 0) {
-                    this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
-                    this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed);
-                  }
-                  socket.close();
-                  return;
-                }
-                if (uploadedDocumentId > 0) {
-                  this.refreshExtractedDocumentsForUpload(uploadedDocumentId); // faccio la get per recuparare i documenti estratti, li deserializzo e li inserisco nella history, gli split dunque vengono mostrati subito anche se il processing non è finito
-                  this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione); // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione
-                }
-              }
-              if (evt === 'processing_completed') { // processing_completed arriva una volta a fine job; status decide se successo o errore.
-                const completedWithError = payload.status === 'error';
-                reactiveResult.state = completedWithError ? DocumentState.Failed : DocumentState.Completato;
-                if (uploadedDocumentId > 0) {
-                  this.refreshExtractedDocumentsForUpload(uploadedDocumentId);// faccio la get per recuparare i documenti estratti, li deserializzo e li inserisco nella history.
-                  this.updateSessionParentState(uploadedDocumentId, completedWithError ? DocumentState.Failed : DocumentState.Completato); // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione
-                }
-                socket.close();
-              }
-              if (evt === 'processing_failed') { // fallback legacy: backend attuale usa processing_completed con status=error
-                console.error('Elaborazione fallita per il documento:', payload.error);
-                reactiveResult.state = DocumentState.Failed;
-                if (uploadedDocumentId > 0) {
-                  this.refreshExtractedDocumentsForUpload(uploadedDocumentId);// faccio la get per recuparare i documenti estratti, li deserializzo e li inserisco nella history.
-                  this.updateSessionParentState(uploadedDocumentId, DocumentState.Failed); // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione
-                }
-                socket.close();
-              }
-            },
-            () => {
-              // Immediate sync avoids UI lag if split artifacts are already persisted.
-              if (uploadedDocumentId > 0) {
-                this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
-              }
-            }
-          );
-        },
-        error: (error) => {
-          this.removeSessionParent(temporaryParentId);
-          throw new Error('Errore durante l\'upload del documento: ' + error.message);
+    const formData = new FormData();
+    formData.append(fileParam, file); // Il backend si aspetta il file con chiave 'pdf' se è un PDF, altrimenti 'file' per altri tipi di documento.
+    formData.append('category', category);
+    formData.append('company', company);
+    formData.append('department', department);
+    formData.append('competence_period', competence_period); // e passo tutti gli altri metadati
+
+    return { endpoint, formData };
+  }
+
+  private handleProcessDocumentResponse(response: any, reactiveResult: ResultAiCopilot, temporaryParentId: number): void {
+    const uploadedDocumentId = Number(response?.uploaded_document_id) || 0; // uploadedDocumentId è Id del doc padre
+    reactiveResult.id = uploadedDocumentId;
+
+    // Se si passa un file duplicato ovvero già analizzato, il backend ritorna job_id vuoto, verrà dunque restituito lo stesso documento già analizzato. Senza far ripartire analisi.
+    if (!response.job_id) {
+      this.syncUploadedDocumentState(uploadedDocumentId, DocumentState.Completato, reactiveResult);
+      this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.Completato);
+      return;
+    }
+
+    reactiveResult.state = DocumentState.InElaborazione; // Stato In Elaborazione del padre poichè il job_id è presente poichè il doc non è duplicato.
+    this.replacePendingParentId(temporaryParentId, uploadedDocumentId, DocumentState.InElaborazione); // Sostituisco l'id temporaneo del parent con quello reale arrivato dal backend in risposta, e imposto stato in elaborazione
+    this.subscribeToJobUpdates(
+      response.job_id,
+      (payload, socket) => this.handleProcessDocumentJobUpdate(payload, socket, uploadedDocumentId, reactiveResult),
+      () => {
+        // Immediate sync avoids UI lag if split artifacts are already persisted.
+        if (uploadedDocumentId > 0) {
+          this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
         }
-      });
-      return reactiveResult;
+      }
+    );
+  }
+
+  private handleProcessDocumentJobUpdate(payload: any, socket: WebSocket, uploadedDocumentId: number, reactiveResult: ResultAiCopilot): void {
+    const evt = payload.event;
+
+    if (evt === 'document_processed') {  //se viene tornato document processed, recupero l'id del documento estratto e recupero il documento ed aggiorno la history.
+      const extractedDocumentId = Number(payload.extracted_document_id) || 0;
+      if (extractedDocumentId > 0) {
+        this.fetchExtractedDocumentAndUpsert(extractedDocumentId);
+      }
+    }
+
+    if (evt === 'split_completed') { // se lo split è completato, aggiorno lo stato del documento padre
+      if (payload.status === 'error') { // se lo split da errore
+        this.syncUploadedDocumentState(uploadedDocumentId, DocumentState.Failed, reactiveResult);
+        socket.close();
+        return;
+      }
+
+      if (uploadedDocumentId > 0) {
+        this.refreshExtractedDocumentsForUpload(uploadedDocumentId); // faccio la get per recuparare i documenti estratti, li deserializzo e li inserisco nella history, gli split dunque vengono mostrati subito anche se il processing non è finito
+        this.updateSessionParentState(uploadedDocumentId, DocumentState.InElaborazione); // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione
+      }
+    }
+
+    if (evt === 'processing_completed') { // processing_completed arriva una volta a fine job; status decide se successo o errore.
+      const completedWithError = payload.status === 'error';
+      this.syncUploadedDocumentState(uploadedDocumentId, completedWithError ? DocumentState.Failed : DocumentState.Completato, reactiveResult);
+      socket.close();
+    }
+
+    if (evt === 'processing_failed') { // fallback legacy: backend attuale usa processing_completed con status=error
+      console.error('Elaborazione fallita per il documento:', payload.error);
+      this.syncUploadedDocumentState(uploadedDocumentId, DocumentState.Failed, reactiveResult);
+      socket.close();
+    }
+  }
+
+  private syncUploadedDocumentState(uploadedDocumentId: number, state: DocumentState, reactiveResult?: ResultAiCopilot): void {
+    if (reactiveResult) {
+      reactiveResult.state = state;
+    }
+
+    if (uploadedDocumentId > 0) {
+      this.refreshExtractedDocumentsForUpload(uploadedDocumentId);
+      this.updateSessionParentState(uploadedDocumentId, state);
+    }
   }
 
     /**

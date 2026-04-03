@@ -66,8 +66,8 @@
                   Non trovato
                 </span>
             } @else if (col.type === 'splitid') {
-                <a href="#" class="truncate-content" [title]="(row.parentId?.Id ?? row.parentId)?.toString() + '.' + row.id.toString()" (click)="$event.preventDefault(); onTitleClick(row)">
-                  {{ (row.parentId?.Id ?? row.parentId)?.toString() + '.' + row.id.toString() }}
+                <a href="#" class="truncate-content" [title]="row.id.toString()" (click)="$event.preventDefault(); onTitleClick(row)">
+                  {{ row.id.toString() }}
                 </a>
                 <i class="pi pi-link"></i>
             } @else {

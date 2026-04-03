@@ -238,7 +238,7 @@ export class AnteprimaDocumento {
             extracted_document_id: this.result.id,
             recipient_id: this.result.recipient.recipientId,
             sent_at: this.resolveSentAt(result.orarioInvio.value).toISOString(),
-            subject: result.templateName || `Invio documento ${this.result.name ?? ''}`.trim(),
+            subject: result.templateName || `Invio documento ${this.result.category ?? ''}`.trim(),
             body: result.messaggio,
             template_id: result.templateId,
           })
@@ -380,7 +380,6 @@ export class AnteprimaDocumento {
     department: 'department',
     reason: 'reason',
     month_year: 'competence',
-    name: 'name',
     data_interna: 'date',
   };
 

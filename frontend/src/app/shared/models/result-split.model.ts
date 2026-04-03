@@ -23,7 +23,6 @@ export interface OtherExtractDocumentRow {
 }
 
 export interface ResultSplit extends Result {
-    name: string;
     state: State;
     confidence: number;
     fieldConfidences: Record<string, number>;

@@ -40,14 +40,8 @@ export class ResultAiCopilotSerializer{
       recipientEmail: raw.matched_employee?.email ?? '',
       recipientCode: raw.matched_employee?.employee_code ?? '',
     };
-    const documentName =
-      [metadata['name'], raw.name, recipientName]
-        .map((value) => (typeof value === 'string' ? value.trim() : ''))
-        .find((value) => value.length > 0) ?? `Documento ${raw.id}`;
-
     return {
       id: raw.id,
-      name: documentName,
       state: this.mapStatus(raw.status),
       confidence: this.normalizeConfidence(raw.confidence),
       fieldConfidences: this.normalizeFieldConfidences(raw.confidence),

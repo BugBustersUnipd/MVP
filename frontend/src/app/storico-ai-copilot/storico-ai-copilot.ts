@@ -42,7 +42,7 @@ export class StoricoAiCopilot {
     this.selectedCompanySubject,
   ]).pipe(
     map(([documents, searchvalue, dates, selectedDocument, selectedCompany]) =>
-      documents.filter((g) => {
+      documents.filter((g: any) => {
         const normalizedSearch = searchvalue.toLowerCase();
         const matchSearch =
           !searchvalue ||
@@ -165,8 +165,8 @@ export class StoricoAiCopilot {
     return date.getTime();
   }
 
-  private toStoricoRow(split: ResultSplit): ResultSplit {
-    const originalDocumentName = this.parentNames[split.parentId] || split.name;
+  private toStoricoRow(split: ResultSplit): any {
+    const originalDocumentName = this.parentNames[split.parentId];
 
     return {
       company: split.company,

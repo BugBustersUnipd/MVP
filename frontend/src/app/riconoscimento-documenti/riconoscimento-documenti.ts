@@ -195,7 +195,6 @@ export class RiconoscimentoDocumenti {
       doc.parentId,
       parentNameFromHistory,
       parentNameFromSession,
-      doc.name,
       doc.category,
       doc.company,
       doc.department,
@@ -265,7 +264,7 @@ export class RiconoscimentoDocumenti {
       const first = children[0];
       const minPage = Math.min(...children.map((child) => child.page_start));
       const maxPage = Math.max(...children.map((child) => child.page_end));
-      const parentName = this.parentNames[parentId] || first.name;
+      const parentName = this.parentNames[parentId];
       const parentPages = this.parentPageCounts[parentId] ?? (maxPage - minPage + 1);
 
       return {
