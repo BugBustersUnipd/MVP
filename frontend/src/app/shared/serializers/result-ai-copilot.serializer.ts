@@ -23,9 +23,6 @@ export class ResultAiCopilotSerializer{
       ResultSplit: [],
     } as ResultAiCopilot;
   }
-  deserialize(result: ResultAiCopilot): unknown[] {
-    throw new Error('ResultAiCopilotSerializer.deserialize not implemented yet');
-  }
 
    deserializeExtractedDocument(raw: any): ResultSplit {
     const metadata = raw.metadata ?? {};

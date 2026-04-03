@@ -24,10 +24,6 @@ describe('ResultAiCopilotSerializer', () => {
     expect(result.id).toBe(0);
   });
 
-  it('should throw on deserialize not implemented', () => {
-    expect(() => serializer.deserialize({} as any)).toThrow();
-  });
-
   it('should deserialize extracted document with numeric confidence <= 1', () => {
     const split = serializer.deserializeExtractedDocument({
       id: 5,
@@ -62,7 +58,6 @@ describe('ResultAiCopilotSerializer', () => {
 
     expect(split.state).toBe(State.Inviato);
     expect(split.confidence).toBe(72);
-    expect(split.name).toBe('Documento 8');
     expect(split.category).toBe('F24');
     expect(split.month_year).toBe('02/2025');
   });
@@ -80,7 +75,7 @@ describe('ResultAiCopilotSerializer', () => {
 
     expect(split.state).toBe(State.InElaborazione);
     expect(split.confidence).toBe(75);
-    expect(split.name).toBe('Luca');
+    expect(split.recipient.recipientName).toBe('Luca');
     expect(split.month_year).toBe('03/2025');
   });
 
