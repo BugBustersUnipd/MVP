@@ -2,6 +2,7 @@ FROM node:24
 
 WORKDIR /app
 
+
 # Installiamo la CLI globalmente nel container
 RUN npm install -g @angular/cli@21
 

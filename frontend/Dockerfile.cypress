@@ -1,0 +1,16 @@
+FROM cypress/browsers:latest-arm64
+
+WORKDIR /app
+
+# Installiamo la CLI globalmente nel container
+RUN npm install -g @angular/cli@21
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 4200
+
+# Default: serve. Usabile anche con npm run cypress:run
+CMD ["ng", "serve", "--host", "0.0.0.0", "--poll", "2000"]
