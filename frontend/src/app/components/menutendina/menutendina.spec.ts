@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
-import { Menutendina } from './menutendina';
+import { SelectComponent } from './menutendina';
 
-describe('Menutendina', () => {
-  let component: Menutendina;
-  let fixture: ComponentFixture<Menutendina>;
+describe('SelectComponent', () => {
+  let component: SelectComponent;
+  let fixture: ComponentFixture<SelectComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Menutendina]
+      imports: [SelectComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Menutendina);
+    fixture = TestBed.createComponent(SelectComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

@@ -12,7 +12,7 @@ import { Button } from '../button/button';
   templateUrl: './menutendina.html',
   styleUrl: './menutendina.css',
 })
-export class Menutendina {
+export class SelectComponent {
   @Input() options: { id: number; name: string }[] | null | undefined;
   @Input() label: string='';
   @Input() selected: any;

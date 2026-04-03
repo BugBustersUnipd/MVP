@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { Menutendina } from '../components/menutendina/menutendina';
+import { SelectComponent } from '../components/menutendina/menutendina';
 import { Button } from '../components/button/button';
 import { Prompt } from '../components/prompt/prompt';
 import { AddDialog, AddDialogSaveData, AddDialogType } from '../components/add-dialog/add-dialog';
@@ -14,7 +14,7 @@ import { AiAssistantService } from '../../services/ai-assistant-service/ai-assis
 
 @Component({
   selector: 'app-generatore',
-  imports: [FormsModule, Prompt, Menutendina, ButtonModule, Button, AsyncPipe, AddDialog],
+  imports: [FormsModule, Prompt, SelectComponent, ButtonModule, Button, AsyncPipe, AddDialog],
   templateUrl: './generatore.html',
   styleUrl: './generatore.css',
 })

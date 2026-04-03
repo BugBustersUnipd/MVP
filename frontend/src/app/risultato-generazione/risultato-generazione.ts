@@ -6,7 +6,7 @@ import { Button } from '../components/button/button';
 import { Editor } from '../components/editor/editor';
 import { Prompt } from '../components/prompt/prompt';
 import { Valutazione } from '../components/valutazione/valutazione';
-import { Menutendina } from '../components/menutendina/menutendina';
+import { SelectComponent } from '../components/menutendina/menutendina';
 import { Dialog } from '../components/dialog/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-risultato-generazione',
-  imports: [ImageTitle, FormsModule, Button, Prompt, Editor, Valutazione, Menutendina, CommonModule, Dialog],
+  imports: [ImageTitle, FormsModule, Button, Prompt, Editor, Valutazione, SelectComponent, CommonModule, Dialog],
   templateUrl: './risultato-generazione.html',
   styleUrl: './risultato-generazione.css',
 })

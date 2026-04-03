@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { Button } from '../button/button';
-import { Menutendina } from '../menutendina/menutendina';
+import { SelectComponent } from '../menutendina/menutendina';
 import { Prompt } from '../prompt/prompt';
 import { SendDocumentDialog } from './send-document-dialog';
 import { AiCoPilotService } from '../../../services/ai-co-pilot-service/ai-co-pilot-service';
@@ -110,7 +110,7 @@ describe('SendDocumentDialog', () => {
   it('should open add dialog when first menutendina emits addNew', () => {
     fixture.detectChanges();
 
-    const menuDes = fixture.debugElement.queryAll(By.directive(Menutendina));
+    const menuDes = fixture.debugElement.queryAll(By.directive(SelectComponent));
     menuDes[0].componentInstance.addNew.emit();
 
     expect(component.addDialogVisible).toBe(true);

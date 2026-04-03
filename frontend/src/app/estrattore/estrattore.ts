@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AsyncPipe } from '@angular/common';
-import { Menutendina } from '../components/menutendina/menutendina';
+import { SelectComponent } from '../components/menutendina/menutendina';
 import { InputComponent } from '../components/input/input';
 import { MonthYearComponent } from '../components/month-year/month-year';
 import { Upload } from '../components/upload/upload';
@@ -16,7 +16,7 @@ import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot
 
 @Component({
   selector: 'app-estrattore',
-  imports: [FormsModule, Upload, Menutendina, InputComponent, MonthYearComponent, Button, AsyncPipe, ToastModule],
+  imports: [FormsModule, Upload, SelectComponent, InputComponent, MonthYearComponent, Button, AsyncPipe, ToastModule],
   providers: [MessageService],
   templateUrl: './estrattore.html',
   styleUrl: './estrattore.css',

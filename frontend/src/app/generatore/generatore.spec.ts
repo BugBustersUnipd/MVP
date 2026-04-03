@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 import { AddDialog } from '../components/add-dialog/add-dialog';
 import { Button } from '../components/button/button';
-import { Menutendina } from '../components/menutendina/menutendina';
+import { SelectComponent } from '../components/menutendina/menutendina';
 import { Prompt } from '../components/prompt/prompt';
 import { Generatore } from './generatore';
 import { AiAssistantService } from '../../services/ai-assistant-service/ai-assistant-service';
@@ -166,7 +166,7 @@ describe('Generatore', () => {
     const promptDe = fixture.debugElement.query(By.directive(Prompt));
     promptDe.componentInstance.promptChange.emit('Prompt da template');
 
-    const menuDes = fixture.debugElement.queryAll(By.directive(Menutendina));
+    const menuDes = fixture.debugElement.queryAll(By.directive(SelectComponent));
     const selectedCompany = { id: 9, name: 'TemplateCo' };
     menuDes[0].componentInstance.selectedChange.emit(selectedCompany);
 
@@ -182,7 +182,7 @@ describe('Generatore', () => {
 
     const openSpy = vi.spyOn(component, 'openAddDialog');
     const removeSpy = vi.spyOn(component, 'removeOption');
-    const menuDes = fixture.debugElement.queryAll(By.directive(Menutendina));
+    const menuDes = fixture.debugElement.queryAll(By.directive(SelectComponent));
 
     menuDes[1].componentInstance.remove.emit(11);
     menuDes[1].componentInstance.addNew.emit();

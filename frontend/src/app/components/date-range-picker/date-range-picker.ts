@@ -2,12 +2,12 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Button } from '../button/button';
 import { DatePicker } from 'primeng/datepicker';
-import { Menutendina } from '../menutendina/menutendina';
+import { SelectComponent } from '../menutendina/menutendina';
 
 @Component({
   selector: 'app-date-range-picker',
   standalone: true,
-  imports: [FormsModule, Button, DatePicker, Menutendina],
+  imports: [FormsModule, Button, DatePicker, SelectComponent],
   templateUrl: './date-range-picker.html',
   styleUrls: ['./date-range-picker.css'],
 })

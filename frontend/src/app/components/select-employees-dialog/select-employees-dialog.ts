@@ -3,13 +3,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { map, Observable } from 'rxjs';
 import { Button } from '../button/button';
-import { Menutendina } from '../menutendina/menutendina';
+import { SelectComponent } from '../menutendina/menutendina';
 import { RecipientInfo } from '../../shared/models/result-split.model';
 import { EmployeeMenuOption, SelectEmployeeDialogData } from '../../shared/models/result-ai-copilot.model';
 
 @Component({
   selector: 'bb-select-employees-dialog',
-  imports: [Menutendina, Button, AsyncPipe],
+  imports: [SelectComponent, Button, AsyncPipe],
   templateUrl: './select-employees-dialog.html',
   styleUrl: './select-employees-dialog.css'
 })

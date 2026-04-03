@@ -5,7 +5,7 @@ import { TableModule } from 'primeng/table';
 import { AsyncPipe } from '@angular/common';
 import { SendDocumentData } from '../../shared/models/result-ai-copilot.model';
 import { Button} from '../button/button';  
-import { Menutendina } from '../menutendina/menutendina';
+import { SelectComponent } from '../menutendina/menutendina';
 import { Prompt } from '../prompt/prompt';
 import { Observable } from 'rxjs';
 import { AddDialog,AddDialogType, AddDialogSaveData } from '../add-dialog/add-dialog';
@@ -19,7 +19,7 @@ import { TemplateOption } from '../../shared/models/result-ai-copilot.model';
     templateUrl: './send-document-dialog.html',
     styleUrl: './send-document-dialog.css',
     providers: [],
-    imports: [TableModule, Button, Menutendina, Prompt, AsyncPipe, AddDialog]
+    imports: [TableModule, Button, SelectComponent, Prompt, AsyncPipe, AddDialog]
 })
 export class SendDocumentDialog {
     public ref: DynamicDialogRef= inject(DynamicDialogRef);
