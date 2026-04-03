@@ -130,7 +130,7 @@ describe('AnteprimaDocumento', () => {
       otherRows = rows;
     });
 
-    component.extractedEmployeeRows = [{ name: "A", email: "a@a", employeeCode: "1", rawName: "A Raw", hasMatch: true, recipientConfidence: 85 }];
+    component.extractedEmployeeRows = [{ recipientName: 'A', recipientEmail: 'a@a', employeeCode: '1', rawRecipientName: 'A Raw', hasMatch: true, recipientConfidence: 85 } as any];
     aiServiceMock.otherExtractedDocuments$.next([{ id: 1, recipientName: 'Mario', confidence: 80 }]);
 
     component.handleRemoveExtractedEmployeeRow(0);
@@ -307,6 +307,6 @@ describe('AnteprimaDocumento', () => {
     });
 
     expect(component.result?.recipient.recipientName).toBe('Nuovo Destinatario');
-    expect(component.extractedEmployeeRows[0]?.name).toBe('Nuovo Destinatario');
+    expect(component.extractedEmployeeRows[0]?.recipient?.recipientName).toBe('Nuovo Destinatario');
   });
 });
