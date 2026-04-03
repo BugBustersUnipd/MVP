@@ -93,7 +93,7 @@ describe('AI Co-Pilot - anteprima documento e destinatari', () => {
 		}).as('getSiblings')
 	}
 
-	const visitAnteprima = (rawExtracted = rawExtractedA) => {
+	const visitAnteprima = (rawExtracted: any = rawExtractedA) => {
 		setupAnteprimaInterceptors(rawExtracted)
 
 		cy.visit('/anteprima-documento', {
