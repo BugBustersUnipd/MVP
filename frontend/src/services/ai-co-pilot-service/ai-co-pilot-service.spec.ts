@@ -13,7 +13,7 @@ describe('AiCoPilotService', () => {
   let httpMock: HttpTestingController;
 
   const serializerMock = {
-    creaStatoIniziale: () => ({ id: -1, name: 'mock', pages: 0, state: 'in_coda', ResultSplit: [] }),
+    createInitialState: () => ({ id: -1, name: 'mock', pages: 0, state: 'in_coda', ResultSplit: [] }),
     deserializeExtractedDocument: (raw: any) => raw,
   };
 

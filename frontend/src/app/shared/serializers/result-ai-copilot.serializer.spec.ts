@@ -9,7 +9,7 @@ describe('ResultAiCopilotSerializer', () => {
   });
 
   it('should create initial state from file', () => {
-    const result = serializer.creaStatoIniziale(
+    const result = serializer.createInitialState(
       new File(['x'], 'cedolino.pdf', { type: 'application/pdf' }),
     );
 

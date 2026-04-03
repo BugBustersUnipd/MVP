@@ -5,7 +5,7 @@ import { ResultSplit, State} from '../models/result-split.model';
   providedIn: 'root'
 })
 export class ResultAiCopilotSerializer{
-  creaStatoIniziale(file: File): ResultAiCopilot {
+  createInitialState(file: File): ResultAiCopilot {
     return {
       id: 0, // non ancora assegnato dal backend
       name: file.name,

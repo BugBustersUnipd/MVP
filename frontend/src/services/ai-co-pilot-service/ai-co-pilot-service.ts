@@ -145,7 +145,7 @@ export class AiCoPilotService {
    * @private
    */
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
-    const reactiveResult  = this.serializer.creaStatoIniziale(file); // Crea un ResultAiCopilot iniziale
+    const reactiveResult  = this.serializer.createInitialState(file); // Crea un ResultAiCopilot iniziale
     reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
     const { endpoint, formData } = this.buildUploadRequest(file, company, department, category, competence_period);
 
