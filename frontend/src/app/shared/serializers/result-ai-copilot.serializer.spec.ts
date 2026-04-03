@@ -18,12 +18,6 @@ describe('ResultAiCopilotSerializer', () => {
     expect(result.ResultSplit).toEqual([]);
   });
 
-  it('should serialize from payload file', () => {
-    const result = serializer.serialize([new File(['x'], 'file.csv')]);
-    expect(result.name).toBe('file.csv');
-    expect(result.id).toBe(0);
-  });
-
   it('should deserialize extracted document with numeric confidence <= 1', () => {
     const split = serializer.deserializeExtractedDocument({
       id: 5,

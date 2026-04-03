@@ -14,15 +14,6 @@ export class ResultAiCopilotSerializer{
       ResultSplit: [],
     } as ResultAiCopilot;
   }
-    serialize(payload: unknown[]): ResultAiCopilot {
-    return {
-      id: 0,
-      name: this.asFile(payload[0]).name,
-      pages: 0,
-      state: DocumentState.InCoda,
-      ResultSplit: [],
-    } as ResultAiCopilot;
-  }
 
    deserializeExtractedDocument(raw: any): ResultSplit {
     const metadata = raw.metadata ?? {};
