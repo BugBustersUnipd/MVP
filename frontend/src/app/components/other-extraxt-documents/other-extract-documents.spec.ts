@@ -28,4 +28,10 @@ describe('OtherExtractDocuments', () => {
 
 		expect(emitSpy).toHaveBeenCalledWith(2);
 	});
+
+	it('should format confidence with one decimal place', () => {
+		expect(component.formatConfidence(82)).toBe('82.0');
+		expect(component.formatConfidence(82.37)).toBe('82.3');
+		expect(component.formatConfidence(null)).toBe('');
+	});
 });

@@ -147,6 +147,43 @@ describe('StoricoAiCopilot', () => {
     expect(rows.length).toBe(1);
   });
 
+  it('should not match search term from hidden confidence decimals', () => {
+    component.Documents = [
+      {
+        id: 1,
+        parentId: 10,
+        company: 'ACME',
+        category: 'Cedolini',
+        name: 'estratto_2_p1-1.pdf',
+        confidence: 57.028571428571425,
+        recipient: {
+          recipientId: 0,
+          recipientName: '',
+          rawRecipientName: '',
+          recipientEmail: '',
+          recipientCode: '',
+        },
+        fieldConfidences: {},
+        state: State.DaValidare,
+        data: new Date('2025-01-10'),
+        data_interna: new Date('2025-01-10'),
+        time_Analysis: 20,
+        page_start: 1,
+        page_end: 1,
+        department: 'HR',
+        reason: 'Payroll',
+        month_year: '01/2025',
+      },
+    ] as any;
+
+    (component as any).documentsSubject.next(component.Documents);
+    component.onSearchChange('14');
+
+    let rows: ResultSplit[] = [];
+    component.FilteredDocuments$.subscribe((value) => (rows = value));
+    expect(rows.length).toBe(0);
+  });
+
   it('should navigate to result when filtered row has a matching split', () => {
     (component as any).resultSplits = [
       {

@@ -21,7 +21,7 @@
 			<tr>
 				<td>{{ row.id }}</td>
 				<td>{{ row.recipientName }}</td>
-				<td>{{ row.confidence }}%</td>
+				<td>{{ formatConfidence(row.confidence) }}%</td>
 				<td class="actions-cell">
 					<button
 						type="button"

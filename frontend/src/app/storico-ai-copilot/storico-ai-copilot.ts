@@ -44,13 +44,14 @@ export class StoricoAiCopilot {
     map(([documents, searchvalue, dates, selectedDocument, selectedCompany]) =>
       documents.filter((g: any) => {
         const normalizedSearch = searchvalue.toLowerCase();
+        const confidenceForSearch = this.formatConfidenceForSearch(g.confidence);
         const matchSearch =
           !searchvalue ||
-          g.name.toLowerCase().includes(normalizedSearch) ||
+          (g.name ?? '').toLowerCase().includes(normalizedSearch) ||
           g.id!.toString().toLowerCase().includes(normalizedSearch) ||
-          g.confidence.toString().toLowerCase().includes(normalizedSearch) ||
+          confidenceForSearch.includes(normalizedSearch) ||
           (g.recipient?.recipientName ?? '').toLowerCase().includes(normalizedSearch) ||
-          g.state.toLowerCase().includes(normalizedSearch);
+          (g.state ?? '').toLowerCase().includes(normalizedSearch);
         const matchDocument = !selectedDocument || g.category === selectedDocument;
         const matchCompany = !selectedCompany || g.company === selectedCompany;
         const matchDate =
@@ -198,6 +199,19 @@ export class StoricoAiCopilot {
    * @param split Documento split sorgente.
    * @returns Riga pronta per visualizzazione e filtri.
    */
+  private formatConfidenceForSearch(value: unknown): string {
+    const num = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(num)) {
+      return '';
+    }
+
+    const truncated = Math.trunc(num * 10) / 10;
+    return truncated.toLocaleString('en-US', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).toLowerCase();
+  }
+
   private toStoricoRow(split: ResultSplit): any {
     const originalDocumentName = this.parentNames[split.parentId];
 
