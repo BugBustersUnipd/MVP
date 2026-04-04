@@ -12,36 +12,6 @@ import { CreateSendingPayload, DocumentState, ResultAiCopilot, TemplateOption } 
 const API_BASE = 'http://localhost:3000'; // URL base del backend API (in produzione sostituire con URL reale)
 const WS_URL = 'ws://localhost:3000/cable'; // URL WebSocket per ActionCable (in produzione usare wss://)
 
-/**
- * AiCoPilotService - Servizio principale per elaborazione e gestione documenti
- * 
- * Questo servizio gestisce l'intero ciclo di vita di upload, processamento e analisi
- * dei documenti. Fornisce aggiornamenti realtime tramite WebSocket e mantiene uno
- * stato reattivo dei documenti nella sessione corrente.
- * 
- * Responsabilita principali:
- * - Orchestrazione upload e processamento documenti
- * - Tracciamento realtime dei job tramite ActionCable/WebSocket
- * - Gestione template per invio/generazione
- * - Gestione metadati e opzioni di filtro
- * - Lookup dipendenti/destinatari e gestione invii
- * 
- * Gestione stato:
- * Il servizio usa RxJS BehaviorSubject per mantenere stato reattivo, permettendo ai
- * componenti di sottoscriversi alle variazioni senza polling. Tra gli observable principali:
- * - currentResult$: documento attualmente selezionato per anteprima/modifica
- * - currentSessionParents$: elenco documenti caricati (documenti padre)
- * - currentResultsHistory$: storico completo dei documenti estratti/processati
- * - templates$: template email disponibili
- * 
- * Gestione ID temporanei:
- * Durante l'upload vengono assegnati ID negativi temporanei per mostrare subito i
- * documenti in UI. Quando il backend restituisce l'ID reale, quello temporaneo viene
- * sostituito senza interrompere l'esperienza utente.
- * 
- * @injectable
- * @providedIn 'root' - servizio singleton a livello root
- */
 @Injectable({
   providedIn: 'root',
 })
@@ -104,23 +74,6 @@ export class AiCoPilotService {
   private otherExtractedDocumentsSubject = new BehaviorSubject<ResultSplit[]>([]);
   otherExtractedDocuments$ = this.otherExtractedDocumentsSubject.asObservable();
 
-
-  /**
-   * Carica e processa piu file per l'analisi documentale.
-   * 
-   * Orchestrazione del caricamento multiplo:
-   * 1. Crea ID negativi temporanei per feedback UI immediato
-   * 2. Notifica i documenti pendenti tramite currentBatchParentIds$
-   * 3. Processa ogni file singolarmente gestendo le transizioni di stato
-   * 4. Gestisce sia PDF (con split) sia file non PDF (processamento diretto)
-   * 
-   * @param {File[]} files - Array di file da caricare
-   * @param {string} company - Azienda associata al documento
-   * @param {string} department - Reparto associato al documento
-   * @param {string} category - Categoria del contenuto
-   * @param {string} competence_period - Periodo di competenza
-   * @returns {void}
-   */
   public uploadFiles(files: File[], company: string, department: string, category: string, competence_period: string): void {
     this.currentBatchTempIds.clear(); //cleara gli id assegnati temporaneamente.
     this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds)); //notifica tutti i subscriber che la batch è cambiata (ora vuota)
@@ -131,19 +84,6 @@ export class AiCoPilotService {
     }
     this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds)); // notifica tutti i subscriber con gli id temporanei appena creati, la UI fa vedere i documenti IN CODA intanto.
   }
-
-  /**
-   * Metodo interno che processa un singolo file.
-   * 
-   * Gestisce il flusso completo per un documento:
-   * - costruisce stato iniziale
-   * - sceglie endpoint corretto (split PDF vs processing diretto)
-   * - invia il file al backend
-   * - si sottoscrive agli aggiornamenti realtime via WebSocket
-   * - gestisce le transizioni di stato durante il ciclo di vita del job
-   * 
-   * @private
-   */
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
     const reactiveResult  = this.serializer.createInitialState(file); // Crea un ResultAiCopilot iniziale
     reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
@@ -246,18 +186,6 @@ export class AiCoPilotService {
       this.updateSessionParentState(uploadedDocumentId, state);
     }
   }
-
-    /**
-     * Crea un documento padre temporaneo con ID negativo.
-     * 
-     * Serve a mostrare feedback immediato in UI appena parte l'upload, prima
-     * che il backend risponda con l'ID reale. Successivamente l'ID negativo
-     * viene sostituito con quello definitivo.
-     * 
-     * @private
-     * @param {File} file - File caricato
-     * @returns {number} ID negativo temporaneo assegnato
-     */
   private addPendingParent(file: File): number { // crea parent temporaneo con id negativo e stato "In coda", lo aggiunge alla lista dei parent della sessione e ritorna l'id temporaneo assegnato.
     const id = this.tempParentId--;
     const parent: ResultAiCopilot = {
@@ -271,18 +199,6 @@ export class AiCoPilotService {
     this.setParentName(id, file.name);
     return id;
   }
-
-  /**
-   * Sostituisce l'ID temporaneo con l'ID reale restituito dal backend.
-   * 
-   * Quando l'upload e confermato, aggiorna i riferimenti dall'ID negativo
-   * temporaneo all'ID reale e imposta anche lo stato del documento.
-   * 
-   * @private
-   * @param {number} temporaryParentId - ID temporaneo assegnato in fase di upload
-   * @param {number} realParentId - ID reale restituito dal backend
-   * @param {DocumentState} state - Nuovo stato del documento
-   */
   private replacePendingParentId(temporaryParentId: number, realParentId: number, state: DocumentState): void { // Sostituisco l'id temporaneo del parent con quello reale arrivato dal backend in risposta, e imposto uno stato al documentoi padre.
     const updated = this.sessionParentsSubject.value.map((parent) =>
       parent.id === temporaryParentId ? { ...parent, id: realParentId, state } : parent
@@ -432,18 +348,7 @@ export class AiCoPilotService {
       });
     });
   }
-    /**
-     * Recupera e mostra un singolo documento estratto tramite ID.
-     * 
-     * Usato in navigazione verso anteprima/dettaglio documento:
-     * 1. aggiorna i documenti programmati
-     * 2. recupera il documento dal backend
-     * 3. risolve correttamente lo stato "Inviato/Programmato"
-     * 4. emette il risultato su currentResult$
-     * 
-     * @param {number} id - ID del documento estratto
-     * @returns {void}
-     */
+
 
   private refreshScheduledDocuments$(): Observable<void> { // recupera i sendings dal database e aggiorna la mappa dei documenti programmati, con solo i documenti che hanno data di invio futura, lavora con resolveScheuledState per aggiornare lo stato dei documenti estratti che risultano programmati.
     return this.http.get<any>(`${API_BASE}/sendings`).pipe(
@@ -474,16 +379,7 @@ export class AiCoPilotService {
       error: (err) => console.error('Errore nel recupero dei documenti fratelli:', err),
     });
   }
-    /**
-     * Recupera tutti i documenti fratelli dello stesso documento padre.
-     * 
-     * Ottiene la lista completa dei documenti con lo stesso parentId,
-     * escludendo opzionalmente quello attualmente visualizzato.
-     * 
-     * @param {number} parentId - ID del documento padre
-     * @param {number} [currentResultId] - ID documento corrente da escludere (opzionale)
-     * @returns {void}
-     */
+
 
   /** POST /documents/uploads/:id/retry */ 
   public retryDocumentProcessing(uploadedDocumentId: number): void { // rianalizza un documento già caricato, viene utilizzato quando un documento è in stato di errore.
@@ -547,15 +443,7 @@ export class AiCoPilotService {
       error: (err) => console.error('Errore nel riavvio del processamento:', err),
     });
   }
-    /**
-     * Riprova il processamento di un documento padre caricato.
-     * 
-     * Reinvio del job dopo errore o su richiesta utente, con aggiornamenti
-     * realtime via WebSocket e gestione completa degli stati.
-     * 
-     * @param {number} uploadedDocumentId - ID del documento padre da riprocessare
-     * @returns {void}
-     */
+
 
   /** POST /documents/extracted/:id/retry */
   public retryExtractedDocumentProcessing(extractedDocumentId: number): void { //il metodo viene utilizzato per rianalizzare un documento già splittato, ma che risulta in stato di errore.
@@ -588,15 +476,7 @@ export class AiCoPilotService {
       error: (err) => console.error('Errore nel riavvio della rianalisi:', err),
     });
   }
-    /**
-     * Riprova l'analisi di un singolo documento estratto in errore.
-     * 
-     * Utile quando fallisce solo una parte (pagina/sezione) del documento
-     * senza dover rilanciare l'intero processo del documento padre.
-     * 
-     * @param {number} extractedDocumentId - ID del documento estratto da riprocessare
-     * @returns {void}
-     */
+
 
   /** DELETE /documents/uploads/:id */
   public deleteUploadedDocument(uploadedDocumentId: number): void { // il metodo elimina un documento padre, e dunque elimina anche tutti i suoi documenti figli estratti. Chiama la delete, si sottoscrive e appena riceve la conferma dell'eliminazione, rimuove il documento padre e i suoi figli dalla view senza dover fare un refresh completo della pagina.
@@ -609,15 +489,7 @@ export class AiCoPilotService {
       error: (err) => console.error('Errore durante eliminazione documento:', err),
     });
   }
-    /**
-     * Elimina un documento padre e tutti i documenti estratti figli.
-     * 
-     * Esegue una cancellazione a cascata e aggiorna subito lo stato locale UI
-     * senza richiedere refresh completo della pagina.
-     * 
-     * @param {number} uploadedDocumentId - ID del documento padre da eliminare
-     * @returns {void}
-     */
+
 
 
   /** POST /templates */
@@ -859,288 +731,3 @@ export class AiCoPilotService {
   }
 
 }
-/*
- * DOCUMENTAZIONE TECNICA ESTESA (SEZIONE PER MANUTENZIONE E ONBOARDING)
- * Questa sezione e stata aggiunta per migliorare la tracciabilita del comportamento del servizio.
- * Contiene note operative, regole di manutenzione e checklist per debug e sviluppo futuro.
- * Nota 1: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 2: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 3: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 4: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 5: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 6: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 7: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 8: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 9: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 10: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 11: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 12: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 13: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 14: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 15: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 16: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 17: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 18: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 19: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 20: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 21: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 22: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 23: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 24: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 25: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 26: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 27: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 28: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 29: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 30: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 31: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 32: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 33: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 34: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 35: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 36: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 37: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 38: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 39: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 40: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 41: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 42: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 43: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 44: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 45: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 46: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 47: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 48: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 49: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 50: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 51: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 52: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 53: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 54: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 55: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 56: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 57: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 58: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 59: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 60: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 61: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 62: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 63: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 64: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 65: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 66: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 67: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 68: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 69: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 70: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 71: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 72: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 73: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 74: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 75: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 76: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 77: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 78: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 79: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 80: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 81: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 82: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 83: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 84: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 85: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 86: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 87: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 88: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 89: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 90: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 91: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 92: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 93: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 94: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 95: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 96: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 97: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 98: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 99: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 100: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 101: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 102: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 103: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 104: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 105: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 106: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 107: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 108: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 109: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 110: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 111: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 112: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 113: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 114: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 115: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 116: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 117: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 118: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 119: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 120: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 121: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 122: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 123: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 124: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 125: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 126: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 127: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 128: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 129: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 130: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 131: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 132: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 133: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 134: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 135: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 136: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 137: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 138: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 139: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 140: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 141: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 142: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 143: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 144: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 145: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 146: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 147: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 148: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 149: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 150: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 151: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 152: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 153: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 154: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 155: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 156: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 157: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 158: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 159: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 160: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 161: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 162: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 163: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 164: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 165: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 166: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 167: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 168: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 169: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 170: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 171: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 172: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 173: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 174: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 175: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 176: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 177: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 178: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 179: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 180: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 181: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 182: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 183: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 184: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 185: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 186: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 187: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 188: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 189: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 190: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 191: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 192: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 193: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 194: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 195: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 196: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 197: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 198: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 199: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 200: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 201: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 202: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 203: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 204: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 205: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 206: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 207: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 208: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 209: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 210: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 211: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 212: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 213: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 214: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 215: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 216: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 217: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 218: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 219: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 220: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 221: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 222: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 223: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 224: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 225: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 226: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 227: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 228: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 229: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 230: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 231: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 232: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 233: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 234: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 235: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 236: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 237: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 238: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 239: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 240: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 241: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 242: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 243: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 244: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 245: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 246: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 247: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 248: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 249: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 250: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 251: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 252: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 253: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 254: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 255: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 256: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 257: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 258: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 259: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 260: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 261: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 262: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 263: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 264: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 265: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 266: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- * Nota 267: per modifiche ai flussi asincroni, controllare race condition tra callback HTTP e callback WebSocket.
- * Nota 268: evitare side effect nei metodi di sola lettura; mantenere separazione netta tra query e command.
- * Nota 269: in caso di errore API, uniformare i messaggi utente e non esporre dettagli interni del backend.
- * Nota 270: quando si introducono nuovi campi nel modello, aggiornare serializer, mapping e test end-to-end.
- * Nota 271: mantenere gli observable pubblici in sola lettura e centralizzare le next() dentro il servizio.
- * Nota 272: documentare sempre le transizioni di stato (in coda, in elaborazione, completato, errore, programmato).
- * Nota 273: verificare che le subscription abbiano ciclo di vita controllato e rilascio risorse coerente.
- * Nota 274: in presenza di id temporanei, garantire sostituzione atomica con id reale per evitare inconsistenze UI.
- * Nota 275: mantenere naming dei metodi esplicito; i metodi con effetti collaterali devono dichiararlo chiaramente.
- * Nota 276: aggiungere logging diagnostico solo nei punti ad alto valore e con messaggi orientati alla triage.
- * Nota 277: ogni nuova integrazione realtime va validata con fallback HTTP per resilienza a rete instabile.
- * Nota 278: prima di refactor complessi, fissare snapshot comportamentale con test su casi felici e casi errore.
- * Nota 279: tenere allineati commenti, contratti API e comportamento effettivo per ridurre debito tecnico.
- * Nota 280: validare sempre la coerenza tra stato locale (BehaviorSubject) e stato backend dopo ogni mutazione.
- */
