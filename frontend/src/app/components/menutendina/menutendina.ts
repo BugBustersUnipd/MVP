@@ -13,6 +13,7 @@ import { Button } from '../button/button';
   styleUrl: './menutendina.css',
 })
 export class SelectComponent {
+  @Input() emptyMessage: string = 'Nessun elemento trovato';
   @Input() options: { id: number; name: string }[] | null | undefined;
   @Input() label: string='';
   @Input() selected: any;
