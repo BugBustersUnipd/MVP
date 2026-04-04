@@ -19,15 +19,7 @@ export class ResultAiCopilotSerializer{
       ResultSplit: [],
     } as ResultAiCopilot;
   }
-    serialize(payload: unknown[]): ResultAiCopilot {
-    return {
-      id: 0,
-      name: this.asFile(payload[0]).name,
-      pages: 0,
-      state: DocumentState.InCoda,
-      ResultSplit: [],
-    } as ResultAiCopilot;
-  }
+
   deserialize(result: ResultAiCopilot): unknown[] {
     throw new Error('ResultAiCopilotSerializer.deserialize not implemented yet');
   }
@@ -45,14 +37,9 @@ export class ResultAiCopilotSerializer{
       recipientEmail: raw.matched_employee?.email ?? '',
       recipientCode: raw.matched_employee?.employee_code ?? '',
     };
-    const documentName =
-      [metadata['name'], raw.name, recipientName]
-        .map((value) => (typeof value === 'string' ? value.trim() : ''))
-        .find((value) => value.length > 0) ?? `Documento ${raw.id}`;
 
     return {
       id: raw.id,
-      name: documentName,
       state: this.mapStatus(raw.status),
       confidence: this.normalizeConfidence(raw.confidence),
       fieldConfidences: this.normalizeFieldConfidences(raw.confidence),
