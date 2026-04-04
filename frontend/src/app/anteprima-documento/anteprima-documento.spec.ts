@@ -139,7 +139,7 @@ describe('AnteprimaDocumento', () => {
     component.handleOpenSplitPdf();
 
     expect(aiServiceMock.getOriginalPdfById).toHaveBeenCalledWith(11);
-    expect(aiServiceMock.getPdfById).toHaveBeenCalledWith(1, 11);
+    expect(aiServiceMock.getPdfById).toHaveBeenCalledWith(1);
   });
 
   it('should show error when pdf ids are missing', () => {
