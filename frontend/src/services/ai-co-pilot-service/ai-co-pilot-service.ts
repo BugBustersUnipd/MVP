@@ -99,7 +99,7 @@ export class AiCoPilotService {
    * @returns Stato reattivo iniziale del documento padre.
    */
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
-    const reactiveResult  = this.serializer.createInitialState(file); // Crea un ResultAiCopilot iniziale
+    const reactiveResult  = this.createInitialState(file); // Crea un ResultAiCopilot iniziale
     reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
     const { endpoint, formData } = this.buildUploadRequest(file, company, department, category, competence_period);
 
@@ -231,16 +231,26 @@ export class AiCoPilotService {
    */
   private addPendingParent(file: File): number { // crea parent temporaneo con id negativo e stato "In coda", lo aggiunge alla lista dei parent della sessione e ritorna l'id temporaneo assegnato.
     const id = this.tempParentId--;
-    const parent: ResultAiCopilot = {
+    const parent: ResultAiCopilot = { ...this.createInitialState(file), id };
+    this.sessionParentsSubject.next([...this.sessionParentsSubject.value, parent]);
+    this.setParentName(id, file.name);
+    return id;
+  }
+
+  /**
+   * Crea lo stato iniziale locale di un documento appena caricato.
+   * @param file File selezionato in upload.
+   * @param id Id del documento da assegnare allo stato iniziale.
+   * @returns Documento padre inizializzato in coda.
+   */
+  private createInitialState(file: File, id = 0): ResultAiCopilot {
+    return {
       id,
       name: file.name,
       pages: 0,
       state: DocumentState.InCoda,
       ResultSplit: [],
-    };
-    this.sessionParentsSubject.next([...this.sessionParentsSubject.value, parent]);
-    this.setParentName(id, file.name);
-    return id;
+    } as ResultAiCopilot;
   }
 
   /**
