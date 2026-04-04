@@ -26,7 +26,8 @@ export class Estrattore implements OnInit {
   private aiService = inject(AiCoPilotService);
   private messageService = inject(MessageService);
   companies$ = this.aiService.companies$;
-
+  accept = '.pdf,.csv,.jpg,.jpeg,.png';
+  subtitleText = '(pdf, csv, jpg, jpeg, png)';
   selectedCategory: string | undefined= '';
   selectedCompany: any = null;
   selectedDepartment: string = '';

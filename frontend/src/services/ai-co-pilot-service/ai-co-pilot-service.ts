@@ -695,8 +695,33 @@ export class AiCoPilotService {
    * @param id Id del documento estratto.
    */
   public getPdfById(id: number): void {
+    if (this.isExtractedFromPdf(id)) {
+       window.open(`${API_BASE}/documents/extracted/${id}/pdf?t=${Date.now()}`, '_blank');
+      return;
+    }
 
-    window.open(`${API_BASE}/documents/extracted/${id}/pdf?t=${Date.now()}`, '_blank');
+    const split = (this.resultsHistorySubject.value ?? []).find((row) => row.id === id);
+    const parentId = split?.parentId;
+    if (!parentId) {
+      return;
+    }
+
+    window.open(`${API_BASE}/documents/uploads/${parentId}/file?t=${Date.now()}`, '_blank');
+  }
+
+  private isExtractedFromPdf(extractedDocumentId: number): boolean {
+    const split = (this.resultsHistorySubject.value ?? []).find((row) => row.id === extractedDocumentId);
+    const parentId = split?.parentId;
+    if (!parentId) {
+      return false;
+    }
+
+    const parentName = this.parentNamesSubject.value[parentId] ?? '';
+    if (!parentName) {
+      return false;
+    }
+
+    return parentName.toLowerCase().endsWith('.pdf');
   }
 
   /** PATCH /documents/extracted/:id/reassign_range (async) */

@@ -249,4 +249,57 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
     assert_equal 1, payload[:total_documents]
     assert_equal "mario@example.com", payload[:matched_recipient][:email]
   end
+
+  test "does not delete persisted source file after generic processing" do
+    company = Company.first || Company.create!(name: "TestCo")
+    user = User.create!(email: "keep-source@test", name: "Keep Source", username: "keepsource")
+    employee = Employee.create!(user: user, company: company)
+
+    csv = Tempfile.new(["source_keep", ".csv"])
+    csv.write("recipient,amount\nMario Rossi,100\n")
+    csv.rewind
+
+    uploaded_document = UploadedDocument.create!(
+      original_filename: "source_keep.csv",
+      storage_path: csv.path,
+      page_count: 1,
+      checksum: "csv-keep-source-1",
+      file_kind: "csv",
+      employee: employee
+    )
+
+    run = ProcessingRun.create!(
+      job_id: "job-csv-keep-source-1",
+      status: "queued",
+      original_filename: uploaded_document.original_filename,
+      uploaded_document: uploaded_document
+    )
+
+    deleted_paths = []
+    storage_spy = Object.new
+    storage_spy.define_singleton_method(:exist?) { |path| File.exist?(path) }
+    storage_spy.define_singleton_method(:delete) { |path| deleted_paths << path }
+
+    container = FakeContainer.new
+    file_processor = DocumentProcessing::CsvProcessor.new(
+      data_extractor: container.data_extractor,
+      recipient_resolver: container.recipient_resolver
+    )
+
+    DocumentProcessing::ProcessGenericFile.new(
+      notifier: container.notifier,
+      file_storage: storage_spy,
+      generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
+      file_processor: file_processor
+    ).call(
+      file_path: csv.path,
+      job_id: run.job_id,
+      uploaded_document_id: uploaded_document.id
+    )
+
+    assert_equal [], deleted_paths
+    assert File.exist?(csv.path)
+  ensure
+    csv.close! if csv
+  end
 end

@@ -15,11 +15,11 @@ export class Upload {
     @ViewChild('nativeFileInput') nativeFileInput!: ElementRef<HTMLInputElement>;
   private selectedPrimeFiles: File[] = [];
 
-    @Input() accept: string = '.pdf,.csv,.jpg';
+    @Input() accept: string = '.pdf,.csv,.jpg,.jpeg,.png';
     @Input() maxFileSize: number = 10000000; // In byte (es. 10MB)
     @Input() multiple: boolean = true;
     @Input() titleText: string = 'Carica uno o più documenti';
-    @Input() subtitleText: string = '(pdf, csv, jpg)';
+    @Input() subtitleText: string = '(pdf, csv, jpg, jpeg, png)';
 
     @Output() filesSelected = new EventEmitter<File[]>();
     @Output() fileValidationError = new EventEmitter<UploadValidationError>();

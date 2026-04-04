@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { ResultAiCopilot, DocumentState } from '../models/result-ai-copilot.model';
 import { ResultSplit, State} from '../models/result-split.model';
 @Injectable({
   providedIn: 'root'
