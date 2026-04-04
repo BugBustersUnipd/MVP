@@ -37,7 +37,7 @@ export class RisultatoGenerazione {
   // Se c'è un'immagine in pending (in modifica), mostra quella, altrimenti quella del risultato
   imagePathForView = computed(() => this.pendingImagePath() ?? this.result()?.imagePath ?? '');
 
-  ngOnInit() {
+  constructor() {
     if (this.result()) {
       // il result preso dallo stato di navigazione (da generatore) viene settato anche nel service, per avere coerenza tra i due
       this.aiService.setCurrentResult(this.result());
@@ -121,6 +121,11 @@ export class RisultatoGenerazione {
    */
   deleteGeneration(): void {
     this.aiService.deletePost(this.result()?.id ?? 0);
+    this.router.navigate(['/generatore']);
+  }
+
+  discardGeneration(): void {
+    this.aiService.setEvaluation(this.result()?.generatedDatumId ?? null, 1);
     this.router.navigate(['/generatore']);
   }
 
