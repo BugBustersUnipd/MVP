@@ -415,7 +415,7 @@ export class RiconoscimentoDocumenti {
 columns = [
   { field: 'id', header: 'ID' },
   { field: 'confidence', header: 'Confidenza' },
-  { field: 'recipientName', header: 'Destinatario' },
+  { field: 'recipient', header: 'Destinatario' },
   { field: 'state', header: 'Stato' },
   { field: 'department', header: 'Reparto' },
   { field: 'company', header: 'Azienda' },
