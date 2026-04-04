@@ -16,5 +16,10 @@ export interface AnalyticsPeriod {
   providedIn: 'root',
 })
 export abstract class AnalyticsAbstractService {
+  /**
+   * Recupera le metriche analytics per il periodo richiesto.
+   * @param periodo Intervallo temporale da applicare alla query analytics.
+   * @returns Stream di metriche pronte per la visualizzazione.
+   */
   abstract getAnalysis(periodo: AnalyticsPeriod): Observable<AnalyticsMetric[]>;
 }

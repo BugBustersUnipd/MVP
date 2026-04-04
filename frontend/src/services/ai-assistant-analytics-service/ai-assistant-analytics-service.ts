@@ -33,6 +33,11 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
     super();
   }
 
+  /**
+   * Recupera le metriche analytics per il periodo richiesto e aggiorna gli stream locali.
+   * @param periodo Intervallo temporale per il filtro delle metriche.
+   * @returns Observable con la lista aggiornata di metriche.
+   */
   getAnalysis(periodo: AnalyticsPeriod): Observable<AnalyticsMetric[]> {
     let params: any = {};
 
@@ -62,14 +67,27 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
     return this.metricsSubject.asObservable();
   }
 
+  /**
+   * Espone i dati del grafico di utilizzo dei toni.
+   * @returns Observable con etichette e valori del grafico toni.
+   */
   getToneUsageChart(): Observable<AnalyticsChartData> {
     return this.toneUsageChartSubject.asObservable();
   }
 
+  /**
+   * Espone i dati del grafico di utilizzo degli stili.
+   * @returns Observable con etichette e valori del grafico stili.
+   */
   getStyleUsageChart(): Observable<AnalyticsChartData> {
     return this.styleUsageChartSubject.asObservable();
   }
 
+  /**
+   * Converte la risposta backend nella lista di metriche da mostrare in UI.
+   * @param response Payload analytics del backend.
+   * @returns Collezione normalizzata di metriche.
+   */
   private transformToMetrics(response: AiAssistantAnalyticsResponse): AnalyticsMetric[] {
     const data = response.data;
 
@@ -80,6 +98,11 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
     ];
   }
 
+  /**
+   * Converte una mappa key-value in struttura adatta ai grafici.
+   * @param usage Mappa con voce e quantita.
+   * @returns Dati chart con labels e values ordinati per inserimento.
+   */
   private transformUsageToChart(usage: Record<string, number>): AnalyticsChartData {
     const entries = Object.entries(usage ?? {});
 
@@ -89,12 +112,22 @@ export class AiAssistantAnalyticsService extends AnalyticsAbstractService {
     };
   }
 
+  /**
+   * Normalizza una data all'inizio del giorno in formato ISO.
+   * @param date Data di input.
+   * @returns Timestamp ISO alle 00:00:00.000.
+   */
   private toStartOfDayIso(date: Date): string {
     const normalized = new Date(date);
     normalized.setHours(0, 0, 0, 0);
     return normalized.toISOString();
   }
 
+  /**
+   * Normalizza una data alla fine del giorno in formato ISO.
+   * @param date Data di input.
+   * @returns Timestamp ISO alle 23:59:59.999.
+   */
   private toEndOfDayIso(date: Date): string {
     const normalized = new Date(date);
     normalized.setHours(23, 59, 59, 999);

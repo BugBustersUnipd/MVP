@@ -5,6 +5,11 @@ import { ResultSplit, State} from '../models/result-split.model';
   providedIn: 'root'
 })
 export class ResultAiCopilotSerializer{
+  /**
+   * Crea lo stato iniziale locale di un documento appena caricato.
+   * @param file File selezionato in upload.
+   * @returns Documento padre inizializzato in coda.
+   */
   createInitialState(file: File): ResultAiCopilot {
     return {
       id: 0, // non ancora assegnato dal backend
@@ -13,6 +18,18 @@ export class ResultAiCopilotSerializer{
       state: DocumentState.InCoda,
       ResultSplit: [],
     } as ResultAiCopilot;
+  }
+    serialize(payload: unknown[]): ResultAiCopilot {
+    return {
+      id: 0,
+      name: this.asFile(payload[0]).name,
+      pages: 0,
+      state: DocumentState.InCoda,
+      ResultSplit: [],
+    } as ResultAiCopilot;
+  }
+  deserialize(result: ResultAiCopilot): unknown[] {
+    throw new Error('ResultAiCopilotSerializer.deserialize not implemented yet');
   }
 
    deserializeExtractedDocument(raw: any): ResultSplit {
@@ -28,8 +45,14 @@ export class ResultAiCopilotSerializer{
       recipientEmail: raw.matched_employee?.email ?? '',
       recipientCode: raw.matched_employee?.employee_code ?? '',
     };
+    const documentName =
+      [metadata['name'], raw.name, recipientName]
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .find((value) => value.length > 0) ?? `Documento ${raw.id}`;
+
     return {
       id: raw.id,
+      name: documentName,
       state: this.mapStatus(raw.status),
       confidence: this.normalizeConfidence(raw.confidence),
       fieldConfidences: this.normalizeFieldConfidences(raw.confidence),
@@ -48,6 +71,11 @@ export class ResultAiCopilotSerializer{
     };
   }
 
+  /**
+   * Normalizza la confidence in percentuale.
+   * @param confidence Valore confidence in ingresso.
+   * @returns Confidence in percentuale (0-100+).
+   */
   private normalizeConfidence(confidence: unknown): number {
     if (typeof confidence === 'number' && Number.isFinite(confidence)) {
       return confidence <= 1 ? confidence * 100 : confidence;
@@ -75,6 +103,11 @@ export class ResultAiCopilotSerializer{
     return 0;
   }
 
+  /**
+   * Normalizza le confidence per campo in forma percentuale.
+   * @param confidence Oggetto confidence per campo.
+   * @returns Mappa campo -> percentuale confidence.
+   */
   private normalizeFieldConfidences(confidence: unknown): Record<string, number> {
     if (!confidence || typeof confidence !== 'object') return {};
     return Object.fromEntries(
@@ -88,14 +121,31 @@ export class ResultAiCopilotSerializer{
 
 // ─── helpers ──────────────────────────────────────────────────────────────
  
+  /**
+   * Converte un valore in File con fallback.
+   * @param value Valore da convertire.
+   * @param fallback File fallback se non valido.
+   * @returns File valido.
+   */
   asFile(value: unknown, fallback: File = new File([], '')): File {
     return value instanceof File ? value : fallback;
   }
  
+  /**
+   * Converte un valore in stringa con fallback.
+   * @param value Valore da convertire.
+   * @param fallback Valore di fallback.
+   * @returns Stringa normalizzata.
+   */
   asString(value: unknown, fallback: string = ''): string {
     return typeof value === 'string' ? value : fallback;
   }
  
+  /**
+   * Mappa lo status backend nello stato documento usato in frontend.
+   * @param status Stato ricevuto dal backend.
+   * @returns Stato frontend equivalente.
+   */
   private mapStatus(status: string): State {
     switch (status) {
       case 'done':        return State.Pronto;

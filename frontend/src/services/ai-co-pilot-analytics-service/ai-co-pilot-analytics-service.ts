@@ -23,6 +23,11 @@ export class AiCoPilotAnalyticsService extends AnalyticsAbstractService {
 
   private httpClient = inject(HttpClient);
 
+  /**
+   * Recupera le metriche analytics del co-pilot per il periodo richiesto.
+   * @param periodo Intervallo temporale per il filtro delle metriche.
+   * @returns Observable con la lista aggiornata di metriche.
+   */
   getAnalysis(periodo: AnalyticsPeriod): Observable<AnalyticsMetric[]> {
     let params: any = {};
 
@@ -44,6 +49,11 @@ export class AiCoPilotAnalyticsService extends AnalyticsAbstractService {
     return this.metricsSubject.asObservable();
   }
 
+  /**
+   * Converte la risposta backend nella lista di metriche mostrata in UI.
+   * @param response Payload analytics del backend.
+   * @returns Collezione normalizzata di metriche.
+   */
   private transformToMetrics(response: AiCoPilotAnalyticsResponse): AnalyticsMetric[] {
     const data = response.data;
 
@@ -55,12 +65,22 @@ export class AiCoPilotAnalyticsService extends AnalyticsAbstractService {
     ];
   }
 
+  /**
+   * Normalizza una data all'inizio del giorno in formato ISO.
+   * @param date Data di input.
+   * @returns Timestamp ISO alle 00:00:00.000.
+   */
   private toStartOfDayIso(date: Date): string {
     const normalized = new Date(date);
     normalized.setHours(0, 0, 0, 0);
     return normalized.toISOString();
   }
 
+  /**
+   * Normalizza una data alla fine del giorno in formato ISO.
+   * @param date Data di input.
+   * @returns Timestamp ISO alle 23:59:59.999.
+   */
   private toEndOfDayIso(date: Date): string {
     const normalized = new Date(date);
     normalized.setHours(23, 59, 59, 999);

@@ -73,6 +73,10 @@ export class RisultatoGenerazione {
     this.updateContentLoading(this.result());
   }
 
+  /**
+   * Aggiorna il loader dedicato a titolo/immagine in base al risultato corrente.
+   * @param result Risultato attuale della generazione.
+   */
   private updateImageTitleLoading(result: ResultAiAssistant | null): void {
     if (!result || result.id!== null) {
       this.isImageTitleLoading = false;
@@ -83,6 +87,10 @@ export class RisultatoGenerazione {
     this.isImageTitleLoading = !hasTitle || !hasImage;
   }
 
+  /**
+   * Aggiorna il loader del contenuto testuale in base al risultato corrente.
+   * @param result Risultato attuale della generazione.
+   */
   private updateContentLoading(result: ResultAiAssistant | null): void {
     if (!result || result.id!== null) {
       this.isContentLoading = false;
@@ -92,16 +100,26 @@ export class RisultatoGenerazione {
     this.isContentLoading = !hasContent;
   }
 
+  /**
+   * Avvia la rigenerazione del contenuto corrente.
+   * @param id Id ricevuto dal componente chiamante.
+   */
   onRigenera(id: number|null): void {
     this.aiService.regenerateCurrent();
   }
 
+  /**
+   * Salva il risultato corrente come post.
+   */
   onSalva(): void {
     const current = this.result();
     if (!current) return;
     this.aiService.createCurrentPost();
   }
 
+  /**
+   * Elimina la generazione corrente e torna al generatore.
+   */
   deleteGeneration(): void {
     this.aiService.deletePost(this.result()?.id ?? 0);
     this.router.navigate(['/generatore']);
@@ -111,10 +129,20 @@ export class RisultatoGenerazione {
     return Object.keys(this.pendingModifications).length > 0;
   }
 
+  /**
+   * Normalizza un valore stringa gestendo null/undefined.
+   * @param value Valore di input.
+   * @returns Stringa normalizzata.
+   */
   private normalizeValue(value: string | null | undefined): string {
     return value ?? '';
   }
 
+  /**
+   * Registra una modifica locale ai campi editabili (titolo o contenuto).
+   * @param field Campo modificato.
+   * @param value Nuovo valore inserito.
+   */
   onFieldModified(field: 'title' | 'content', value: string): void {
     const current = this.result();
     if (!current) return;
@@ -134,18 +162,30 @@ export class RisultatoGenerazione {
     };
   }
 
+  /**
+   * Restituisce il titolo da mostrare in editor (pending o corrente).
+   * @returns Titolo visualizzato in UI.
+   */
   getTitleValue(): string {
     const value = this.pendingModifications.title;
     if (typeof value === 'string') return value;
     return this.result()?.title ?? '';
   }
 
+  /**
+   * Restituisce il contenuto da mostrare in editor (pending o corrente).
+   * @returns Contenuto visualizzato in UI.
+   */
   getContentValue(): string {
     const value = this.pendingModifications.content;
     if (typeof value === 'string') return value;
     return this.result()?.content ?? '';
   }
 
+  /**
+   * Restituisce l'URL immagine pronto per la preview.
+   * @returns Path assoluto/base64 dell'immagine da mostrare.
+   */
   getImagePathValue(): string {
     const path = this.imagePathForView();
     if (path && !path.startsWith('data:') && !path.startsWith('http')) {
@@ -154,6 +194,9 @@ export class RisultatoGenerazione {
     return path;
   }
 
+  /**
+   * Applica e salva le modifiche locali sul risultato corrente.
+   */
   saveChanges(): void {
     const current = this.result();
     if (!current) return;
@@ -174,12 +217,19 @@ export class RisultatoGenerazione {
     this.isEditable = false;
   }
 
+  /**
+   * Annulla la modalita editing scartando modifiche pendenti.
+   */
   cancelEditing(): void {
     this.pendingModifications = {};
     this.pendingImagePath.set(null);
     this.isEditable = false;
   }
 
+  /**
+   * Carica una nuova immagine, la converte in base64 e la mette in pending.
+   * @param file File selezionato dall'utente.
+   */
   changeImage(file: File): void {
     const reader = new FileReader();
     reader.onload = () => {
@@ -203,6 +253,9 @@ export class RisultatoGenerazione {
     reader.readAsDataURL(file);
   }
 
+  /**
+   * Abilita l'editing azzerando lo stato pending precedente.
+   */
   enableEditing(): void{
     this.pendingModifications = {};
     this.pendingImagePath.set(null);
@@ -210,17 +263,27 @@ export class RisultatoGenerazione {
     this.readonly = false;
   }
 
+  /**
+   * Invia la valutazione utente del risultato corrente.
+   * @param rating Valore rating selezionato.
+   */
   onRatingChange(rating: number): void {
     const current = this.result();
     if (!current) return;
     this.aiService.setEvaluation(current.generatedDatumId, rating);
   }
 
+  /**
+   * Riusa i parametri della generazione corrente per una nuova richiesta.
+   */
   reuseGeneration(): void {
     const current = this.result();
     this.aiService.reuse(current?.tone ?? { id: 0, name: '', isActive: false }, current?.style ?? { id: 0, name: '', isActive: false }, current?.company ?? { id: 0, name:''}, current?.prompt ?? '');
   }
 
+  /**
+   * Duplica la generazione corrente aprendo il generatore con stato precompilato.
+   */
   duplicateGeneration(): void {
     const current = this.result();
     this.router.navigate(['/generatore'], {

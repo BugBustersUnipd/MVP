@@ -149,6 +149,10 @@ export class AiAssistantService {
 
 
   // todo anche eliminabile per mettere solo generationErrorSubject.next direttamente
+  /**
+   * Pubblica un messaggio di errore nella stream dedicata alla generazione.
+   * @param message Messaggio da mostrare all'utente.
+   */
   private notifyGenerationError(message: string): void {
     this.generationErrorSubject.next(message);
   }
@@ -165,6 +169,9 @@ export class AiAssistantService {
   }
 
 
+  /**
+   * Recupera tutti i toni disponibili per tutte le aziende note.
+   */
   fetchAllTones(): void {
     const companies = this.companiesSubject.value ?? [];
     if (!companies.length) return;
@@ -181,6 +188,9 @@ export class AiAssistantService {
           }
         },
         error: (err) => {
+        /**
+         * Recupera tutti gli stili disponibili per tutte le aziende note.
+         */
           console.error('Errore nel recupero dei toni per company', company.id, err);
           completed++;
           if (completed === companies.length) {
@@ -192,6 +202,11 @@ export class AiAssistantService {
   }
 
   fetchAllStyles(): void {
+  /**
+   * Recupera i toni di una specifica azienda e aggiorna lo stato locale.
+   * @param company Id dell'azienda.
+   * @param is_active Filtro opzionale sullo stato di attivazione.
+   */
     const companies = this.companiesSubject.value ?? [];
     if (!companies.length) return;
     let allStyles: Style[] = [];
@@ -232,6 +247,11 @@ export class AiAssistantService {
     });
   }
   
+  /**
+   * Recupera gli stili di una specifica azienda e aggiorna lo stato locale.
+   * @param company Id dell'azienda.
+   * @param is_active Filtro opzionale sullo stato di attivazione.
+   */
   fetchStylesByCompany(company: number, is_active?: boolean) : void {
     const params: any = { company_id: company };
     if (is_active !== undefined) {
@@ -264,6 +284,12 @@ export class AiAssistantService {
   }
 
 
+  /**
+   * Crea un nuovo tono e aggiorna sia la lista corrente sia quella completa.
+   * @param name Nome del tono.
+   * @param code Codice del tono.
+   * @param companyId Id dell'azienda.
+   */
   newTone(name: string, code: string, companyId: number) : void {
     const payload = this.serializer.serializeNewToneRequest(name, code, companyId);
     this.http.post<any>(`${API_BASE}/tones`, payload).subscribe({
@@ -277,6 +303,12 @@ export class AiAssistantService {
     });
   }
 
+  /**
+   * Crea un nuovo stile e aggiorna sia la lista corrente sia quella completa.
+   * @param name Nome dello stile.
+   * @param code Codice dello stile.
+   * @param companyId Id dell'azienda.
+   */
   newStyle(name: string, code: string, companyId: number) : void {
     const payload = this.serializer.serializeNewStyleRequest(name, code, companyId);
     this.http.post<any>(`${API_BASE}/styles`, payload).subscribe({
@@ -291,6 +323,10 @@ export class AiAssistantService {
     });
   }
 
+  /**
+   * Rimuove un tono sia dal backend sia dallo stato locale.
+   * @param id Id del tono da eliminare.
+   */
   removeTone(id: number) : void {
     this.http.delete<any>(`${API_BASE}/tones/${id}`, {}).subscribe({
       next: (response) => {
@@ -300,6 +336,11 @@ export class AiAssistantService {
       error: (err) => console.error('Errore nella rimozione del tono:', err),
     });
   }
+
+  /**
+   * Rimuove uno stile sia dal backend sia dallo stato locale.
+   * @param id Id dello stile da eliminare.
+   */
   removeStyle(id: number) : void {
     this.http.delete<any>(`${API_BASE}/styles/${id}`, {}).subscribe({
       next: (response) => {
@@ -311,12 +352,23 @@ export class AiAssistantService {
   }
 
   // todo forse da togliere
+  /**
+   * Riavvia la generazione riusando i parametri passati.
+   * @param tone Tono selezionato.
+   * @param style Stile selezionato.
+   * @param company Azienda selezionata.
+   * @param prompt Prompt originale.
+   */
   reuse(tone: Tone, style: Style, company: Company, prompt: string) : void {
     console.log('Riutilizzo richiesta con i seguenti parametri:', { tone, style, company, prompt });
     this.requireGeneration(prompt, tone, style, company);
   }
 
 
+  /**
+   * Elimina un post salvato e sincronizza lo stato locale.
+   * @param id Id del post da rimuovere.
+   */
   deletePost(id: number): void {
     this.http.delete<any>(`${API_BASE}/posts/${id}`).subscribe({
       next: (response) => {
@@ -336,6 +388,11 @@ export class AiAssistantService {
     });
   }
 
+  /**
+   * Aggiorna la valutazione associata alla generazione corrente.
+   * @param id Id del dato generato.
+   * @param evaluation Valutazione assegnata.
+   */
   setEvaluation(id: number|null, evaluation: number) : void { //numero di GeneratedDatum
     const current = this.resultSubject.value;
     if (!current) return;
@@ -360,6 +417,9 @@ export class AiAssistantService {
     console.log(`Valutazione per generazione ${id} impostata a ${evaluation}`);
   }
   
+  /**
+   * Crea un post a partire dal risultato corrente.
+   */
   createCurrentPost(): void {
     const current = this.resultSubject.value;
     if (!current) return;
@@ -390,6 +450,9 @@ export class AiAssistantService {
     });
   }
 
+  /**
+   * Rilancia l'ultima generazione usando il generated datum corrente.
+   */
   regenerateCurrent(): void {
     const generationId = Number(this.resultSubject.value?.generatedDatumId) || 0;
     if (generationId <= 0) {
@@ -440,6 +503,14 @@ export class AiAssistantService {
       }
     });
   }
+
+  /**
+   * Avvia una nuova generazione pubblicando prima uno stato pending locale.
+   * @param prompt Prompt da inviare.
+   * @param tone Tono selezionato.
+   * @param style Stile selezionato.
+   * @param company Azienda selezionata.
+   */
   requireGeneration(prompt: string, tone: Tone, style: Style, company: Company): void {
     console.log('Rigenerazione richiesta');
     this.clearGenerationError();
@@ -483,6 +554,14 @@ export class AiAssistantService {
     });
   }
 
+  /**
+   * Costruisce il risultato locale provvisorio mentre la generazione e in corso.
+   * @param prompt Prompt originale.
+   * @param tone Tono selezionato.
+   * @param style Stile selezionato.
+   * @param company Azienda selezionata.
+   * @returns Risultato provvisorio da pubblicare nello stato.
+   */
   private buildPendingResult(prompt: string, tone: Tone, style: Style, company: Company): ResultAiAssistant {
     return {
       id: null, // id temporaneo, sarà aggiornato una volta ricevuto il risultato dal backend
@@ -499,6 +578,10 @@ export class AiAssistantService {
     };
   }
 
+  /**
+   * Sottoscrive il canale realtime della generazione e aggiorna il risultato finale.
+   * @param generationId Id della generazione da ascoltare.
+   */
   private subscribeToGenerationChannel(generationId: number): void {
     const socket = new WebSocket(WS_URL, ['actioncable-v1-json', 'actioncable-unsupported']);
     const identifier = JSON.stringify({ channel: 'GenerationChannel' });

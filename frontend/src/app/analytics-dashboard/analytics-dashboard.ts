@@ -45,14 +45,21 @@ export class AnalyticsDashboard implements OnInit {
     this.aiAssistantStyleChart$ = this.aiAssistantAnalyticsService.getStyleUsageChart();
   }
 
+  /**
+   * Carica i dati analytics iniziali senza filtro temporale.
+   */
   ngOnInit(): void {
-    // Carica i dati iniziali per 'sempre'
     const initialPeriodo: AnalyticsPeriod = { periodoKey: 'sempre' };
 
     this.aiAssistantMetrics$ = this.aiAssistantAnalyticsService.getAnalysis(initialPeriodo);
     this.aiCoPilotMetrics$ = this.aiCoPilotAnalyticsService.getAnalysis(initialPeriodo);
   }
 
+  /**
+   * Costruisce il periodo analytics a partire dall'intervallo date selezionato.
+   * @param dates Date selezionate nel date-range picker.
+   * @returns Periodo da inviare ai service analytics.
+   */
   private buildPeriod(dates: Date[] | undefined): AnalyticsPeriod {
     if (!dates || dates.length < 2 || !dates[0] || !dates[1]) {
       return { periodoKey: 'sempre' };
@@ -64,6 +71,10 @@ export class AnalyticsDashboard implements OnInit {
     };
   }
 
+  /**
+   * Aggiorna le metriche AI Assistant quando cambia l'intervallo date.
+   * @param dates Intervallo selezionato dall'utente.
+   */
   onAiAssistantRangeChange(dates: Date[] | undefined) {
     if (dates && (!dates[0] || !dates[1])) {
       return;
@@ -73,6 +84,10 @@ export class AnalyticsDashboard implements OnInit {
     this.aiAssistantMetrics$ = this.aiAssistantAnalyticsService.getAnalysis(periodo);
   }
 
+  /**
+   * Aggiorna le metriche AI CoPilot quando cambia l'intervallo date.
+   * @param dates Intervallo selezionato dall'utente.
+   */
   onAiCoPilotRangeChange(dates: Date[] | undefined) {
     if (dates && (!dates[0] || !dates[1])) {
       return;

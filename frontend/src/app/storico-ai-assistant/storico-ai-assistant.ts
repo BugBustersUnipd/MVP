@@ -46,6 +46,9 @@ export class StoricoAiAssistant {
     { field: 'evaluation', header: 'Valutazione', type: 'rating' }
   ];
 
+  /**
+   * Inizializza opzioni filtri, menu azioni e sincronizzazione con lo storico dal service.
+   */
   ngOnInit () {
 
     // Prima fetchCompanies, poi fetchAllTones e fetchAllStyles solo dopo che companies$ ha emesso
@@ -96,15 +99,26 @@ export class StoricoAiAssistant {
       });
   }
 
+  /**
+   * Naviga alla pagina generatore.
+   */
   NavigateToGeneratore(){
     this.router.navigate(['/generatore']);
   }
 
+  /**
+   * Apre il dettaglio di una generazione selezionata.
+   * @param result Risultato da visualizzare.
+   */
   openGenerationResult(result: ResultAiAssistant): void {
     this.aiService.setCurrentResult(result);
     this.router.navigate(['/risultato-generazione']);
   }
 
+  /**
+   * Gestisce le azioni contestuali dello storico (elimina, riutilizza, duplica).
+   * @param event Riga selezionata e voce menu scelta.
+   */
   onMenuAction(event: { row: ResultAiAssistant; item: MenuItem }): void {
     const row = event?.row;
     const action = event?.item?.label?.toLowerCase();
@@ -136,26 +150,45 @@ export class StoricoAiAssistant {
     }
   }
 
+  /**
+   * Aggiorna la ricerca testuale e riapplica i filtri.
+   * @param value Testo di ricerca.
+   */
   onSearchChange(value:string){
     this.searchvalue = value;
     this.applyFilters();
   }
 
+  /**
+   * Aggiorna il filtro per intervallo date.
+   * @param dates Date selezionate.
+   */
   onDateChange(dates: Date[]) {
     this.dates = dates;
     this.applyFilters();
   }
 
+  /**
+   * Aggiorna il filtro tono.
+   * @param tono Tono selezionato.
+   */
   onTonoChange(tono: number | string) {
     this.selectedTono = tono;
     this.applyFilters();
   }
 
+  /**
+   * Aggiorna il filtro stile.
+   * @param stile Stile selezionato.
+   */
   onStileChange(stile: number | string) {
     this.selectedStile = stile;
     this.applyFilters();
   }
 
+  /**
+   * Applica filtri correnti (ricerca, data, tono, stile, azienda) e pubblica le righe filtrate.
+   */
   applyFilters() {
     const rawSearch = (this.searchvalue ?? '').trim().toLowerCase();
     const normalizedSearch = this.normalizeForSearch(rawSearch);
@@ -198,7 +231,11 @@ export class StoricoAiAssistant {
     this.generazioniFiltrateSubject.next(filtrate);
   }
 
-  // Usato solo per ricerca/filtri: non modifica i dati originali mostrati nell'editor.
+  /**
+   * Normalizza testo per confronti di ricerca (rimuove HTML e compatta spazi), non modifica i dati originali mostrati nell'editor.
+   * @param value Testo da normalizzare.
+   * @returns Testo normalizzato in lowercase.
+   */
   private normalizeForSearch(value: string | null | undefined): string {
     const input = (value ?? '').toString();
     return input
@@ -208,6 +245,11 @@ export class StoricoAiAssistant {
       .toLowerCase();
   }
 
+  /**
+   * Verifica se una data ricade nell'intervallo selezionato.
+   * @param value Data del record.
+   * @returns True se la data e nel range attivo.
+   */
   private isInSelectedDateRange(value: Date | string | undefined): boolean {
     if (!this.dates || this.dates.length === 0) return true;
 
@@ -222,20 +264,39 @@ export class StoricoAiAssistant {
     return itemDate >= start && itemDate <= end;
   }
 
+  /**
+   * Converte un valore date/string in oggetto Date valido.
+   * @param value Valore data da convertire.
+   * @returns Date valida o null.
+   */
   private toDate(value: Date | string | undefined): Date | null {
     if (!value) return null;
     const d = value instanceof Date ? value : new Date(value);
     return isNaN(d.getTime()) ? null : d;
   }
 
+  /**
+   * Restituisce l'inizio giornata della data specificata.
+   * @param d Data di riferimento.
+   * @returns Data normalizzata alle 00:00:00.000.
+   */
   private startOfDay(d: Date): Date {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
   }
 
+  /**
+   * Restituisce la fine giornata della data specificata.
+   * @param d Data di riferimento.
+   * @returns Data normalizzata alle 23:59:59.999.
+   */
   private endOfDay(d: Date): Date {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
   }
 
+  /**
+   * Aggiorna il filtro azienda.
+   * @param company Azienda selezionata.
+   */
   onCompanyChange(company: number | string) {
     this.selectedCompany = company;
     this.applyFilters();

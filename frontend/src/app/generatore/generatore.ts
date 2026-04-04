@@ -39,6 +39,9 @@ export class Generatore {
   }
 
  
+  /**
+   * Avvia una nuova generazione e apre la pagina risultato al primo payload disponibile.
+   */
   generate() {
     if (!this.canGenerate) {
       return;
@@ -55,9 +58,13 @@ export class Generatore {
       });
     });
   }
+
+  /**
+   * Carica dati iniziali (aziende e, se necessario, toni/stili dell'azienda pre-selezionata).
+   */
   ngOnInit() {
     this.aiService.fetchCompanies();
-    //questo serve esclusivamente per quando l'azienda e' gia' caricata (per esempio quando si arriva alla pagina da 'Duplica')
+
     const companyId = this.selectedCompany?.id || 0;
     if (companyId > 0) {
       this.aiService.fetchTonesByCompany(companyId, true);
@@ -65,11 +72,19 @@ export class Generatore {
     }
   }
 
+  /**
+   * Apre il dialog per la creazione di tono o stile.
+   * @param type Tipologia elemento da creare.
+   */
   openAddDialog(type: AddDialogType): void {
     this.addDialogType = type;
     this.addDialogVisible = true;
   }
 
+  /**
+   * Gestisce il salvataggio dal dialog e crea il nuovo tono/stile.
+   * @param data Dati inseriti nel dialog.
+   */
   handleAddDialogSave(data: AddDialogSaveData): void {
     if (data.type === 'tone') {
       this.aiService.newTone(data.name, data.description, this.selectedCompany?.id);
@@ -80,6 +95,11 @@ export class Generatore {
     }
   }
 
+  /**
+   * Rimuove un tono o uno stile dalla lista corrente.
+   * @param id Identificativo dell'opzione da rimuovere.
+   * @param type Tipologia da rimuovere.
+   */
   removeOption(id: number, type: AddDialogType): void {
     if (type === 'tone') {
       this.aiService.removeTone(id);
@@ -89,6 +109,10 @@ export class Generatore {
     }
   }
 
+  /**
+   * Aggiorna l'azienda selezionata e ricarica le opzioni correlate.
+   * @param $event Azienda selezionata oppure null.
+   */
   onCompanyChange($event: { id: number; name: string } | null): void {
     this.selectedCompany = $event;
     this.aiService.fetchTonesByCompany(this.selectedCompany?.id,true);

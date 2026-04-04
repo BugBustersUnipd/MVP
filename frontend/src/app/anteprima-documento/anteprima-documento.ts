@@ -53,6 +53,9 @@ export class AnteprimaDocumento {
     this.extractedEmployeeRows$.next(value);
   }
   
+  /**
+   * Inizializza template, dettaglio corrente, documenti fratelli e subscription realtime.
+   */
   ngOnInit() {
     this.aiService.fetchTemplates();
     this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
@@ -108,6 +111,10 @@ export class AnteprimaDocumento {
       this.otherExtractedDocumentRows$ = of([]);
     }
   }
+
+  /**
+   * Apre il PDF originale del documento padre.
+   */
   handleOpenOriginalPdf(): void {
     if (!this.result?.parentId) {
       this.messageService.add({severity:'error', summary: 'Documento originale non disponibile'});
@@ -116,6 +123,9 @@ export class AnteprimaDocumento {
     this.aiService.getOriginalPdfById(this.result.parentId);
   }
 
+  /**
+   * Apre il PDF dello split corrente.
+   */
   handleOpenSplitPdf(): void {
     if (!this.result?.id) {
       this.messageService.add({severity:'error', summary: 'Documento estratto non disponibile'});
@@ -124,6 +134,9 @@ export class AnteprimaDocumento {
     this.aiService.getPdfById(this.result.id);
   }
 // todo: questi due metodi sono da implementare, per ora loggano solo l'azione richiesta, ma in futuro dovranno interagire con i servizi per modificare lo stato dell'applicazione e mostrare le modifiche all'utente
+  /**
+   * Apre il dialog per aggiornare il dipendente associato al documento estratto.
+   */
   handleEditExtractedEmployeeInfo(): void {
     if (!this.result) {
       return;
@@ -172,10 +185,18 @@ export class AnteprimaDocumento {
     }
   }
 
+  /**
+   * Rimuove una riga dipendente dalla tabella locale.
+   * @param rowIndex Indice della riga da rimuovere.
+   */
   handleRemoveExtractedEmployeeRow(rowIndex: number): void {
     this.extractedEmployeeRows = this.extractedEmployeeRows.filter((_, index) => index !== rowIndex);
   }
 
+  /**
+   * Rimuove dalla vista un documento fratello senza alterare i dati backend.
+   * @param rowId Id del documento da nascondere.
+   */
   handleRemoveOtherExtractedDocumentRow(rowId: number): void {
     const current = this.removedOtherDocumentIds$.value;
     if (current.includes(rowId)) {
@@ -184,6 +205,11 @@ export class AnteprimaDocumento {
     this.removedOtherDocumentIds$.next([...current, rowId]);
   }
 
+  /**
+   * Costruisce la riga informativa del dipendente estratto partendo dal risultato corrente.
+   * @param result Risultato estratto corrente.
+   * @returns Righe pronte per la tabella dipendente.
+   */
   private buildExtractedEmployeeRows(result: ResultSplit | null): ExtractedEmployeeInfoRow[] {
     if (!result) {
       return [];
@@ -208,12 +234,19 @@ export class AnteprimaDocumento {
     return isEmptyRow ? [] : [row];
   }
 
+  /**
+   * Applica un risultato aggiornato allo stato locale e allo stato di navigazione.
+   * @param updated Risultato aggiornato ricevuto da backend/service.
+   */
   private applyIncomingResult(updated: ResultSplit): void {
     this.result = { ...updated };
     this.extractedEmployeeRows = this.buildExtractedEmployeeRows(this.result);
     window.history.replaceState({ ...(history.state ?? {}), result: this.result }, '');
   }
 
+  /**
+   * Apre il dialog invio documento e gestisce la creazione del sending.
+   */
   showDialog() {
      this.ref = this.dialogService.open(SendDocumentDialog, {
             header: 'Aggiungi un messaggio',
@@ -238,7 +271,7 @@ export class AnteprimaDocumento {
             extracted_document_id: this.result.id,
             recipient_id: this.result.recipient.recipientId,
             sent_at: this.resolveSentAt(result.orarioInvio.value).toISOString(),
-            subject: result.templateName || `Invio documento ${this.result.category ?? ''}`.trim(),
+            subject: result.templateName || `Invio documento ${this.result.name ?? ''}`.trim(),
             body: result.messaggio,
             template_id: result.templateId,
           })
@@ -265,6 +298,11 @@ export class AnteprimaDocumento {
     }
   }
 
+  /**
+   * Converte l'opzione selezionata nel dialog in una data/ora di invio effettiva.
+   * @param optionValue Valore opzione scheduling.
+   * @returns Data di invio risolta.
+   */
   private resolveSentAt(optionValue: string): Date {
     const now = new Date();
     if (optionValue === 'now') {
@@ -294,11 +332,17 @@ export class AnteprimaDocumento {
     return now;
   }
 
+  /**
+   * Abilita la modalita modifica azzerando eventuali cambi pendenti.
+   */
   enableEditing(): void{
     this.pendingModifications = {};
     this.isEditable = true;
   }
 
+  /**
+   * Annulla la modalita modifica e scarta le modifiche locali.
+   */
   cancelEditing(): void {
     this.pendingModifications = {};
     this.isEditable = false;
@@ -313,10 +357,19 @@ export class AnteprimaDocumento {
     return (this.result?.recipient?.recipientId ?? 0) > 0;
   }
 
+  /**
+   * Normalizza un valore eterogeneo in stringa per confronti consistenti.
+   * @param value Valore da normalizzare.
+   * @returns Stringa normalizzata.
+   */
   private normalizeValue(value: string | number | undefined | null): string {
     return value === undefined || value === null ? '' : String(value);
   }
 
+  /**
+   * Registra una modifica locale su un campo del documento.
+   * @param event Campo modificato e nuovo valore.
+   */
   onFieldModified(event: { field: keyof ResultSplit; value: string | number | undefined }): void {
     const originalValue = this.result ? this.result[event.field] : undefined;
     const incoming = this.normalizeValue(event.value);
@@ -334,6 +387,9 @@ export class AnteprimaDocumento {
     };
   }
 
+  /**
+   * Salva le modifiche locali inviando patch range/metadati quando necessario.
+   */
   saveChanges(): void {
     if (!this.result) {
       return;
@@ -371,8 +427,12 @@ export class AnteprimaDocumento {
     this.isEditable = false;
   }
 
+  /**
+   * Costruisce il payload metadati accettato dall'endpoint /metadata.
+   * @param modifications Modifiche pendenti locali.
+   * @returns Mappa chiave/valore compatibile col backend.
+   */
   private buildMetadataUpdates(modifications: Partial<ResultSplit>): Record<string, unknown> {
-  // Solo i campi che il backend accetta in /metadata.
   // data_interna viene salvata come "date" per allineamento con il payload backend.
   const METADATA_MAP: Partial<Record<keyof ResultSplit, string>> = {
     category: 'category',
@@ -380,6 +440,7 @@ export class AnteprimaDocumento {
     department: 'department',
     reason: 'reason',
     month_year: 'competence',
+    name: 'name',
     data_interna: 'date',
   };
 
@@ -395,6 +456,12 @@ export class AnteprimaDocumento {
   }, {});
 }
 
+  /**
+   * Estrae e valida eventuali modifiche sul range pagine.
+   * @param modifications Modifiche pendenti locali.
+   * @param current Risultato corrente usato come fallback.
+   * @returns Range aggiornato oppure null se assente/non valido.
+   */
   private buildRangeUpdates(
     modifications: Partial<ResultSplit>,
     current: ResultSplit
@@ -417,6 +484,12 @@ export class AnteprimaDocumento {
     };
   }
 
+  /**
+   * Verifica la validita del range pagine rispetto ai vincoli del documento.
+   * @param range Range proposto.
+   * @param current Risultato corrente.
+   * @returns True se il range e valido.
+   */
   private isRangeValid(range: { page_start: number; page_end: number }, current: ResultSplit): boolean {
     const maxPages = Number(this.pages) > 0
       ? Number(this.pages)

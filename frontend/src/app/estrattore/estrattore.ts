@@ -39,32 +39,59 @@ export class Estrattore implements OnInit {
     );
   }
 
+  /**
+   * Carica i dati iniziali necessari alla pagina di upload documenti.
+   */
   ngOnInit(): void {
     this.aiService.fetchCompanies();
     
   }
 
+  /**
+   * Aggiorna la categoria selezionata.
+   * @param value Valore emesso dal componente select.
+   */
   onCategoryChange(value: string | number | undefined): void {
     this.selectedCategory = String(value ?? '');
   }
 
+  /**
+   * Aggiorna il reparto selezionato.
+   * @param value Valore emesso dal campo reparto.
+   */
   onDepartmentChange(value: string | number | undefined): void {
     this.selectedDepartment = String(value ?? '');
   }
 
+  /**
+   * Aggiorna il mese/anno di competenza selezionato.
+   * @param value Valore emesso dal componente month-year.
+   */
   onCompetenceMonthYearChange(value: string | number | undefined): void {
     this.selectedCompetenceMonthYear = String(value ?? '');
   }
 
+  /**
+   * Imposta l'azienda selezionata e resetta i campi dipendenti dall'azienda.
+   * @param company Azienda selezionata.
+   */
   onCompanyChange(company: any): void {
     this.selectedCompany = company;
     this.selectedDepartment = '';
   }
 
+  /**
+   * Salva la lista file validati pronta per l'upload.
+   * @param files File selezionati dal componente upload.
+   */
   onFilesSelected(files: File[]): void {
     this.selectedFiles = files ?? [];
   }
 
+  /**
+   * Mostra un toast con i file non validi intercettati in upload.
+   * @param error Errore di validazione con elenco file scartati.
+   */
   onFileValidationError(error: UploadValidationError): void {
     const invalidList = error.invalidFiles.join(', ');
     this.messageService.add({
@@ -76,6 +103,9 @@ export class Estrattore implements OnInit {
     });
   }
 
+  /**
+   * Avvia l'upload della batch e naviga alla pagina di riconoscimento.
+   */
   upload(): void {
     if (!this.canUpload) {
       return;

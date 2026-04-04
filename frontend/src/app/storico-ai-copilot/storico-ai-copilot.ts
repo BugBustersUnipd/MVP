@@ -78,6 +78,10 @@ export class StoricoAiCopilot {
     { field: 'state', header: 'Stato' },
     { field: 'data', header: 'Data analisi', type: 'date' },
   ];
+
+  /**
+   * Inizializza menu, dati storico e subscription ai flussi del service.
+   */
   ngOnInit() {
         this.items = [
             {
@@ -133,38 +137,67 @@ export class StoricoAiCopilot {
       });
   }
 
+  /**
+   * Aggiorna la ricerca testuale globale.
+   * @param value Testo digitato dall'utente.
+   */
   onSearchChange(value: string) {
     this.searchvalue = value;
     this.searchSubject.next(value);
   }
 
+  /**
+   * Aggiorna il filtro per intervallo date.
+   * @param dates Date selezionate nel filtro.
+   */
   onDateChange(dates: Date[]) {
     this.dates = dates;
     this.datesSubject.next(dates);
   }
 
+  /**
+   * Aggiorna il filtro per tipologia documento.
+   * @param document Documento/categoria selezionata.
+   */
   onDocumentChange(document: string | number) {
     this.selectedDocument = document !== undefined && document !== null ? String(document) : undefined;
     this.selectedDocumentSubject.next(this.selectedDocument);
   }
 
+  /**
+   * Aggiorna il filtro azienda.
+   * @param company Azienda selezionata.
+   */
   onCompanyChange(company: string | number) {
     this.selectedCompany = company !== undefined && company !== null ? String(company) : undefined;
     this.selectedCompanySubject.next(this.selectedCompany);
   }
 
+  /**
+   * Ricostruisce la lista documenti e aggiorna le opzioni filtro documento.
+   */
   private rebuildDocuments(): void {
     this.Documents = this.resultSplits.map((split) => this.toStoricoRow(split));
     this.DocumentType = [...new Set(this.Documents.map((d) => d.category).filter(Boolean))];
     this.documentsSubject.next(this.Documents);
   }
 
+  /**
+   * Normalizza una data al solo giorno per confronti su range.
+   * @param value Data da normalizzare.
+   * @returns Timestamp del giorno normalizzato.
+   */
   private normalizeDate(value: Date): number {
     const date = new Date(value);
     date.setHours(0, 0, 0, 0);
     return date.getTime();
   }
 
+  /**
+   * Mappa uno split nel formato riga usato dalla tabella storico.
+   * @param split Documento split sorgente.
+   * @returns Riga pronta per visualizzazione e filtri.
+   */
   private toStoricoRow(split: ResultSplit): any {
     const originalDocumentName = this.parentNames[split.parentId];
 
@@ -189,6 +222,10 @@ export class StoricoAiCopilot {
     };
   }
 
+  /**
+   * Gestisce le azioni menu tabella (modifica, elimina, riprova).
+   * @param event Riga selezionata e azione scelta.
+   */
   onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void {
     const action = event.item.label?.toLowerCase();
 
@@ -201,11 +238,19 @@ export class StoricoAiCopilot {
     }
   }
 
+  /**
+   * Rimuove una riga dalla lista locale e aggiorna lo stream documenti.
+   * @param row Riga rimossa.
+   */
   onRowRemoved(row: ResultSplit): void {
     this.Documents = this.Documents.filter((doc) => doc.id !== row.id);
     this.documentsSubject.next(this.Documents);
   }
 
+  /**
+   * Apre la preview documento per la riga selezionata (o la prima filtrata).
+   * @param targetRow Riga target opzionale.
+   */
   navigateToResult(targetRow?: ResultSplit){
     const row = targetRow ?? this.filteredDocumentsSnapshot[0];
     const result = this.resultSplits.find((split) => split.id === row?.id);

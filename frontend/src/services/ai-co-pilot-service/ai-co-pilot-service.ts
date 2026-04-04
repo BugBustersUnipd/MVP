@@ -74,6 +74,14 @@ export class AiCoPilotService {
   private otherExtractedDocumentsSubject = new BehaviorSubject<ResultSplit[]>([]);
   otherExtractedDocuments$ = this.otherExtractedDocumentsSubject.asObservable();
 
+  /**
+   * Avvia l'upload di una batch di file creando parent temporanei e processamento asincrono.
+   * @param files File da caricare.
+   * @param company Azienda selezionata.
+   * @param department Reparto selezionato.
+   * @param category Categoria selezionata.
+   * @param competence_period Periodo di competenza.
+   */
   public uploadFiles(files: File[], company: string, department: string, category: string, competence_period: string): void {
     this.currentBatchTempIds.clear(); //cleara gli id assegnati temporaneamente.
     this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds)); //notifica tutti i subscriber che la batch è cambiata (ora vuota)
@@ -84,6 +92,12 @@ export class AiCoPilotService {
     }
     this.currentBatchParentIdsSubject.next(new Set(this.currentBatchTempIds)); // notifica tutti i subscriber con gli id temporanei appena creati, la UI fa vedere i documenti IN CODA intanto.
   }
+
+  /**
+   * Processa un singolo file inviandolo al backend e gestendo la risposta realtime.
+   * @param temporaryParentId Id temporaneo assegnato al parent.
+   * @returns Stato reattivo iniziale del documento padre.
+   */
   private processDocument(file: File, company: string, department: string, category: string, competence_period: string, temporaryParentId: number) : ResultAiCopilot {
     const reactiveResult  = this.serializer.createInitialState(file); // Crea un ResultAiCopilot iniziale
     reactiveResult.ResultSplit.forEach(split => this.upsertInHistory(split)); // Aggiungo subito alla history per far comparire i documenti splittati subito in lista
@@ -100,6 +114,10 @@ export class AiCoPilotService {
     return reactiveResult;
   }
 
+  /**
+   * Costruisce endpoint e FormData per upload PDF o file generico.
+   * @returns Endpoint e payload FormData pronti per la chiamata HTTP.
+   */
   private buildUploadRequest(file: File, company: string, department: string, category: string, competence_period: string): { endpoint: string; formData: FormData } {
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const endpoint = isPdf ? `${API_BASE}/documents/split` : `${API_BASE}/documents/process_file`; // Se è PDF uso endpoint split, altrimenti direttamente process_file che accetta anche altri tipi di file e faccio il processing senza passare dallo split. In questo modo supporto anche file di testo, excel, ecc. senza doverli splittare in pagine.
@@ -115,6 +133,12 @@ export class AiCoPilotService {
     return { endpoint, formData };
   }
 
+  /**
+   * Gestisce la risposta iniziale del processamento e apre la sottoscrizione ai job updates.
+   * @param response Risposta backend all'upload.
+   * @param reactiveResult Stato locale del parent.
+   * @param temporaryParentId Id temporaneo da sostituire.
+   */
   private handleProcessDocumentResponse(response: any, reactiveResult: ResultAiCopilot, temporaryParentId: number): void {
     const uploadedDocumentId = Number(response?.uploaded_document_id) || 0; // uploadedDocumentId è Id del doc padre
     reactiveResult.id = uploadedDocumentId;
@@ -140,6 +164,13 @@ export class AiCoPilotService {
     );
   }
 
+  /**
+   * Gestisce gli eventi realtime del job di processamento.
+   * @param payload Messaggio ricevuto via WebSocket.
+   * @param socket Socket attiva del job.
+   * @param uploadedDocumentId Id reale del documento padre.
+   * @param reactiveResult Stato locale del parent.
+   */
   private handleProcessDocumentJobUpdate(payload: any, socket: WebSocket, uploadedDocumentId: number, reactiveResult: ResultAiCopilot): void {
     const evt = payload.event;
 
@@ -176,6 +207,12 @@ export class AiCoPilotService {
     }
   }
 
+  /**
+   * Sincronizza lo stato del documento padre sia in memoria locale sia nella lista sessione.
+   * @param uploadedDocumentId Id del documento padre.
+   * @param state Nuovo stato del documento.
+   * @param reactiveResult Riferimento opzionale allo stato locale reattivo.
+   */
   private syncUploadedDocumentState(uploadedDocumentId: number, state: DocumentState, reactiveResult?: ResultAiCopilot): void {
     if (reactiveResult) {
       reactiveResult.state = state;
@@ -186,6 +223,12 @@ export class AiCoPilotService {
       this.updateSessionParentState(uploadedDocumentId, state);
     }
   }
+
+  /**
+   * Crea un parent temporaneo in stato InCoda per feedback UI immediato.
+   * @param file File caricato dall'utente.
+   * @returns Id temporaneo negativo assegnato al parent.
+   */
   private addPendingParent(file: File): number { // crea parent temporaneo con id negativo e stato "In coda", lo aggiunge alla lista dei parent della sessione e ritorna l'id temporaneo assegnato.
     const id = this.tempParentId--;
     const parent: ResultAiCopilot = {
@@ -199,7 +242,14 @@ export class AiCoPilotService {
     this.setParentName(id, file.name);
     return id;
   }
-  private replacePendingParentId(temporaryParentId: number, realParentId: number, state: DocumentState): void { // Sostituisco l'id temporaneo del parent con quello reale arrivato dal backend in risposta, e imposto uno stato al documentoi padre.
+
+  /**
+   * Sostituisce l'id temporaneo del parent con quello reale e arrivato dal backend in risposta, e imposto uno stato al documentoi padre.
+   * @param temporaryParentId Id temporaneo da rimpiazzare.
+   * @param realParentId Id reale ricevuto dal backend.
+   * @param state Stato da applicare al parent.
+   */
+  private replacePendingParentId(temporaryParentId: number, realParentId: number, state: DocumentState): void { 
     const updated = this.sessionParentsSubject.value.map((parent) =>
       parent.id === temporaryParentId ? { ...parent, id: realParentId, state } : parent
     );
@@ -223,14 +273,23 @@ export class AiCoPilotService {
     }
   }
 
-  private updateSessionParentState(parentId: number, state: DocumentState): void { // aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione. (Poichè a backend lo stato del padre non è presente)
+  /**
+   *Aggiorna lo stato del documento padre nella lista dei documenti caricati nella sessione. (Poichè a backend lo stato del padre non è presente)
+   * @param parentId Id del documento padre.
+   * @param state Stato da impostare.
+   */
+  private updateSessionParentState(parentId: number, state: DocumentState): void { 
     const updated = this.sessionParentsSubject.value.map((parent) =>
       parent.id === parentId ? { ...parent, state } : parent
     );
     this.sessionParentsSubject.next(updated);
   }
 
-  private removeSessionParent(parentId: number): void {  // viene chiamato quando c'è un errore nell'upload del documento, il documento padre qua ha ancora un id temporaneo negativo, dunque rimuove il parent con id temporaneo dalla lista dei parent della sessione e pulisce eventuali dati associati a quell'id temporaneo (nome, id)
+  /**
+   * Viene chiamato quando c'è un errore nell'upload del documento, il documento padre qua ha ancora un id temporaneo negativo, dunque rimuove il parent con id temporaneo dalla lista dei parent della sessione e pulisce eventuali dati associati a quell'id temporaneo (nome, id)
+   * @param parentId Id del documento padre.
+   */
+  private removeSessionParent(parentId: number): void {
     const updated = this.sessionParentsSubject.value.filter((parent) => parent.id !== parentId);
     this.sessionParentsSubject.next(updated);
 
@@ -242,14 +301,24 @@ export class AiCoPilotService {
     }
   }
 
-  private setParentName(parentId: number, name: string): void { // setta il nome al documento padre
+  /**
+   * Salva o aggiorna il nome associato a un documento padre.
+   * @param parentId Id del documento padre.
+   * @param name Nome da associare.
+   */
+  private setParentName(parentId: number, name: string): void { 
     if (!parentId || !name) return;
     const current = this.parentNamesSubject.value;
     if (current[parentId] === name) return;
     this.parentNamesSubject.next({ ...current, [parentId]: name });
   }
 
-  private setParentPageCount(parentId: number, pageCount: unknown): void { // setta il numero di pagine del documento padre quando riceve il dato dal backend, prima di riceverlo il numero di pagine è 0
+  /**
+   * Salva o aggiorna il numero di pagine associato a un documento padre quando riceve il dato dal backend, prima di riceverlo il numero di pagine è 0.
+   * @param parentId Id del documento padre.
+   * @param pageCount Numero di pagine ricevuto dal backend.
+   */
+  private setParentPageCount(parentId: number, pageCount: unknown): void { 
     const numeric = Number(pageCount); 
     if (!parentId || !Number.isFinite(numeric) || numeric < 1) return;
     const normalized = Math.floor(numeric);
@@ -257,7 +326,13 @@ export class AiCoPilotService {
     if (current[parentId] === normalized) return;
     this.parentPageCountsSubject.next({ ...current, [parentId]: normalized });
   }
-  private resolveScheduledState(split: ResultSplit): ResultSplit { //Se lo stato di un documento è "Inviato" e ha un id, allora controlla se tale documento è presente nella mappa dei documenti programmati. Se la data programmata è nel futuro, imposta lo stato su "Programmato". Se la data programmata è nel passato, rimuove il documento dalla mappa e lascia lo stato su "Inviato".
+
+  /**
+   * Se lo stato di un documento è "Inviato" e ha un id, allora controlla se tale documento è presente nella mappa dei documenti programmati. Se la data programmata è nel futuro, imposta lo stato su "Programmato". Se la data programmata è nel passato, rimuove il documento dalla mappa e lascia lo stato su "Inviato".
+   * @param split Documento estratto da normalizzare.
+   * @returns Documento con stato eventualmente aggiornato.
+   */
+  private resolveScheduledState(split: ResultSplit): ResultSplit { 
     if (split.state !== State.Inviato || !split.id) return split;
     const scheduledAt = this.scheduledDocuments.get(split.id);
     if (!scheduledAt) return split;
@@ -266,7 +341,11 @@ export class AiCoPilotService {
     return split;
   }
 
-  private upsertInHistory(split: ResultSplit): void {// aggiunge documenti alla history dei risultati, se il documento ha un id presente lo aggiorna, altrimenti lo aggiunge.
+  /**
+   * Aggiunge documenti alla history dei risultati, se il documento ha un id presente lo aggiorna, altrimenti lo aggiunge.y locale.
+   * @param split Documento estratto da sincronizzare.
+   */
+  private upsertInHistory(split: ResultSplit): void {
     const resolved = this.resolveScheduledState(split);
     const current = this.resultsHistorySubject.value ?? []; // Prendo lo stato attuale della history, se è null uso un array vuoto
     const idx = current.findIndex((r) => r.id === resolved.id);
@@ -280,11 +359,18 @@ export class AiCoPilotService {
     this.refreshDynamicFilterOptions(); // Refresho i filtri dinamici, nel nostro caso Categorie e Reparti che si basano su valori presenti nei documenti della history.
   }
 
-  private refreshDynamicFilterOptions(): void { //refresh dei filter categorie e reparti.
+  /**
+   * Aggiorna le opzioni dei filtri dinamici derivate dalla history corrente.
+   */
+  private refreshDynamicFilterOptions(): void { 
     this.fetchCategories();
     this.fetchDepartment();
   }
 
+  /**
+   * Serve per rimuovere un documento caricato, dalla view senza far refresh completo della pagina.
+   * @param uploadedDocumentId Id del documento padre da rimuovere.
+   */
   private removeUploadedDocumentFromLocalState(uploadedDocumentId: number): void { // Serve per rimuovere un documento caricato, dalla view senza far refresh completo della pagina.
     const currentHistory = this.resultsHistorySubject.value ?? [];
     this.resultsHistorySubject.next(currentHistory.filter((row) => row.parentId !== uploadedDocumentId)); // rimuove dalla history i documenti che hanno come parentId l'id passato.
@@ -309,7 +395,11 @@ export class AiCoPilotService {
     this.refreshDynamicFilterOptions(); // refresh dei filtri dinamici
   }
 
-  private fetchExtractedDocumentAndUpsert(extractedDocumentId: number): void { // Il metodo usa l'id passato del documento estratto, recupera il documento dal backend e lo deserializza, poi lo upserta nella history dei risultati.
+  /**
+   * Il metodo usa l'id passato del documento estratto, recupera il documento dal backend e lo deserializza, poi lo upserta nella history dei risultati.
+   * @param extractedDocumentId Id del documento estratto.
+   */
+  private fetchExtractedDocumentAndUpsert(extractedDocumentId: number): void {
     this.http.get<any>(`${API_BASE}/documents/extracted/${extractedDocumentId}`).subscribe({
       next: ({ extracted_document }) => {
         const split = this.serializer.deserializeExtractedDocument(extracted_document);
@@ -319,7 +409,11 @@ export class AiCoPilotService {
     });
   }
 
-  private refreshExtractedDocumentsForUpload(uploadedDocumentId: number): void { // il metodo usa l'id passato, sempre del documento padre, e recupera la risposta al backend che contiene i dati che gli servono per aggiornare i valori mostrati del padre, che prima erano derivanti dal file caricato e ora vengono presi dal backend. Infine refresha la history.
+  /**
+   * Il metodo usa l'id passato, sempre del documento padre, e recupera la risposta al backend che contiene i dati che gli servono per aggiornare i valori mostrati del padre, che prima erano derivanti dal file caricato e ora vengono presi dal backend. Infine refresha la history.
+   * @param uploadedDocumentId Id del documento padre.
+   */
+  private refreshExtractedDocumentsForUpload(uploadedDocumentId: number): void { 
     this.http.get<any>(`${API_BASE}/documents/uploads/${uploadedDocumentId}/extracted`).subscribe({
       next: (response) => {
         const parentName = response?.uploaded_document?.original_filename;
@@ -350,7 +444,11 @@ export class AiCoPilotService {
   }
 
 
-  private refreshScheduledDocuments$(): Observable<void> { // recupera i sendings dal database e aggiorna la mappa dei documenti programmati, con solo i documenti che hanno data di invio futura, lavora con resolveScheuledState per aggiornare lo stato dei documenti estratti che risultano programmati.
+  /**
+   * Recupera i sendings dal database e aggiorna la mappa dei documenti programmati, con solo i documenti che hanno data di invio futura, lavora con resolveScheuledState per aggiornare lo stato dei documenti estratti che risultano programmati.
+   * @returns Observable completato quando la mappa schedulazioni e sincronizzata.
+   */
+  private refreshScheduledDocuments$(): Observable<void> {
     return this.http.get<any>(`${API_BASE}/sendings`).pipe(
       map((res) => {
         const now = new Date();
@@ -560,6 +658,9 @@ export class AiCoPilotService {
     this.confidenceSubject.next(['0-20', '21-40', '41-60', '61-80', '81-100']);
   }
   /** GET /lookups/companies */
+  /**
+   * Recupera le aziende dal backend e aggiorna lo stato locale.
+   */
   public fetchCompanies(): void {
     this.http.get<any>(`${API_BASE}/lookups/companies`).subscribe({
       next: (response) => {
@@ -571,11 +672,20 @@ export class AiCoPilotService {
   }
 
   
+  /**
+   * Apre il file originale del documento padre in una nuova scheda.
+   * @param id Id del documento padre.
+   */
   public getOriginalPdfById(id: number): void {
     window.open(`${API_BASE}/documents/uploads/${id}/file`, '_blank');
   }
+
+  /**
+   * Apre il PDF del documento estratto in una nuova scheda con cache buster.
+   * @param id Id del documento estratto.
+   */
   public getPdfById(id: number): void {
-    // C'è un cache buster per evitare pdf vecchi, si forza il browser a fare una nuova richiesta invece di prendere il pdf dalla cache.
+
     window.open(`${API_BASE}/documents/extracted/${id}/pdf?t=${Date.now()}`, '_blank');
   }
 
@@ -618,7 +728,14 @@ export class AiCoPilotService {
       );
   }
 
-  private subscribeToJobUpdates( //metodo per fare il subscribe ai WebSocket updates di ActionCable, si passa il jobId, una callback da chiamare ad ogni messaggio ricevuto, una callback opzionale da chiamare alla conferma della sottoscrizione e una callback opzionale da chiamare in caso di errore del socket.
+  /**
+   * Il metodo serve per fare il subscribe ai WebSocket updates di ActionCable, si passa il jobId, una callback da chiamare ad ogni messaggio ricevuto, una callback opzionale da chiamare alla conferma della sottoscrizione e una callback opzionale da chiamare in caso di errore del socket. ActionCable.
+   * @param jobId Id del job backend.
+   * @param onMessage Callback invocata per ogni messaggio applicativo.
+   * @param onConfirmSubscription Callback opzionale alla conferma sottoscrizione.
+   * @param onError Callback opzionale in caso di errore socket.
+   */
+  private subscribeToJobUpdates( 
     jobId: string,
     onMessage: (payload: any, socket: WebSocket) => void,
     onConfirmSubscription?: () => void,
@@ -725,7 +842,11 @@ export class AiCoPilotService {
   }
 
 
-    public updateResult(result: ResultSplit): void { //metodo per sincronizzare lo stato del documento mostrato nei dettagli con eventuali modifiche. (Usato in anteprima documento)
+  /**
+   * Il metodo serve per sincronizzare lo stato del documento mostrato nei dettagli con eventuali modifiche. (Usato in anteprima documento)
+   * @param result Documento estratto aggiornato.
+   */
+    public updateResult(result: ResultSplit): void { 
     this.resultSubject.next(result);
     this.upsertInHistory(result);
   }

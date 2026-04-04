@@ -52,43 +52,81 @@ export class RiconoscimentoDocumenti {
   state$ = this.aiCoPilotService.state$;
   selectedState: any = history.state?.state ?? null;
 
+  /**
+   * Aggiorna il filtro per intervallo date.
+   * @param dates Date selezionate nel date-range picker.
+   */
   onDateChange(dates: Date[]) {
     this.dates = dates;
     console.log('Date range changed:', this.dates);
     this.applyFilters();
   }
+
+  /**
+   * Aggiorna la ricerca testuale globale.
+   * @param searchValue Testo inserito nella barra di ricerca.
+   */
   onSearchChange(searchValue: string) {
     this.searchvalue = searchValue;
     console.log('Search value changed:', searchValue);
     this.applyFilters();
   }
+
+  /**
+   * Aggiorna il filtro confidence.
+   * @param confidence Intervallo o valore confidence selezionato.
+   */
   onConfidenceChange(confidence: string | number) {
     this.selectedconfidence = confidence;
     console.log('Selected confidence option changed:', this.selectedconfidence);
     this.applyFilters();
   }
+
+  /**
+   * Aggiorna il filtro categoria.
+   * @param category Categoria selezionata.
+   */
   onCategoryChange(category: string | number) {
     this.selectedCategory = category;
     console.log('Selected category option changed:', this.selectedCategory);
     this.applyFilters();
   }
+
+  /**
+   * Aggiorna il filtro stato documento.
+   * @param state Stato selezionato.
+   */
   onStateChange(state: string | number) {
     this.selectedState = state;
     console.log('Selected state option changed:', this.selectedState);
     this.applyFilters();
   }
+
+  /**
+   * Aggiorna il filtro azienda.
+   * @param company Azienda selezionata.
+   */
   onCompanyChange(company: string | number) {
     this.selectedCompany = company;
     console.log('Selected company option changed:', this.selectedCompany);
     this.applyFilters();
   }
+
+  /**
+   * Aggiorna il filtro reparto.
+   * @param department Reparto selezionato.
+   */
   onDepartmentChange(department: string | number) {
     this.selectedDepartment = department;
     console.log('Selected department option changed:', this.selectedDepartment);
     this.applyFilters();
   }
 
-  onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void { //Gestise logica dei pulsanti "Modifica" ed "Elimina".
+  /**
+   * Gestisce le azioni del menu tabella (modifica/elimina).
+   * @param event Riga selezionata e voce menu scelta.
+   */
+  onTableMenuAction(event: { row: ResultSplit; item: MenuItem }): void { 
     const action = event.item.label?.toLowerCase();
     if (action === 'modifica') {
       this.navigateToResult(event.row);
@@ -97,16 +135,27 @@ export class RiconoscimentoDocumenti {
     }
   }
 
+  /**
+   * Richiede il retry dell'analisi per un documento padre.
+   * @param parentId Id del documento padre.
+   */
   onRetryAnalysis(parentId: number): void {
     this.aiCoPilotService.retryDocumentProcessing(parentId);
   }
 
+  /**
+   * Rimuove localmente una riga e riapplica i filtri correnti.
+   * @param row Riga rimossa dalla tabella.
+   */
   onRowRemoved(row: ResultSplit): void {
-    // Rimuovi il documento dalla lista locale
     this.DocumentiSplittati = this.DocumentiSplittati.filter((doc) => doc.id !== row.id);
     this.applyFilters();
   }
 
+  /**
+   * Apre la pagina dettaglio per il documento selezionato.
+   * @param targetRow Riga target da visualizzare.
+   */
   navigateToResult(targetRow: ResultSplit): void {
     if (!targetRow) {
       return;
@@ -122,6 +171,9 @@ export class RiconoscimentoDocumenti {
     });
   }
 
+  /**
+   * Applica tutti i filtri attivi e ricostruisce la vista nested dei documenti.
+   */
   applyFilters() {
     const hasActiveFilters = Boolean(
       this.searchvalue ||
@@ -181,6 +233,12 @@ export class RiconoscimentoDocumenti {
     });
   }
 
+  /**
+   * Verifica se una riga soddisfa la ricerca globale testuale.
+   * @param doc Documento da valutare.
+   * @param rawSearch Testo di ricerca inserito.
+   * @returns True se la riga matcha la ricerca.
+   */
   private matchesGlobalSearch(doc: ResultSplit, rawSearch: string): boolean {
     const search = rawSearch?.trim().toLowerCase();
     if (!search) {
@@ -195,6 +253,7 @@ export class RiconoscimentoDocumenti {
       doc.parentId,
       parentNameFromHistory,
       parentNameFromSession,
+      doc.name,
       doc.category,
       doc.company,
       doc.department,
@@ -212,6 +271,12 @@ export class RiconoscimentoDocumenti {
     return searchableFields.some((value) => String(value ?? '').toLowerCase().includes(search));
   }
 
+  /**
+   * Verifica la confidence rispetto all'intervallo selezionato.
+   * @param confidence Valore confidence del documento.
+   * @param selectedRange Intervallo o valore selezionato nel filtro.
+   * @returns True se il valore e incluso nel range richiesto.
+   */
   private matchesConfidenceRange(confidence: number, selectedRange: string | number | null | undefined): boolean {
     if (selectedRange === null || selectedRange === undefined || selectedRange === '') {
       return true;
@@ -235,6 +300,11 @@ export class RiconoscimentoDocumenti {
     return confidence >= min && confidence <= max;
   }
 
+  /**
+   * Converte lo stato dello split nello stato usato dal documento padre.
+   * @param state Stato dello split.
+   * @returns Stato documento equivalente per la vista nested.
+   */
   private mapSplitStateToDocumentState(state: State): DocumentState {
     switch (state) {
       case State.Inviato:
@@ -251,6 +321,11 @@ export class RiconoscimentoDocumenti {
     }
   }
 
+  /**
+   * Raggruppa gli split per parentId e costruisce la struttura nested.
+   * @param rows Righe filtrate da aggregare.
+   * @returns Lista di documenti padre con figli associati.
+   */
   private buildNestedDocuments(rows: ResultSplit[]): ResultAiCopilot[] {
     const groups = new Map<number, ResultSplit[]>();
 
@@ -264,7 +339,7 @@ export class RiconoscimentoDocumenti {
       const first = children[0];
       const minPage = Math.min(...children.map((child) => child.page_start));
       const maxPage = Math.max(...children.map((child) => child.page_end));
-      const parentName = this.parentNames[parentId];
+      const parentName = this.parentNames[parentId] || first.name;
       const parentPages = this.parentPageCounts[parentId] ?? (maxPage - minPage + 1);
 
       return {
@@ -277,6 +352,9 @@ export class RiconoscimentoDocumenti {
     });
   }
 
+  /**
+   * Inizializza i filtri, le subscription ai subject del service e il menu tabella.
+   */
   ngOnInit() {
     this.aiCoPilotService.fetchCategories();
     this.aiCoPilotService.fetchCompanies();
