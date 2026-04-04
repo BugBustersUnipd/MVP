@@ -91,7 +91,7 @@ describe('RiconoscimentoDocumenti', () => {
     };
 
     component.DocumentiSplittati = [doc as any];
-    component.searchvalue = 'cedolino';
+    component.searchvalue = 'mario';
     component.selectedCategory = 'Cedolini';
     component.selectedState = State.DaValidare;
     component.selectedCompany = 'ACME';

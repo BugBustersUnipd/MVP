@@ -93,7 +93,7 @@ describe('StoricoAiCopilot', () => {
         reason: 'Payroll',
         month_year: '01/2025',
       },
-    ] as ResultSplit[]);
+    ] as any);
     parentNames$.next({ 10: 'Documento originale' });
     parentPageCounts$.next({ 10: 6 });
     companies$.next([{ id: 1, name: 'ACME' }]);
@@ -101,7 +101,7 @@ describe('StoricoAiCopilot', () => {
     expect(aiCoPilotServiceMock.fetchHistoryResults).toHaveBeenCalled();
     expect(aiCoPilotServiceMock.fetchCompanies).toHaveBeenCalled();
     expect(component.Documents.length).toBe(1);
-    expect(component.Documents[0].name).toBe('Documento originale');
+    expect((component.Documents[0] as any).name).toBe('Documento originale');
     expect(component.DocumentType).toEqual(['Cedolini']);
     expect(component.Companies).toEqual(['ACME']);
   });
@@ -133,7 +133,7 @@ describe('StoricoAiCopilot', () => {
         reason: 'Payroll',
         month_year: '01/2025',
       },
-    ] as ResultSplit[];
+    ] as any;
 
     (component as any).documentsSubject.next(component.Documents);
 
@@ -174,9 +174,9 @@ describe('StoricoAiCopilot', () => {
         reason: 'Reason',
         month_year: '01/2025',
       },
-    ] as ResultSplit[];
+    ] as any;
     (component as any).parentPageCounts = { 4: 3 };
-    const selectedRow: ResultSplit =
+    const selectedRow =
       {
         id: 9,
         parentId: 4,
@@ -201,7 +201,7 @@ describe('StoricoAiCopilot', () => {
         department: 'D',
         reason: 'Reason',
         month_year: '01/2025',
-      };
+      } as any;
 
     component.navigateToResult(selectedRow);
 
