@@ -23,7 +23,7 @@ export class StoricoAiAssistant {
   private aiService = inject(AiAssistantService);
   private destroyRef = inject(DestroyRef);
 
-  ButtonLabel: string ='Aggiungi';
+
   Generazioni: ResultAiAssistant[] = [];
   private generazioniFiltrateSubject = new BehaviorSubject<ResultAiAssistant[]>([]);
   GenerazioniFiltrate$ = this.generazioniFiltrateSubject.asObservable();

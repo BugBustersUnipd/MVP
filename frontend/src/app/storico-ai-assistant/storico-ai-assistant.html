@@ -4,7 +4,7 @@
     <app-filters TypeOfFilter="text" TextFilterLabel="Azienda" [textOptions]="companiesOptions.map(o => o.name)" [(selectedTextOption)]="selectedCompany" (selectedTextOptionChange)="onCompanyChange($event)"></app-filters>
     <app-filters TypeOfFilter="text" TextFilterLabel="Tono" [textOptions]="tonoOptions.map(o => o.name)" [(selectedTextOption)]="selectedTono" (selectedTextOptionChange)="onTonoChange($event)"></app-filters>
     <app-filters TypeOfFilter="text" TextFilterLabel="Stile" [textOptions]="stileOptions.map(o => o.name)" [(selectedTextOption)]="selectedStile" (selectedTextOptionChange)="onStileChange($event)"></app-filters>
-    <app-button [label]="ButtonLabel" (action)="NavigateToGeneratore()" ></app-button>
+    <app-button label="Aggiungi" (action)="NavigateToGeneratore()" ></app-button>
 </div>
 
 <app-tables
