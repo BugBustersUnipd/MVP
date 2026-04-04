@@ -39,8 +39,8 @@ export class StoricoAiAssistant {
   columns = [
     { field: 'title', header: 'Titolo' },
     { field: 'prompt', header: 'Prompt' },
-    { field: 'tone', header: 'Tono' },
-    { field: 'style', header: 'Stile' },
+    { field: 'tone.name', header: 'Tono' },
+    { field: 'style.name', header: 'Stile' },
     { field: 'data', header: 'Data', type: 'date' },
     { field: 'content', header: 'Risultato parziale' },
     { field: 'evaluation', header: 'Valutazione', type: 'rating' }

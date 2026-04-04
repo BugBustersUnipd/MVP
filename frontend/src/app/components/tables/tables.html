@@ -48,9 +48,9 @@
               @else{
                  <p-tag [value]="row[col.field]" class="p-tag-default"></p-tag>
               }
-            } @else if (col.field === 'tone' || col.field === 'style') {
-                <span class="truncate-content" [title]="row[col.field]?.name">
-                  {{ row[col.field]?.name }}
+            } @else if (col.field === 'tone.name' || col.field === 'style.name') {
+                <span class="truncate-content" [title]="col.field === 'tone.name' ? row?.tone?.name : row?.style?.name">
+                  {{ col.field === 'tone.name' ? row?.tone?.name : row?.style?.name }}
                 </span>
             } @else if (col.field === 'title') {
                 <a href="#" class="truncate-content" [title]="getPlainCellText(row, col)" (click)="$event.preventDefault(); onTitleClick(row)">
