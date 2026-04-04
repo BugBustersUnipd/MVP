@@ -420,7 +420,7 @@ columns = [
   { field: 'department', header: 'Reparto' },
   { field: 'company', header: 'Azienda' },
   { field: 'category', header: 'Categoria' },
-  { field: 'data', header: 'Data Documento', type: 'date' },
+  { field: 'data', header: 'Data Analisi', type: 'date' },
 ];
 
 }
