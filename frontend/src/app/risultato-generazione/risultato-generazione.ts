@@ -25,7 +25,6 @@ export class RisultatoGenerazione {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   isEditable: boolean = false;
-  readonly: boolean = true;
   isImageTitleLoading: boolean = false;
   isContentLoading: boolean = false;
 
@@ -38,7 +37,7 @@ export class RisultatoGenerazione {
   // Se c'è un'immagine in pending (in modifica), mostra quella, altrimenti quella del risultato
   imagePathForView = computed(() => this.pendingImagePath() ?? this.result()?.imagePath ?? '');
 
-  constructor() {
+  ngOnInit() {
     if (this.result()) {
       // il result preso dallo stato di navigazione (da generatore) viene settato anche nel service, per avere coerenza tra i due
       this.aiService.setCurrentResult(this.result());
@@ -260,7 +259,6 @@ export class RisultatoGenerazione {
     this.pendingModifications = {};
     this.pendingImagePath.set(null);
     this.isEditable = true;
-    this.readonly = false;
   }
 
   /**
