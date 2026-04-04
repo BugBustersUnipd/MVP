@@ -1,19 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { EventEmitter, Input, Output } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
+import { Input } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { OtherExtractDocumentRow } from '../../shared/models/result-split.model';
 
 @Component({
 	selector: 'app-other-extract-documents',
-	imports: [CommonModule, TableModule, ButtonModule],
+	imports: [CommonModule, TableModule],
 	templateUrl: './other-extract-documents.html',
 	styleUrl: './other-extract-documents.css',
 })
 export class OtherExtractDocuments {
 	@Input() rows: OtherExtractDocumentRow[] = [];
-	@Output() rowRemoved = new EventEmitter<number>();
 
 	formatConfidence(value: number | null | undefined): string {
 		if (value === null || value === undefined || !Number.isFinite(value)) {
@@ -27,7 +25,4 @@ export class OtherExtractDocuments {
 		});
 	}
 
-	requestRowRemoval(rowId: number): void {
-		this.rowRemoved.emit(rowId);
-	}
 }

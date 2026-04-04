@@ -29,12 +29,4 @@ describe('ExtractedEmployeeInfo', () => {
 
     expect(emitSpy).toHaveBeenCalledOnce();
   });
-
-  it('should emit row removal index', () => {
-    const emitSpy = vi.spyOn(component.rowRemoved, 'emit');
-
-    component.requestRowRemoval(3);
-
-    expect(emitSpy).toHaveBeenCalledWith(3);
-  });
 });

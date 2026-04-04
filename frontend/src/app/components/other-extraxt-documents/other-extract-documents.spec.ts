@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
 
 import { OtherExtractDocuments } from './other-extract-documents';
 
@@ -19,14 +18,6 @@ describe('OtherExtractDocuments', () => {
 
 	it('should create', () => {
 		expect(component).toBeTruthy();
-	});
-
-	it('should emit row removal index', () => {
-		const emitSpy = vi.spyOn(component.rowRemoved, 'emit');
-
-		component.requestRowRemoval(2);
-
-		expect(emitSpy).toHaveBeenCalledWith(2);
 	});
 
 	it('should format confidence with one decimal place', () => {

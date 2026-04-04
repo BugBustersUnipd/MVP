@@ -12,7 +12,7 @@ import { OtherExtractDocuments } from '../components/other-extraxt-documents/oth
 import { ToastModule } from 'primeng/toast';
 import { AiCoPilotService } from '../../services/ai-co-pilot-service/ai-co-pilot-service';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, of } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -43,7 +43,6 @@ export class AnteprimaDocumento {
   pendingModifications: Partial<ResultSplit> = {};
   pages: number = history.state?.pages;
   otherExtractedDocumentRows$: Observable<OtherExtractDocumentRow[]> = of([]);
-  private removedOtherDocumentIds$ = new BehaviorSubject<number[]>([]);
 
   get extractedEmployeeRows(): ExtractedEmployeeInfoRow[] {
     return this.extractedEmployeeRows$.value;
@@ -88,13 +87,10 @@ export class AnteprimaDocumento {
         this.applyIncomingResult(updated);
       });
 
-    this.otherExtractedDocumentRows$ = combineLatest([
-      this.aiService.otherExtractedDocuments$,
-      this.removedOtherDocumentIds$,
-    ]).pipe(
-      map(([rows, removedIds]) =>
+    this.otherExtractedDocumentRows$ = this.aiService.otherExtractedDocuments$.pipe(
+      map((rows) =>
         rows
-          .filter((row) => !removedIds.includes(row.id!) && row.id !== currentExtractedDocumentId)
+          .filter((row) => row.id !== currentExtractedDocumentId)
           .map((row) => ({
             id: row.id,
             recipientName: row.recipient?.recipientName ?? '',
@@ -183,26 +179,6 @@ export class AnteprimaDocumento {
         }
       });
     }
-  }
-
-  /**
-   * Rimuove una riga dipendente dalla tabella locale.
-   * @param rowIndex Indice della riga da rimuovere.
-   */
-  handleRemoveExtractedEmployeeRow(rowIndex: number): void {
-    this.extractedEmployeeRows = this.extractedEmployeeRows.filter((_, index) => index !== rowIndex);
-  }
-
-  /**
-   * Rimuove dalla vista un documento fratello senza alterare i dati backend.
-   * @param rowId Id del documento da nascondere.
-   */
-  handleRemoveOtherExtractedDocumentRow(rowId: number): void {
-    const current = this.removedOtherDocumentIds$.value;
-    if (current.includes(rowId)) {
-      return;
-    }
-    this.removedOtherDocumentIds$.next([...current, rowId]);
   }
 
   /**

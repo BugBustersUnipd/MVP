@@ -8,16 +8,6 @@ describe('ResultAiCopilotSerializer', () => {
     serializer = new ResultAiCopilotSerializer();
   });
 
-  it('should create initial state from file', () => {
-    const result = serializer.createInitialState(
-      new File(['x'], 'cedolino.pdf', { type: 'application/pdf' }),
-    );
-
-    expect(result.id).toBe(0);
-    expect(result.name).toBe('cedolino.pdf');
-    expect(result.ResultSplit).toEqual([]);
-  });
-
   it('should deserialize extracted document with numeric confidence <= 1', () => {
     const split = serializer.deserializeExtractedDocument({
       id: 5,

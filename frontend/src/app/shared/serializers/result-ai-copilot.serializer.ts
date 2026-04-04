@@ -5,25 +5,6 @@ import { ResultSplit, State} from '../models/result-split.model';
   providedIn: 'root'
 })
 export class ResultAiCopilotSerializer{
-  /**
-   * Crea lo stato iniziale locale di un documento appena caricato.
-   * @param file File selezionato in upload.
-   * @returns Documento padre inizializzato in coda.
-   */
-  createInitialState(file: File): ResultAiCopilot {
-    return {
-      id: 0, // non ancora assegnato dal backend
-      name: file.name,
-      pages: 0,
-      state: DocumentState.InCoda,
-      ResultSplit: [],
-    } as ResultAiCopilot;
-  }
-
-  deserialize(result: ResultAiCopilot): unknown[] {
-    throw new Error('ResultAiCopilotSerializer.deserialize not implemented yet');
-  }
-
    deserializeExtractedDocument(raw: any): ResultSplit {
     const metadata = raw.metadata ?? {};
     const category = metadata['type'] ?? '';

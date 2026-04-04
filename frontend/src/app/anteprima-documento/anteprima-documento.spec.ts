@@ -124,19 +124,13 @@ describe('AnteprimaDocumento', () => {
     expect(component.pages).toBe(10);
   });
 
-  it('should remove rows from extracted and other tables', () => {
+  it('should filter out current document from sibling rows', () => {
     let otherRows: any[] = [];
     component.otherExtractedDocumentRows$.subscribe((rows) => {
       otherRows = rows;
     });
 
-    component.extractedEmployeeRows = [{ recipientName: 'A', recipientEmail: 'a@a', employeeCode: '1', rawRecipientName: 'A Raw', hasMatch: true, recipientConfidence: 85 } as any];
     aiServiceMock.otherExtractedDocuments$.next([{ id: 1, recipientName: 'Mario', confidence: 80 }]);
-
-    component.handleRemoveExtractedEmployeeRow(0);
-    component.handleRemoveOtherExtractedDocumentRow(1);
-
-    expect(component.extractedEmployeeRows).toEqual([]);
     expect(otherRows).toEqual([]);
   });
 
@@ -145,7 +139,7 @@ describe('AnteprimaDocumento', () => {
     component.handleOpenSplitPdf();
 
     expect(aiServiceMock.getOriginalPdfById).toHaveBeenCalledWith(11);
-    expect(aiServiceMock.getPdfById).toHaveBeenCalledWith(1);
+    expect(aiServiceMock.getPdfById).toHaveBeenCalledWith(1, 11);
   });
 
   it('should show error when pdf ids are missing', () => {
@@ -256,22 +250,14 @@ describe('AnteprimaDocumento', () => {
     expect(openSplitSpy).toHaveBeenCalledOnce();
   });
 
-  it('should react to extracted and other documents output bindings in template', () => {
+  it('should react to extracted documents output bindings in template', () => {
     const editSpy = vi.spyOn(component, 'handleEditExtractedEmployeeInfo');
-    const removeExtractedSpy = vi.spyOn(component, 'handleRemoveExtractedEmployeeRow');
-    const removeOtherSpy = vi.spyOn(component, 'handleRemoveOtherExtractedDocumentRow');
     fixture.detectChanges();
 
     const extracted = fixture.debugElement.query(By.directive(ExtractedEmployeeInfo));
     extracted.componentInstance.editRequested.emit();
-    extracted.componentInstance.rowRemoved.emit(0);
-
-    const other = fixture.debugElement.query(By.directive(OtherExtractDocuments));
-    other.componentInstance.rowRemoved.emit(1);
 
     expect(editSpy).toHaveBeenCalledOnce();
-    expect(removeExtractedSpy).toHaveBeenCalledWith(0);
-    expect(removeOtherSpy).toHaveBeenCalledWith(1);
   });
 
   it('should handle send button action from template', () => {
