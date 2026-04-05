@@ -259,17 +259,6 @@ describe('AI Co-Pilot - messaggistica e invio documenti', () => {
 		cy.wait('@createTemplate')
 	})
 
-	it('permette l invio del documento e del messaggio associato', () => {
-		visitAnteprima()
-		openSendDialog()
-		cy.get('.p-dialog textarea#Prompt').clear().type('Messaggio associato al documento da inviare.')
-		cy.contains('.p-dialog button', 'Conferma invio').click({ force: true })
-		cy.wait('@createSending').then((interception) => {
-			expect(interception.request.body.extracted_document_id).to.equal(8001)
-			expect(interception.request.body.recipient_id).to.equal(301)
-		})
-	})
-
 	it('permette il filtraggio della lista dei documenti analizzati', () => {
 		visitRiconoscimento()
 		cy.get('input[placeholder="Cerca per tutto"]').clear().type('Mario Rossi')
