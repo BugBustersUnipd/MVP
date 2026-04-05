@@ -40,7 +40,10 @@ module DocumentProcessing
       notifier.broadcast(job_id, build_error_payload(message: e.message, filename: File.basename(file_path)))
       notifier.broadcast(job_id, event: "processing_completed", status: "error")
     ensure
-      cleanup_processing_file(file_path, uploaded_document)
+      if file_path && file_storage.exist?(file_path)
+        source_path = uploaded_document&.storage_path
+        file_storage.delete(file_path) if source_path.blank? || File.expand_path(file_path) != File.expand_path(source_path)
+      end
     end
 
     private
@@ -196,22 +199,6 @@ module DocumentProcessing
       else
         nil
       end
-    end
-
-    # Cancella solo artefatti temporanei, non il source path persistito dell'upload.
-    def cleanup_processing_file(file_path, uploaded_document)
-      return unless file_path && file_storage.exist?(file_path)
-      return unless should_delete_processing_file?(file_path, uploaded_document)
-
-      file_storage.delete(file_path)
-    end
-
-    # Evita la cancellazione del file originale usato anche dall'endpoint download.
-    def should_delete_processing_file?(file_path, uploaded_document)
-      source_path = uploaded_document&.storage_path
-      return true if source_path.blank?
-
-      File.expand_path(file_path) != File.expand_path(source_path)
     end
   end
 end
