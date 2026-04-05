@@ -126,6 +126,9 @@ describe('AiCoPilotService', () => {
   it('should call window.open for original and extracted PDFs', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
+    (service as any).resultsHistorySubject.next([{ id: 22, parentId: 11 }] as any);
+    (service as any).parentNamesSubject.next({ 11: 'documento.pdf' });
+
     service.getOriginalPdfById(11);
     service.getPdfById(22);
 

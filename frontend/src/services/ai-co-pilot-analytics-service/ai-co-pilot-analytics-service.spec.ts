@@ -48,7 +48,7 @@ describe('AiCoPilotAnalyticsService', () => {
 
     expect(collected.at(-1)).toEqual([
       { label: 'PERCENTUALE CONFIDENZA MEDIA', value: '89.28%' },
-      { label: 'PERCENTUALE HUMAN-IN-THE-LOOP', value: 0 },
+      { label: 'MEDIA HUMAN-IN-THE-LOOP', value: 0 },
       { label: 'ACCURATEZZA MAPPING', value: '100%' },
       { label: 'TEMPI MEDI ANALISI', value: '6.71s' },
     ]);
@@ -107,7 +107,7 @@ describe('AiCoPilotAnalyticsService', () => {
 
     expect(collected.at(-1)).toEqual([
       { label: 'PERCENTUALE CONFIDENZA MEDIA', value: '0%' },
-      { label: 'PERCENTUALE HUMAN-IN-THE-LOOP', value: 0 },
+      { label: 'MEDIA HUMAN-IN-THE-LOOP', value: 0 },
       { label: 'ACCURATEZZA MAPPING', value: '0%' },
       { label: 'TEMPI MEDI ANALISI', value: '0s' },
     ]);

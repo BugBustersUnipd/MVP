@@ -281,7 +281,7 @@ describe('RisultatoGenerazione', () => {
     const editSpy = vi.spyOn(component, 'enableEditing');
     const rigeneraSpy = vi.spyOn(component, 'onRigenera');
     const salvaSpy = vi.spyOn(component, 'onSalva');
-    const deleteSpy = vi.spyOn(component, 'deleteGeneration');
+    const discardSpy = vi.spyOn(component, 'discardGeneration');
     component.result.set({ ...baseResult, id: null, generatedDatumId: 777 });
     component.isEditable = false;
     fixture.detectChanges();
@@ -301,7 +301,7 @@ describe('RisultatoGenerazione', () => {
     expect(rigeneraSpy).toHaveBeenCalledWith(777);
     expect(salvaSpy).toHaveBeenCalledOnce();
     expect(editSpy).toHaveBeenCalledOnce();
-    expect(deleteSpy).toHaveBeenCalledOnce();
+    expect(discardSpy).toHaveBeenCalledOnce();
   });
 
   it('should handle reuse and duplicate actions in post branch from template', () => {

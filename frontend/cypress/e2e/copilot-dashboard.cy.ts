@@ -63,7 +63,7 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 	it('mostra la dashboard con i dati analytics dell AI Co-Pilot', () => {
 		cy.contains('p-accordion-header', 'Ai Co-Pilot').should('be.visible')
 		cy.contains('.item .label', 'PERCENTUALE CONFIDENZA MEDIA').should('exist')
-		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP').should('exist')
+		cy.contains('.item .label', 'MEDIA HUMAN-IN-THE-LOOP').should('exist')
 		cy.contains('.item .label', 'ACCURATEZZA MAPPING').should('exist')
 		cy.contains('.item .label', 'TEMPI MEDI ANALISI').should('exist')
 	})
@@ -78,7 +78,7 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 	})
 
 	it('mostra la percentuale di interventi manuali necessari', () => {
-		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP')
+		cy.contains('.item .label', 'MEDIA HUMAN-IN-THE-LOOP')
 			.should('exist')
 			.closest('.item')
 			.find('.data-value')
@@ -119,7 +119,7 @@ describe('Analytics Dashboard - AI Co-Pilot', () => {
 			.invoke('text')
 			.should('match', /^88(00)?%$/)
 
-		cy.contains('.item .label', 'PERCENTUALE HUMAN-IN-THE-LOOP')
+		cy.contains('.item .label', 'MEDIA HUMAN-IN-THE-LOOP')
 			.closest('.item')
 			.find('.data-value')
 			.should('have.text', '15')

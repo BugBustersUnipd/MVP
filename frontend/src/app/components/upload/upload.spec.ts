@@ -22,21 +22,21 @@ describe('Upload', () => {
   });
 
   it('should have default input values', () => {
-    expect(component.accept).toBe('.pdf,.csv,.jpg');
+    expect(component.accept).toBe('.pdf,.csv,.jpg,.jpeg,.png');
     expect(component.multiple).toBe(true);
     expect(component.titleText).toBe('Carica uno o più documenti');
   });
 
   it('should emit only valid files from onPrimeSelect', () => {
     const valid = new File(['x'], 'doc.pdf');
-    const invalid = new File(['x'], 'img.png');
+    const invalid = new File(['x'], 'doc.txt');
     const selectedSpy = vi.spyOn(component.filesSelected, 'emit');
     const invalidSpy = vi.spyOn(component.fileValidationError, 'emit');
 
     component.onPrimeSelect({ files: [valid, invalid] });
 
     expect(selectedSpy).toHaveBeenCalledWith([valid]);
-    expect(invalidSpy).toHaveBeenCalledWith({ invalidFiles: ['img.png'] });
+    expect(invalidSpy).toHaveBeenCalledWith({ invalidFiles: ['doc.txt'] });
   });
 
   it('should accept all files when accept list is empty', () => {
