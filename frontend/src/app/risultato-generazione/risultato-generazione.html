@@ -11,7 +11,7 @@
                 <app-button label="Salva" class="btn btn-primary" [fluid]="true" (action)="onSalva()"></app-button>
             </div>
             <div class="p-2 mb-3">
-                <app-dialog Icon="assets/icons/cross.svg" message="Vuoi scartare questa generazione? L'azione imposterà automaticamente la generazione a 1." header="Scarta generazione"
+                <app-dialog Icon="assets/icons/cross.svg" message="L'azione avrà l'effetto di cancellare il risultato e impostare la valutazione a 1." header="Vuoi scartare questa generazione?"
                     (confirmed)="discardGeneration()">
                 </app-dialog>
             </div>
