@@ -21,7 +21,7 @@
 				<div class="extracted-name-row">
 					<span class="extracted-name-value">{{ row.rawName || 'Non disponibile' }}</span>
 					@if (row.recipientConfidence !== null) {
-						<span class="recipient-confidence-pill">{{ row.recipientConfidence }}%</span>
+						<span class="recipient-confidence-pill">{{ formatConfidence(row.recipientConfidence) }}%</span>
 					}
 				</div>
 			</div>
