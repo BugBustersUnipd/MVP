@@ -68,20 +68,6 @@ class ProcessDataItemTest < ActiveSupport::TestCase
     end
   end
 
-  class FakeNotifier
-    attr_reader :events
-
-    # Inizializza le dipendenze del componente.
-    def initialize
-      @events = []
-    end
-
-    # Invia l'output verso il canale previsto.
-    def broadcast(job_id, payload)
-      @events << [job_id, payload]
-    end
-  end
-
   class FakeFileStorage
     # Verifica le condizioni richieste prima di procedere.
     def exist?(_path)
@@ -132,12 +118,11 @@ class ProcessDataItemTest < ActiveSupport::TestCase
   end
 
   class FakeContainer
-    attr_reader :data_item_repository, :notifier, :file_storage
+    attr_reader :data_item_repository, :file_storage
 
     # Inizializza le dipendenze del componente.
-    def initialize(repo:, notifier:, file_storage:, employee:)
+    def initialize(repo:, file_storage:, employee:)
       @data_item_repository = repo
-      @notifier = notifier
       @file_storage = file_storage
       @employee = employee
     end
@@ -188,30 +173,34 @@ class ProcessDataItemTest < ActiveSupport::TestCase
     item = ProcessingItem.create!(processing_run: run, sequence: 1, filename: "x.pdf", extracted_document: extracted)
 
     repo = FakeRepository.new(run: run, item: item, extracted_document: extracted)
-    notifier = FakeNotifier.new
     file_storage = FakeFileStorage.new
-    container = FakeContainer.new(repo: repo, notifier: notifier, file_storage: file_storage, employee: u)
+    container = FakeContainer.new(repo: repo, file_storage: file_storage, employee: u)
 
-    DocumentProcessing::ProcessDataItem.new(
-      data_item_repository: container.data_item_repository,
-      notifier: container.notifier,
-      file_storage: container.file_storage,
-      ocr_service: container.ocr_service,
-      data_extractor: container.data_extractor,
-      recipient_resolver: container.recipient_resolver,
-      confidence_calculator_factory: container.method(:confidence_calculator),
-      extracted_metadata_builder_factory: container.method(:extracted_metadata_builder)
-    ).call(
-      file_path: "/tmp/x.pdf",
-      job_id: "job-pdi",
-      processing_item_id: item.id,
-      extracted_document_id: extracted.id
-    )
+    events = []
+
+    ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, payload|
+      events << payload
+    }, "document_processing.lifecycle") do
+      DocumentProcessing::ProcessDataItem.new(
+        data_item_repository: container.data_item_repository,
+        file_storage: container.file_storage,
+        ocr_service: container.ocr_service,
+        data_extractor: container.data_extractor,
+        recipient_resolver: container.recipient_resolver,
+        confidence_calculator_factory: container.method(:confidence_calculator),
+        extracted_metadata_builder_factory: container.method(:extracted_metadata_builder)
+      ).call(
+        file_path: "/tmp/x.pdf",
+        job_id: "job-pdi",
+        processing_item_id: item.id,
+        extracted_document_id: extracted.id
+      )
+    end
 
     assert_includes repo.calls, :item_done
     assert_includes repo.calls, :doc_done
-    assert_equal 2, notifier.events.size
-    assert_equal "document_processed", notifier.events[0][1][:event]
-    assert_equal "processing_completed", notifier.events[1][1][:event]
+    assert_equal 2, events.size
+    assert_equal "document_processed", events[0][:event]
+    assert_equal "processing_completed", events[1][:event]
   end
 end
