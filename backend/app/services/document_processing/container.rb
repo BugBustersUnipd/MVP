@@ -3,7 +3,6 @@ module DocumentProcessing
     # Inizializza le dipendenze del componente.
     def initialize(
       aws_region: ENV.fetch("AWS_REGION", "us-east-1"),
-      broadcaster: ActionCable.server,
       ocr_service_class: DocumentProcessing::Ocr,
       data_extractor_class: DocumentProcessing::DataExtractor,
       recipient_resolver_class: DocumentProcessing::RecipientResolver,
@@ -12,7 +11,6 @@ module DocumentProcessing
       csv_processor_class: DocumentProcessing::CsvProcessor,
       confidence_calculator_class: DocumentProcessing::ConfidenceCalculator,
       extracted_metadata_builder_class: DocumentProcessing::ExtractedMetadataBuilder,
-      notifier_class: DocumentProcessing::ActionCableNotifier,
       llm_service_class: DocumentProcessing::LlmService,
       split_run_repository_class: DocumentProcessing::Persistence::SplitRunRepository,
       data_item_repository_class: DocumentProcessing::Persistence::DataItemRepository,
@@ -24,7 +22,6 @@ module DocumentProcessing
       bedrock_client: nil
     )
       @aws_region = aws_region
-      @broadcaster = broadcaster
       @ocr_service_class = ocr_service_class
       @data_extractor_class = data_extractor_class
       @recipient_resolver_class = recipient_resolver_class
@@ -33,7 +30,6 @@ module DocumentProcessing
       @csv_processor_class = csv_processor_class
       @confidence_calculator_class = confidence_calculator_class
       @extracted_metadata_builder_class = extracted_metadata_builder_class
-      @notifier_class = notifier_class
       @llm_service_class = llm_service_class
       @split_run_repository_class = split_run_repository_class
       @data_item_repository_class = data_item_repository_class
@@ -89,11 +85,6 @@ module DocumentProcessing
       @extracted_metadata_builder_class.new(**kwargs)
     end
 
-    # Crea e memoizza il notifier verso ActionCable.
-    def notifier
-      @notifier ||= @notifier_class.new(broadcaster: @broadcaster)
-    end
-
     # Crea e memoizza il repository dei run di split.
     def split_run_repository
       @split_run_repository ||= @split_run_repository_class.new
@@ -130,7 +121,6 @@ module DocumentProcessing
     def process_data_item_service
       DocumentProcessing::ProcessDataItem.new(
         data_item_repository: data_item_repository,
-        notifier: notifier,
         file_storage: file_storage,
         ocr_service: ocr_service,
         data_extractor: data_extractor,
@@ -144,7 +134,6 @@ module DocumentProcessing
     def process_split_run_service
       DocumentProcessing::ProcessSplitRun.new(
         split_run_repository: split_run_repository,
-        notifier: notifier,
         file_storage: file_storage,
         pdf_splitter_factory: method(:pdf_splitter),
         data_extraction_job_class: DataExtractionJob
@@ -163,7 +152,6 @@ module DocumentProcessing
     
     def process_generic_file_service(file_kind:)
       DocumentProcessing::ProcessGenericFile.new(
-        notifier: notifier,
         file_storage: file_storage,
         generic_file_repository: data_item_repository,
         file_processor: file_processor(file_kind),
@@ -197,11 +185,6 @@ module DocumentProcessing
         data_extraction_job_class: DataExtractionJob,
         file_storage: file_storage
       )
-    end
-
-    # Invia l'output verso il canale previsto.
-    def broadcast(job_id, data)
-      notifier.broadcast(job_id, data)
     end
 
     private

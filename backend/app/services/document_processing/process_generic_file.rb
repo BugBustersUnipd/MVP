@@ -2,13 +2,11 @@ module DocumentProcessing
   class ProcessGenericFile
     # Inizializza le dipendenze del componente.
     def initialize(
-      notifier: nil,
       file_storage: nil,
       generic_file_repository: nil,
       file_processor:,
       confidence_calculator_factory: nil
     )
-      @notifier = notifier
       @file_storage = file_storage
       @generic_file_repository = generic_file_repository
       @file_processor = file_processor
@@ -32,13 +30,20 @@ module DocumentProcessing
 
       events = process_file(file_path, uploaded_document, run, overlays)
 
-      events.each { |payload| notifier.broadcast(job_id, payload) }
+      events.each { |payload| ActiveSupport::Notifications.instrument("document_processing.lifecycle", job_id: job_id, **payload) }
       run.reload
-      notifier.broadcast(job_id, event: "processing_completed", status: "success", processed_documents: run.processed_documents, total_documents: run.total_documents)
+      ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+        job_id: job_id, event: "processing_completed", status: "success",
+        processed_documents: run.processed_documents, total_documents: run.total_documents
+      )
     rescue StandardError => e
       run&.update(status: "failed", error_message: e.message, completed_at: Time.current)
-      notifier.broadcast(job_id, build_error_payload(message: e.message, filename: File.basename(file_path)))
-      notifier.broadcast(job_id, event: "processing_completed", status: "error")
+      ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+        job_id: job_id, **build_error_payload(message: e.message, filename: File.basename(file_path))
+      )
+      ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+        job_id: job_id, event: "processing_completed", status: "error"
+      )
     ensure
       if file_path && file_storage.exist?(file_path)
         source_path = uploaded_document&.storage_path
@@ -48,7 +53,7 @@ module DocumentProcessing
 
     private
 
-    attr_reader :notifier, :file_storage, :generic_file_repository,
+    attr_reader :file_storage, :generic_file_repository,
       :file_processor, :confidence_calculator_factory
 
     # Sovrascrive dati llm con quelli dati e setta confidenza = 1.0

@@ -3,13 +3,11 @@ module DocumentProcessing
     # Inizializza le dipendenze del componente.
     def initialize(
       split_run_repository:,
-      notifier:,
       file_storage:,
       pdf_splitter_factory:,
       data_extraction_job_class: DataExtractionJob
     )
       @split_run_repository = split_run_repository
-      @notifier = notifier
       @file_storage = file_storage
       @pdf_splitter_factory = pdf_splitter_factory
       @data_extraction_job_class = data_extraction_job_class
@@ -27,8 +25,8 @@ module DocumentProcessing
 
       split_run_repository.mark_post_split_state!(run:, split_count: split_results.size)
 
-      notifier.broadcast(
-        job_id,
+      ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+        job_id: job_id,
         event: "split_completed",
         status: "success",
         original_pages: pdf.pages.size,
@@ -38,21 +36,21 @@ module DocumentProcessing
 
       return unless split_results.empty?
 
-      notifier.broadcast(
-        job_id,
-        event: "processing_completed",
-        status: "success"
+      ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+        job_id: job_id, event: "processing_completed", status: "success"
       )
     rescue StandardError => e
       split_run_repository.mark_failed(run:, error_message: e.message)
-      notifier.broadcast(job_id, event: "split_completed", status: "error", message: e.message)
+      ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+        job_id: job_id, event: "split_completed", status: "error", message: e.message
+      )
     ensure
       cleanup_source_pdf(file_path, run)
     end
 
     private
 
-    attr_reader :split_run_repository, :notifier, :file_storage, :pdf_splitter_factory, :data_extraction_job_class
+    attr_reader :split_run_repository, :file_storage, :pdf_splitter_factory, :data_extraction_job_class
 
     # Costruisce i dati di output per il flusso corrente.
     def create_processing_items_and_enqueue(split_results, run)

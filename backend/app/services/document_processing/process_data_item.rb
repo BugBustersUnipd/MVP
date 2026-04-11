@@ -3,7 +3,6 @@ module DocumentProcessing
     # Inizializza le dipendenze del componente.
     def initialize(
       data_item_repository:,
-      notifier:,
       file_storage:,
       ocr_service:,
       data_extractor:,
@@ -12,7 +11,6 @@ module DocumentProcessing
       extracted_metadata_builder_factory:
     )
       @data_item_repository = data_item_repository
-      @notifier = notifier
       @file_storage = file_storage
       @ocr_service = ocr_service
       @data_extractor = data_extractor
@@ -58,9 +56,9 @@ module DocumentProcessing
       update_extracted_document_success(extracted_document, resolution, extracted_document_data, recipient, final_global_confidence, duration)
 
       if job_id.present?
-        notifier.broadcast(
-          job_id,
-          build_success_payload(
+        ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+          job_id: job_id,
+          **build_success_payload(
             filename: File.basename(file_path),
             ocr_text: full_text,
             recipient: recipient,
@@ -78,9 +76,9 @@ module DocumentProcessing
       data_item_repository.mark_extracted_document_failed(extracted_document:, error_message: e.message)
 
       if job_id.present?
-        notifier.broadcast(
-          job_id,
-          build_error_payload(
+        ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+          job_id: job_id,
+          **build_error_payload(
             message: e.message,
             filename: file_path ? File.basename(file_path) : nil,
             extracted_document_id: extracted_document&.id,
@@ -96,7 +94,7 @@ module DocumentProcessing
 
     private
 
-    attr_reader :data_item_repository, :notifier, :file_storage, :ocr_service, :data_extractor, :recipient_resolver,
+    attr_reader :data_item_repository, :file_storage, :ocr_service, :data_extractor, :recipient_resolver,
       :confidence_calculator_factory, :extracted_metadata_builder_factory
 
     # Recupera il documento estratto usando id esplicito o associato all'item.
@@ -129,10 +127,8 @@ module DocumentProcessing
       result = data_item_repository.update_progress!(run)
       return unless result[:completed]
 
-      notifier.broadcast(
-        job_id,
-        event: "processing_completed",
-        status: "success"
+      ActiveSupport::Notifications.instrument("document_processing.lifecycle",
+        job_id: job_id, event: "processing_completed", status: "success"
       )
     end
 
