@@ -28,21 +28,6 @@ class ContainerTest < ActiveSupport::TestCase
     end
   end
 
-  class FakeNotifier
-    attr_reader :calls
-
-    # Inizializza le dipendenze del componente.
-    def initialize(broadcaster:)
-      @broadcaster = broadcaster
-      @calls = []
-    end
-
-    # Invia l'output verso il canale previsto.
-    def broadcast(job_id, payload)
-      @calls << [job_id, payload]
-    end
-  end
-
   class FakeFileStorage
     # Verifica le condizioni richieste prima di procedere.
     def exist?(_path)
@@ -58,7 +43,6 @@ class ContainerTest < ActiveSupport::TestCase
       ocr_service_class: FakeOcr,
       data_extractor_class: FakeExtractor,
       llm_service_class: FakeLlm,
-      notifier_class: FakeNotifier,
       file_storage_class: FakeFileStorage,
       textract_client: textract,
       bedrock_client: bedrock
@@ -67,15 +51,6 @@ class ContainerTest < ActiveSupport::TestCase
     assert_same textract, container.ocr_service.client
     assert_same bedrock, container.data_extractor.llm.client
     assert_instance_of FakeFileStorage, container.file_storage
-  end
-
-  test "broadcast delegates to notifier" do
-    container = DocumentProcessing::Container.new(notifier_class: FakeNotifier)
-
-    container.broadcast("job-x", { event: "ping" })
-
-    assert_equal 1, container.notifier.calls.size
-    assert_equal "job-x", container.notifier.calls.first[0]
   end
 
   # ---------------------------------------------------------------------------
@@ -160,7 +135,6 @@ class ContainerTest < ActiveSupport::TestCase
       ocr_service_class: FakeOcr,
       data_extractor_class: FakeExtractor,
       llm_service_class: FakeLlm,
-      notifier_class: FakeNotifier,
       file_storage_class: FakeFileStorage,
       textract_client: Object.new,
       bedrock_client: Object.new
@@ -171,7 +145,6 @@ class ContainerTest < ActiveSupport::TestCase
 
   test "process_split_run_service returns ProcessSplitRun instance" do
     container = DocumentProcessing::Container.new(
-      notifier_class: FakeNotifier,
       file_storage_class: FakeFileStorage
     )
     svc = container.process_split_run_service
@@ -183,7 +156,6 @@ class ContainerTest < ActiveSupport::TestCase
       ocr_service_class: FakeOcr,
       data_extractor_class: FakeExtractor,
       llm_service_class: FakeLlm,
-      notifier_class: FakeNotifier,
       file_storage_class: FakeFileStorage,
       textract_client: Object.new,
       bedrock_client: Object.new
@@ -197,7 +169,6 @@ class ContainerTest < ActiveSupport::TestCase
       ocr_service_class: FakeOcr,
       data_extractor_class: FakeExtractor,
       llm_service_class: FakeLlm,
-      notifier_class: FakeNotifier,
       file_storage_class: FakeFileStorage,
       textract_client: Object.new,
       bedrock_client: Object.new

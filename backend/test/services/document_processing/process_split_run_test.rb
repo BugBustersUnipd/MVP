@@ -43,20 +43,6 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
     end
   end
 
-  class FakeNotifier
-    attr_reader :events
-
-    # Inizializza le dipendenze del componente.
-    def initialize
-      @events = []
-    end
-
-    # Invia l'output verso il canale previsto.
-    def broadcast(job_id, payload)
-      @events << [job_id, payload]
-    end
-  end
-
   class FakeFileStorage
     # Verifica le condizioni richieste prima di procedere.
     def exist?(_path)
@@ -74,12 +60,11 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
   end
 
   class FakeContainer
-    attr_reader :split_run_repository, :notifier
+    attr_reader :split_run_repository
 
     # Inizializza le dipendenze del componente.
-    def initialize(split_run_repository:, notifier:, split_results:, file_storage: FakeFileStorage.new)
+    def initialize(split_run_repository:, split_results:, file_storage: FakeFileStorage.new)
       @split_run_repository = split_run_repository
-      @notifier = notifier
       @split_results = split_results
       @file_storage = file_storage
     end
@@ -103,10 +88,8 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
     run = Struct.new(:job_id).new("job-1")
     artifacts = [{ path: "/tmp/mini_1.pdf", processing_item_id: 10, extracted_document_id: 20 }]
     repository = FakeSplitRunRepository.new(run: run, created_artifacts: artifacts)
-    notifier = FakeNotifier.new
     container = FakeContainer.new(
       split_run_repository: repository,
-      notifier: notifier,
       split_results: [{ path: "/tmp/mini_1.pdf", range: { start: 0, end: 1 } }]
     )
 
@@ -122,13 +105,22 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
     begin
       pdf_splitter_factory = ->(pdf:) { container.pdf_splitter(pdf: pdf) }
 
-      DocumentProcessing::ProcessSplitRun.new(
+      events = []
+
+      ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, payload|
+        events << payload
+      }, "document_processing.lifecycle") do
+        DocumentProcessing::ProcessSplitRun.new(
         split_run_repository: repository,
-        notifier: notifier,
         file_storage: container.file_storage,
         pdf_splitter_factory: pdf_splitter_factory,
         data_extraction_job_class: DataExtractionJob
-      ).call(file_path: "/tmp/source.pdf", job_id: "job-1")
+        ).call(file_path: "/tmp/source.pdf", job_id: "job-1")
+      end
+
+      split_completed = events.find { |payload| payload[:event] == "split_completed" }
+      assert_not_nil split_completed
+      assert_equal "success", split_completed[:status]
     ensure
       CombinePDF.define_singleton_method(:load, original_pdf_load)
       DataExtractionJob.define_singleton_method(:perform_later, original_job_perform)
@@ -136,9 +128,6 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
 
     assert_equal 1, job_calls.size
     assert_equal "/tmp/mini_1.pdf", job_calls.first[0]
-    assert_equal 1, notifier.events.size
-    assert_equal "split_completed", notifier.events.first[1][:event]
-    assert_equal "success", notifier.events.first[1][:status]
     assert_equal 1, repository.post_split_count
   end
 
@@ -146,8 +135,7 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
     skip "CombinePDF gem not available" unless defined?(CombinePDF)
     run = Struct.new(:job_id).new("job-empty")
     repository = FakeSplitRunRepository.new(run: run, created_artifacts: [])
-    notifier = FakeNotifier.new
-    container = FakeContainer.new(split_run_repository: repository, notifier: notifier, split_results: [])
+    container = FakeContainer.new(split_run_repository: repository, split_results: [])
 
     pdf = Struct.new(:pages).new([])
 
@@ -157,20 +145,26 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
     begin
       pdf_splitter_factory = ->(pdf:) { container.pdf_splitter(pdf: pdf) }
 
-      DocumentProcessing::ProcessSplitRun.new(
-        split_run_repository: repository,
-        notifier: notifier,
-        file_storage: container.file_storage,
-        pdf_splitter_factory: pdf_splitter_factory,
-        data_extraction_job_class: DataExtractionJob
-      ).call(file_path: "/tmp/source.pdf", job_id: "job-empty")
+      events = []
+
+      ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, payload|
+        events << payload
+      }, "document_processing.lifecycle") do
+        DocumentProcessing::ProcessSplitRun.new(
+          split_run_repository: repository,
+          file_storage: container.file_storage,
+          pdf_splitter_factory: pdf_splitter_factory,
+          data_extraction_job_class: DataExtractionJob
+        ).call(file_path: "/tmp/source.pdf", job_id: "job-empty")
+      end
+
+      assert_equal 2, events.size
+      assert_equal "split_completed", events[0][:event]
+      assert_equal "processing_completed", events[1][:event]
     ensure
       CombinePDF.define_singleton_method(:load, original_pdf_load)
     end
 
-    assert_equal 2, notifier.events.size
-    assert_equal "split_completed", notifier.events[0][1][:event]
-    assert_equal "processing_completed", notifier.events[1][1][:event]
     assert_equal 0, repository.post_split_count
   end
 
@@ -178,8 +172,7 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
     skip "CombinePDF gem not available" unless defined?(CombinePDF)
     run = Struct.new(:job_id).new("job-error")
     repository = FakeSplitRunRepository.new(run: run, created_artifacts: [])
-    notifier = FakeNotifier.new
-    container = FakeContainer.new(split_run_repository: repository, notifier: notifier, split_results: [])
+    container = FakeContainer.new(split_run_repository: repository, split_results: [])
 
     original_pdf_load = CombinePDF.method(:load)
     CombinePDF.define_singleton_method(:load) { |_path| raise "boom" }
@@ -187,19 +180,25 @@ class ProcessSplitRunTest < ActiveSupport::TestCase
     begin
       pdf_splitter_factory = ->(pdf:) { container.pdf_splitter(pdf: pdf) }
 
-      DocumentProcessing::ProcessSplitRun.new(
-        split_run_repository: repository,
-        notifier: notifier,
-        file_storage: container.file_storage,
-        pdf_splitter_factory: pdf_splitter_factory,
-        data_extraction_job_class: DataExtractionJob
-      ).call(file_path: "/tmp/source.pdf", job_id: "job-error")
+      events = []
+
+      ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, payload|
+        events << payload
+      }, "document_processing.lifecycle") do
+        DocumentProcessing::ProcessSplitRun.new(
+          split_run_repository: repository,
+          file_storage: container.file_storage,
+          pdf_splitter_factory: pdf_splitter_factory,
+          data_extraction_job_class: DataExtractionJob
+        ).call(file_path: "/tmp/source.pdf", job_id: "job-error")
+      end
+
+      assert_equal 1, events.size
+      assert_equal "error", events.first[:status]
     ensure
       CombinePDF.define_singleton_method(:load, original_pdf_load)
     end
 
     assert_equal "boom", repository.failed_error_message
-    assert_equal 1, notifier.events.size
-    assert_equal "error", notifier.events.first[1][:status]
   end
 end

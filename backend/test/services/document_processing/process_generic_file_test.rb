@@ -1,20 +1,6 @@
 require "test_helper"
 
 class ProcessGenericFileTest < ActiveSupport::TestCase
-  class FakeNotifier
-    attr_reader :events
-
-    # Inizializza le dipendenze del componente.
-    def initialize
-      @events = []
-    end
-
-    # Invia l'output verso il canale previsto.
-    def broadcast(job_id, payload)
-      @events << [job_id, payload]
-    end
-  end
-
   class FakeResolution
     # Inizializza le dipendenze del componente.
     def initialize(employee)
@@ -38,13 +24,6 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
   end
 
   class FakeContainer
-    attr_reader :notifier
-
-    # Inizializza le dipendenze del componente.
-    def initialize
-      @notifier = FakeNotifier.new
-    end
-
     # Restituisce il resolver fittizio per i destinatari.
     def recipient_resolver
       FakeRecipientResolver.new
@@ -103,32 +82,38 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
       recipient_resolver: container.recipient_resolver
     )
 
-    DocumentProcessing::ProcessGenericFile.new(
-      notifier: container.notifier,
-      file_storage: container.file_storage,
-      generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      file_processor: file_processor
-    ).call(
-      file_path: csv.path,
-      job_id: run.job_id,
-      uploaded_document_id: uploaded_document.id
-    )
+    events = []
 
-    document_event = container.notifier.events.find { |_job_id, payload| payload[:event] == "document_processed" }
-    completed_event = container.notifier.events.find { |_job_id, payload| payload[:event] == "processing_completed" }
+    ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, payload|
+      events << payload
+    }, "document_processing.lifecycle") do
+      DocumentProcessing::ProcessGenericFile.new(
+        file_storage: container.file_storage,
+        generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
+        file_processor: file_processor
+      ).call(
+        file_path: csv.path,
+        job_id: run.job_id,
+        uploaded_document_id: uploaded_document.id
+      )
+    end
+
+    document_event = events.find { |payload| payload[:event] == "document_processed" || payload["event"] == "document_processed" }
+    completed_event = events.find { |payload| payload[:event] == "processing_completed" || payload["event"] == "processing_completed" }
 
     assert_not_nil document_event
     assert_not_nil completed_event
 
-    payload = document_event[1]
-    expected_keys = %i[event status filename ocr_text recipient extracted_document_data extracted_confidence matched_recipient extracted_document_id document_index total_documents message]
-    assert_equal expected_keys.sort, payload.keys.sort
-    assert_equal "success", payload[:status]
-    assert_equal "records.csv", payload[:filename]
-    assert_nil payload[:ocr_text]
-    assert_equal "Mario Rossi", payload[:recipient]
-    assert_equal 1, payload[:document_index]
-    assert_equal 1, payload[:total_documents]
+    payload = document_event
+    expected_keys = %i[event status filename ocr_text recipient extracted_document_data extracted_confidence matched_recipient extracted_document_id document_index total_documents message job_id]
+    payload_keys = payload.keys.map { |key| key.is_a?(String) ? key.to_sym : key }
+    assert_equal expected_keys.sort, payload_keys.sort
+    assert_equal "success", payload[:status] || payload["status"]
+    assert_equal "records.csv", payload[:filename] || payload["filename"]
+    assert_nil payload[:ocr_text] || payload["ocr_text"]
+    assert_equal "Mario Rossi", payload[:recipient] || payload["recipient"]
+    assert_equal 1, payload[:document_index] || payload["document_index"]
+    assert_equal 1, payload[:total_documents] || payload["total_documents"]
   ensure
     csv.close! if csv
   end
@@ -163,16 +148,18 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
       recipient_resolver: container.recipient_resolver
     )
 
-    DocumentProcessing::ProcessGenericFile.new(
-      notifier: container.notifier,
-      file_storage: container.file_storage,
-      generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      file_processor: file_processor
-    ).call(
-      file_path: csv.path,
-      job_id: run.job_id,
-      uploaded_document_id: uploaded_document.id
-    )
+    ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, _payload|
+    }, "document_processing.lifecycle") do
+      DocumentProcessing::ProcessGenericFile.new(
+        file_storage: container.file_storage,
+        generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
+        file_processor: file_processor
+      ).call(
+        file_path: csv.path,
+        job_id: run.job_id,
+        uploaded_document_id: uploaded_document.id
+      )
+    end
 
     run.reload
     assert_equal 1, run.total_documents
@@ -221,33 +208,40 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
 
     container = FakeContainer.new
 
-    DocumentProcessing::ProcessGenericFile.new(
-      notifier: container.notifier,
-      file_storage: container.file_storage,
-      generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      file_processor: fake_image_processor
-    ).call(
-      file_path: "/tmp/scan.png",
-      job_id: run.job_id,
-      uploaded_document_id: uploaded_document.id
-    )
+    events = []
 
-    document_event = container.notifier.events.find { |_job_id, payload| payload[:event] == "document_processed" }
-    completed_event = container.notifier.events.find { |_job_id, payload| payload[:event] == "processing_completed" }
+    ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, payload|
+      events << payload
+    }, "document_processing.lifecycle") do
+      DocumentProcessing::ProcessGenericFile.new(
+        file_storage: container.file_storage,
+        generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
+        file_processor: fake_image_processor
+      ).call(
+        file_path: "/tmp/scan.png",
+        job_id: run.job_id,
+        uploaded_document_id: uploaded_document.id
+      )
+    end
+
+    document_event = events.find { |payload| payload[:event] == "document_processed" || payload["event"] == "document_processed" }
+    completed_event = events.find { |payload| payload[:event] == "processing_completed" || payload["event"] == "processing_completed" }
 
     assert_not_nil document_event
     assert_not_nil completed_event
 
-    payload = document_event[1]
-    expected_keys = %i[event status filename ocr_text recipient extracted_document_data extracted_confidence matched_recipient extracted_document_id document_index total_documents message]
-    assert_equal expected_keys.sort, payload.keys.sort
-    assert_equal "success", payload[:status]
-    assert_equal "scan.png", payload[:filename]
-    assert_equal "Mario Rossi fattura", payload[:ocr_text]
-    assert_equal "Mario Rossi", payload[:recipient]
-    assert_equal 1, payload[:document_index]
-    assert_equal 1, payload[:total_documents]
-    assert_equal "mario@example.com", payload[:matched_recipient][:email]
+    payload = document_event
+    expected_keys = %i[event status filename ocr_text recipient extracted_document_data extracted_confidence matched_recipient extracted_document_id document_index total_documents message job_id]
+    payload_keys = payload.keys.map { |key| key.is_a?(String) ? key.to_sym : key }
+    assert_equal expected_keys.sort, payload_keys.sort
+    assert_equal "success", payload[:status] || payload["status"]
+    assert_equal "scan.png", payload[:filename] || payload["filename"]
+    assert_equal "Mario Rossi fattura", payload[:ocr_text] || payload["ocr_text"]
+    assert_equal "Mario Rossi", payload[:recipient] || payload["recipient"]
+    assert_equal 1, payload[:document_index] || payload["document_index"]
+    assert_equal 1, payload[:total_documents] || payload["total_documents"]
+    matched = payload[:matched_recipient] || payload["matched_recipient"]
+    assert_equal "mario@example.com", matched[:email] || matched["email"]
   end
 
   test "does not delete persisted source file after generic processing" do
@@ -286,16 +280,18 @@ class ProcessGenericFileTest < ActiveSupport::TestCase
       recipient_resolver: container.recipient_resolver
     )
 
-    DocumentProcessing::ProcessGenericFile.new(
-      notifier: container.notifier,
-      file_storage: storage_spy,
-      generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
-      file_processor: file_processor
-    ).call(
-      file_path: csv.path,
-      job_id: run.job_id,
-      uploaded_document_id: uploaded_document.id
-    )
+    ActiveSupport::Notifications.subscribed(lambda { |_name, _start, _finish, _id, _payload|
+    }, "document_processing.lifecycle") do
+      DocumentProcessing::ProcessGenericFile.new(
+        file_storage: storage_spy,
+        generic_file_repository: DocumentProcessing::Persistence::DataItemRepository.new,
+        file_processor: file_processor
+      ).call(
+        file_path: csv.path,
+        job_id: run.job_id,
+        uploaded_document_id: uploaded_document.id
+      )
+    end
 
     assert_equal [], deleted_paths
     assert File.exist?(csv.path)
